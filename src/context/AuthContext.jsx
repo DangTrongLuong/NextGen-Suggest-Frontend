@@ -44,6 +44,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Show toast notification for expired login/required actions saved in sessionStorage (e.g. after a page reload redirect)
+  useEffect(() => {
+    const expiredMsg = sessionStorage.getItem('auth_expired_msg');
+    if (expiredMsg) {
+      // Small timeout to ensure Toaster is initialized and ready
+      const timer = setTimeout(() => {
+        toast.error(expiredMsg);
+      }, 100);
+      sessionStorage.removeItem('auth_expired_msg');
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // ── Login ──────────────────────────────────────────────
   const login = async (email, password) => {
     setLoading(true);

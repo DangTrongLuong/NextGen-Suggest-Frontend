@@ -38,6 +38,15 @@ export const ProductProvider = ({ children }) => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
+      if (filters.search) {
+        const data = await productService.search(filters.search, true);
+        const normalized = normalizeProducts(data);
+        setProducts(normalized);
+        setTotalProducts(normalized.length);
+        setTotalPages(1);
+        return;
+      }
+
       const { sortBy: sortField, sortDir } = buildSortParams(sortBy);
       const params = {
         page,
@@ -49,7 +58,6 @@ export const ProductProvider = ({ children }) => {
         ...(filters.minPrice && { minPrice: filters.minPrice }),
         ...(filters.maxPrice && { maxPrice: filters.maxPrice }),
         ...(filters.minRating && { minRating: filters.minRating }),
-        ...(filters.search && { search: filters.search }),
       };
       const data = await productService.getAll(params);
       setProducts(normalizeProducts(data?.content));
@@ -58,6 +66,8 @@ export const ProductProvider = ({ children }) => {
     } catch (err) {
       console.error('Failed to fetch products:', err);
       setProducts([]);
+      setTotalProducts(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }

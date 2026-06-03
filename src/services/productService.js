@@ -3,6 +3,7 @@ import api from './api';
 export const productService = {
   getAll: async (params = {}) => {
     const res = await api.get('/products', { params });
+    console.log(res.data.data);
     return res.data.data;
   },
 
@@ -36,9 +37,9 @@ export const productService = {
     return res.data.data || [];
   },
 
-  search: async (query) => {
-    const res = await api.get('/products', { params: { search: query, size: 5 } });
-    return res.data.data?.content || [];
+  search: async (query, rerank = false) => {
+    const res = await api.get('/products/search', { params: { q: query, rerank } });
+    return res.data.data || [];
   },
 
   // Admin

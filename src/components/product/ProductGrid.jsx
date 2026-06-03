@@ -9,12 +9,21 @@ const containerVariants = {
 };
 
 const ProductGrid = ({ products, loading = false }) => {
-  if (!loading && products.length === 0) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4 w-full col-span-full">
+        <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+        <p className="text-gray-500 text-sm font-semibold animate-pulse">Đang tìm kiếm và xếp hạng sản phẩm bằng AI...</p>
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
     return (
       <EmptyState
         icon={Search}
-        title="No products found"
-        description="Try adjusting your filters or search query to find what you're looking for."
+        title="Không tìm thấy sản phẩm"
+        description="Hãy thử nhập từ khóa tìm kiếm khác hoặc thay đổi bộ lọc."
       />
     );
   }
