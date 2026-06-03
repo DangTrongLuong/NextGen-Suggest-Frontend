@@ -16,17 +16,19 @@ const Products = () => {
     page, updateFilter, setSortBy, setPage,
   } = useProducts();
 
-  // Sync URL params → filters on mount
+  // Sync URL params → filters on query changes
   useEffect(() => {
-    const search = searchParams.get('search');
-    const category = searchParams.get('category');
-    if (search) updateFilter('search', search);
-    if (category) {
+    const search = searchParams.get('search') || '';
+    const category = searchParams.get('category') || 'All';
+    updateFilter('search', search);
+    if (category !== 'All') {
       const catName = category.charAt(0).toUpperCase() + category.slice(1);
       updateFilter('category', catName);
+    } else {
+      updateFilter('category', 'All');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   const [filterOpen, setFilterOpen] = [
     false,

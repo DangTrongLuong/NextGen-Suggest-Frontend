@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -84,16 +84,24 @@ api.interceptors.response.use(
           processQueue(refreshError, null);
           localStorage.removeItem('auth_tokens');
           localStorage.removeItem('user');
-          toast.error('Phiên đăng nhập đã hết hạn');
           window.dispatchEvent(new Event('auth-change'));
-          if (window.location.pathname !== '/login') window.location.href = '/login';
+          sessionStorage.setItem('auth_expired_msg', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          if (window.location.pathname !== '/') {
+            window.location.href = '/';
+          } else {
+            window.location.reload();
+          }
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
         }
       } else {
-        toast.error('Vui lòng đăng nhập để tiếp tục');
-        if (window.location.pathname !== '/login') window.location.href = '/login';
+        sessionStorage.setItem('auth_expired_msg', 'Vui lòng đăng nhập để tiếp tục.');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        } else {
+          window.location.reload();
+        }
       }
     }
 

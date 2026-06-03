@@ -35,7 +35,6 @@ const ProductCard = ({ product }) => {
   product.images?.[0]?.url ??
   'https://via.placeholder.com/600x600?text=No+Image';
 
-  console.log(JSON.stringify(product.images[0]));
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

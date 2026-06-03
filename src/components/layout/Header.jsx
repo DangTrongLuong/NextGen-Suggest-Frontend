@@ -12,6 +12,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { productService } from '../../services/productService';
 import LoginModal from '../common/LoginModal';
 import logoNivora from '../../assets/logo-nivora.jpg';
+import toast from 'react-hot-toast';
 
 const navLinks = [
   { label: 'Trang chủ', to: '/' },
@@ -63,12 +64,27 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearch = async (q) => {
+  const handleSearch = (q) => {
     setSearchQuery(q);
-    if (q.trim().length < 2) { setSearchResults([]); return; }
-    const results = await productService.search(q);
-    setSearchResults(results.slice(0, 5));
   };
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const results = await productService.search(searchQuery, false);
+        setSearchResults(results.slice(0, 5));
+      } catch (err) {
+        console.error('Failed to fetch search results:', err);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -77,6 +93,15 @@ const Header = () => {
       setSearchFocused(false);
       setSearchResults([]);
       setSearchQuery('');
+    }
+  };
+
+  const handleNavLinkClick = (e, link) => {
+    if (link.to === '/orders' && !user) {
+      e.preventDefault();
+      toast.error('Vui lòng đăng nhập để tiếp tục');
+      setLoginModalOpen(true);
+      setMobileOpen(false);
     }
   };
 
@@ -116,6 +141,7 @@ const Header = () => {
                 <Link
                   key={link.to}
                   to={link.to}
+                  onClick={(e) => handleNavLinkClick(e, link)}
                   className={clsx(
                     'relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                     location.pathname === link.to
@@ -401,6 +427,7 @@ const Header = () => {
                   >
                     <Link
                       to={link.to}
+                      onClick={(e) => handleNavLinkClick(e, link)}
                       className={clsx(
                         'block px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                         location.pathname === link.to
