@@ -34,14 +34,19 @@ const modalVariants = {
   },
 };
 
-const LoginModal = ({ isOpen, onClose }) => {
-  const [tab, setTab] = useState('login'); // 'login' | 'register'
+const LoginModal = ({ isOpen, onClose, initialTab = 'login' }) => {
+  const [tab, setTab] = useState(initialTab); // 'login' | 'register'
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
   const { login, register, loading, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const firstInputRef = useRef(null);
+
+  // Sync tab when modal opens
+  useEffect(() => {
+    if (isOpen) setTab(initialTab);
+  }, [isOpen, initialTab]);
 
   // Lock body scroll
   useEffect(() => {

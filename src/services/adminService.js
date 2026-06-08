@@ -7,6 +7,26 @@ export const adminService = {
     return res.data.data;
   },
 
+  getDashboardStats: async () => {
+    const res = await api.get('/admin/dashboard/stats');
+    return res.data.data;
+  },
+
+  getDashboardRevenueChart: async () => {
+    const res = await api.get('/admin/dashboard/revenue-chart');
+    return res.data.data || [];
+  },
+
+  getDashboardTopProducts: async () => {
+    const res = await api.get('/admin/dashboard/top-products');
+    return res.data.data || [];
+  },
+
+  getDashboardCategoryStats: async () => {
+    const res = await api.get('/admin/dashboard/category-stats');
+    return res.data.data || [];
+  },
+
   // ── Products (admin) ─────────────────────────────────
   getProducts: async (params = {}) => {
     const res = await api.get('/admin/products', { params });
