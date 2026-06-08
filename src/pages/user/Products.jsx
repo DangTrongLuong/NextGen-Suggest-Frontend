@@ -18,12 +18,16 @@ const Products = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [sortBy, setSortBy] = useState('newest');
   const [searchInput, setSearchInput] = useState('');
   const [categoryPage, setCategoryPage] = useState(0);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
+  // Search-specific pagination (load-more pattern, not URL-based)
+  const [searchPage, setSearchPage] = useState(0);
+  const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
   // States for Category Pagination & Search
   const [paginatedParentCategories, setPaginatedParentCategories] = useState([]);
@@ -31,10 +35,6 @@ const Products = () => {
   const [totalCatPages, setTotalCatPages] = useState(0);
   const [categorySearchInput, setCategorySearchInput] = useState('');
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
-
-  // States for Search Pagination
-  const [searchPage, setSearchPage] = useState(0);
-  const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
   const productPage = useMemo(() => {
     const p = parseInt(searchParams.get('page') || '1') - 1;
@@ -94,14 +94,11 @@ const Products = () => {
     fetchParentCats();
   }, [categoryPage, categorySearchQuery, selectedCategorySlug]);
 
-  // Reset search page when query changes
-  useEffect(() => {
-    setSearchPage(0);
-  }, [searchQueryParam]);
-
-  // Sync search input with search URL param
+  // Sync search input with URL param + reset search pagination on new query
   useEffect(() => {
     setSearchInput(searchQueryParam);
+    setSearchPage(0);
+    setHasMoreSearch(false);
   }, [searchQueryParam]);
 
   // Fetch breadcrumb hierarchy whenever active category changes
@@ -115,40 +112,54 @@ const Products = () => {
       .catch(() => setBreadcrumbs([]));
   }, [selectedCategorySlug]);
 
-  // Fetch products matching parameters
+  // ── SEARCH: Load-more pattern (not URL-based) ───────────────────────────
   useEffect(() => {
-    const fetchProductsData = async () => {
-      setLoadingProducts(true);
-      const trimmedSearch = searchQueryParam.trim();
-      try {
-        // Semantic search via Spring → FastAPI reranking with pagination
-        if (trimmedSearch) {
-          const data = await productService.searchPaginated(trimmedSearch, {
-            page: searchPage,
-            size: 12,
-            rerank: true
-          });
-          const normalized = normalizeProducts(data?.content) || [];
-          if (searchPage === 0) {
-            setProducts(normalized);
-          } else {
-            setProducts((prev) => [...prev, ...normalized]);
-          }
-          setTotalProducts(data?.totalElements || 0);
-          setHasMoreSearch(!data?.last);
-          setTotalPages(data?.totalPages || 0);
-          return;
-        }
+    if (!searchQueryParam.trim()) return;
 
+    const fetchSearch = async () => {
+      if (searchPage === 0) {
+        setLoadingProducts(true);
+        setProducts([]);
+      } else {
+        setLoadingMore(true);
+      }
+      try {
+        const data = await productService.searchPaginated(searchQueryParam.trim(), {
+          page: searchPage,
+          size: 12,
+          rerank: true,
+        });
+        const newProducts = normalizeProducts(data?.content) || [];
+        if (searchPage === 0) {
+          setProducts(newProducts);
+        } else {
+          setProducts((prev) => [...prev, ...newProducts]);
+        }
+        setTotalProducts(data?.totalElements || 0);
+        setHasMoreSearch(!data?.last);
+      } catch (err) {
+        console.error('Search failed:', err);
+        toast.error('Không thể tìm kiếm sản phẩm. Vui lòng thử lại.');
+      } finally {
+        setLoadingProducts(false);
+        setLoadingMore(false);
+      }
+    };
+
+    fetchSearch();
+  }, [searchQueryParam, searchPage]);
+
+  // ── BROWSE: Standard pagination (URL-based) ──────────────────────────────
+  useEffect(() => {
+    if (searchQueryParam.trim()) return;
+
+    const fetchBrowse = async () => {
+      setLoadingProducts(true);
+      try {
         let sortField = 'createdAt';
         let sortDir = 'desc';
-        if (sortBy === 'price-asc') {
-          sortField = 'basePrice';
-          sortDir = 'asc';
-        } else if (sortBy === 'price-desc') {
-          sortField = 'basePrice';
-          sortDir = 'desc';
-        }
+        if (sortBy === 'price-asc') { sortField = 'basePrice'; sortDir = 'asc'; }
+        else if (sortBy === 'price-desc') { sortField = 'basePrice'; sortDir = 'desc'; }
 
         const params = {
           page: productPage,
@@ -164,7 +175,7 @@ const Products = () => {
         setTotalPages(data?.totalPages || 0);
       } catch (err) {
         console.error('Failed to fetch products:', err);
-        toast.error(trimmedSearch ? 'Không thể tìm kiếm sản phẩm. Vui lòng thử lại.' : 'Không thể tải sản phẩm.');
+        toast.error('Không thể tải sản phẩm.');
         setProducts([]);
         setTotalProducts(0);
         setTotalPages(0);
@@ -173,8 +184,8 @@ const Products = () => {
       }
     };
 
-    fetchProductsData();
-  }, [selectedCategorySlug, searchQueryParam, sortBy, productPage, searchPage]);
+    fetchBrowse();
+  }, [selectedCategorySlug, searchQueryParam, sortBy, productPage]);
 
   // Filter Categories Helper
   const currentCategory = useMemo(() => {
@@ -214,6 +225,7 @@ const Products = () => {
     });
   };
 
+  // Only show skeleton on first page of search (not when appending more)
   const showSkeleton = loadingProducts && (searchQueryParam.trim() ? searchPage === 0 : true);
 
   return (
@@ -360,10 +372,10 @@ const Products = () => {
           <p className="text-xs text-gray-500 mt-0.5">
             {searchQueryParam.trim() ? (
               <>
-                Tìm thấy <span className="text-emerald-600 font-semibold">{totalProducts}</span> sản phẩm phù hợp
+                {/* Tìm thấy <span className="text-emerald-600 font-semibold">{totalProducts}</span> sản phẩm phù hợp
                 <span className="inline-flex items-center gap-1 ml-2 text-emerald-600 font-semibold">
                   <Sparkles size={12} /> Tìm kiếm thông minh
-                </span>
+                </span> */}
               </>
             ) : (
               <>
@@ -428,36 +440,40 @@ const Products = () => {
             ))}
           </div>
 
-          {/* Pagination or Load More */}
-          {searchQueryParam.trim() ? (
-            hasMoreSearch && (
-              <div className="flex justify-center mt-6 mb-8">
-                <button
-                  onClick={() => setSearchPage((p) => p + 1)}
-                  disabled={loadingProducts}
-                  className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all duration-300 flex items-center gap-2 cursor-pointer"
-                >
-                  {loadingProducts ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
-                    </>
-                  ) : (
-                    'Xem thêm sản phẩm'
-                  )}
-                </button>
-              </div>
-            )
-          ) : (
-            totalPages > 1 && (
-              <div className="flex justify-center mt-4 mb-8">
-                <Pagination
-                  currentPage={productPage + 1}
-                  totalPages={totalPages}
-                  onPageChange={(p) => setProductPage(p - 1)}
-                />
-              </div>
-            )
+          {/* Search: Xem thêm (Load More) button */}
+          {searchQueryParam.trim() && hasMoreSearch && (
+            <div className="flex justify-center mt-2 mb-8">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setSearchPage((prev) => prev + 1)}
+                disabled={loadingMore}
+                className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg transition-all duration-200 flex items-center gap-2.5 cursor-pointer"
+              >
+                {loadingMore ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Đang tải thêm...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} />
+                    Xem thêm sản phẩm
+                  </>
+                )}
+              </motion.button>
+            </div>
+          )}
+
+          {/* Browse: Standard Pagination */}
+          {!searchQueryParam.trim() && totalPages > 1 && (
+            <div className="flex justify-center mt-4 mb-8">
+              <Pagination
+                currentPage={productPage + 1}
+                totalPages={totalPages}
+                onPageChange={(p) => setProductPage(p - 1)}
+              />
+            </div>
           )}
         </>
       )}
