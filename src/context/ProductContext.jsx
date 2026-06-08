@@ -39,7 +39,7 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     try {
       if (filters.search) {
-        const data = await productService.search(filters.search, true);
+        const data = await productService.search(filters.search.trim(), true, 10);
         const normalized = normalizeProducts(data);
         setProducts(normalized);
         setTotalProducts(normalized.length);
@@ -53,7 +53,7 @@ export const ProductProvider = ({ children }) => {
         size: pageSize,
         sortBy: sortField,
         sortDir,
-        ...(filters.categoryId && { categoryId: filters.categoryId }),
+        ...(filters.category !== 'All' && { categorySlug: filters.category }),
         ...(filters.brand && { brand: filters.brand }),
         ...(filters.minPrice && { minPrice: filters.minPrice }),
         ...(filters.maxPrice && { maxPrice: filters.maxPrice }),

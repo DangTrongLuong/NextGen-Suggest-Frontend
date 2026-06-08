@@ -67,98 +67,98 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Actions overlay */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => toggleWishlist(product)}
-            className={clsx(
-              'w-9 h-9 rounded-xl flex items-center justify-center shadow-md transition-colors',
-              inWishlist
-                ? 'bg-red-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-500'
-            )}
-          >
-            <Heart size={16} fill={inWishlist ? 'currentColor' : 'none'} />
-          </motion.button>
-          <Link
-            to={`/products/${product.id}`}
-            className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-md text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-          >
-            <Eye size={16} />
-          </Link>
-        </div>
-
-        {/* Out of stock overlay */}
-        {!hasStock && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-            <span className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl">
-              Out of Stock
-            </span>
-          </div>
-        )}
+      {/* Actions overlay */}
+      <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => toggleWishlist(product)}
+          className={clsx(
+            'w-8 h-8 rounded-lg flex items-center justify-center shadow-md transition-colors',
+            inWishlist
+              ? 'bg-red-500 text-white'
+              : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-500'
+          )}
+        >
+          <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} />
+        </motion.button>
+        <Link
+          to={`/products/${product.id}`}
+          className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-md text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+        >
+          <Eye size={14} />
+        </Link>
       </div>
 
-      {/* Info */}
-      <div className="p-4">
-        <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide mb-1">
-          {categoryName}
-        </p>
-        <Link to={`/products/${product.id}`}>
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 hover:text-emerald-600 transition-colors mb-2">
-            {product.name}
-          </h3>
-        </Link>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1.5 mb-3">
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                size={12}
-                className={
-                  i < Math.floor(rating)
-                    ? 'text-amber-400 fill-amber-400'
-                    : 'text-gray-200 fill-gray-200'
-                }
-              />
-            ))}
-          </div>
-          <span className="text-xs text-gray-500">
-            ({reviewCount.toLocaleString()})
+      {/* Out of stock overlay */}
+      {!hasStock && (
+        <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+          <span className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg">
+            Out of Stock
           </span>
         </div>
+      )}
+    </div>
 
-        {/* Price + Cart */}
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-lg font-bold text-gray-900">
-              {formatPrice(price)}
-            </span>
-            {originalPrice > price && (
-              <span className="text-xs text-gray-400 line-through ml-2">
-                {formatPrice(originalPrice)}
-              </span>
-            )}
-          </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => addToCart(product)}
-            disabled={!hasStock}
-            className={clsx(
-              'w-9 h-9 rounded-xl flex items-center justify-center transition-all',
-              inCart
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white',
-              !hasStock && 'opacity-40 cursor-not-allowed'
-            )}
-          >
-            <ShoppingCart size={16} />
-          </motion.button>
+    {/* Info */}
+    <div className="p-3">
+      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-0.5">
+        {categoryName}
+      </p>
+      <Link to={`/products/${product.id}`}>
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 hover:text-emerald-600 transition-colors mb-1.5">
+          {product.name}
+        </h3>
+      </Link>
+
+      {/* Rating */}
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              size={10}
+              className={
+                i < Math.floor(rating)
+                  ? 'text-amber-400 fill-amber-400'
+                  : 'text-gray-200 fill-gray-200'
+              }
+            />
+          ))}
         </div>
+        <span className="text-[10px] text-gray-500">
+          ({reviewCount.toLocaleString()})
+        </span>
       </div>
-    </motion.div>
+
+      {/* Price + Cart */}
+      <div className="flex items-center justify-between gap-1">
+        <div className="truncate">
+          <span className="text-sm sm:text-base font-bold text-gray-900">
+            {formatPrice(price)}
+          </span>
+          {originalPrice > price && (
+            <span className="text-[10px] sm:text-xs text-gray-400 line-through ml-1.5">
+              {formatPrice(originalPrice)}
+            </span>
+          )}
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => addToCart(product)}
+          disabled={!hasStock}
+          className={clsx(
+            'w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0',
+            inCart
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white',
+            !hasStock && 'opacity-40 cursor-not-allowed'
+          )}
+        >
+          <ShoppingCart size={14} />
+        </motion.button>
+      </div>
+    </div>
+  </motion.div>
   );
 };
 

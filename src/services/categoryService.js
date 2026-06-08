@@ -7,8 +7,18 @@ export const categoryService = {
     return res.data.data || [];
   },
 
+  getPaginated: async (params = {}) => {
+    const res = await api.get('/categories', { params });
+    return res.data.data;
+  },
+
   getTree: async () => {
     const res = await api.get('/categories/tree');
+    return res.data.data || [];
+  },
+
+  getBreadcrumb: async (slug) => {
+    const res = await api.get(`/categories/${slug}/breadcrumb`);
     return res.data.data || [];
   },
 

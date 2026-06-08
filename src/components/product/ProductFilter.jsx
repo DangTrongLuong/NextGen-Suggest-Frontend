@@ -4,6 +4,7 @@ import { SlidersHorizontal, X, ChevronDown, Check, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { useProducts } from '../../context/ProductContext';
 import { SORT_OPTIONS } from '../../utils/constants';
+import CategoryTreeSidebar from './CategoryTreeSidebar';
 
 // ── Constants (unchanged) ─────────────────────────────────
 const COLORS = [
@@ -268,14 +269,15 @@ const ProductFilter = ({ className = '' }) => {
           onToggle={toggle('category')}
           badge={filters.category !== 'All' ? 1 : 0}
         >
-          <OptionList
-            showSearch
-            options={allCategories}
-            getValue={(c) => c}
-            getLabel={(c) => c === 'All' ? 'Tất cả' : c}
-            isSelected={(v) => filters.category === v}
-            onSelect={(v) => { updateFilter('category', v); setOpenKey(null); }}
-          />
+          <div className="p-2">
+            <CategoryTreeSidebar
+              activeCategory={filters.category}
+              onSelectCategory={(slug) => {
+                updateFilter('category', slug);
+                setOpenKey(null);
+              }}
+            />
+          </div>
         </FilterDropdown>
 
         {/* Thương hiệu */}
