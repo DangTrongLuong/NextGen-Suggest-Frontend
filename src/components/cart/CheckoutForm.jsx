@@ -8,6 +8,7 @@ import Button from '../common/Button';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatPrice } from '../../utils/formatPrice';
+import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 
 const steps = ['Shipping', 'Payment', 'Review'];
 
@@ -17,6 +18,7 @@ const CheckoutForm = () => {
   const { clearCart, cartTotal, items } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { trackPurchase } = useBehaviorTracker();
 
   const [shipping, setShipping] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -71,6 +73,14 @@ const CheckoutForm = () => {
   const handlePlaceOrder = async () => {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1500));
+
+    // Track purchase event for each item in the cart
+    (items || []).forEach((item) => {
+      if (item.id) {
+        trackPurchase(item.id);
+      }
+    });
+
     clearCart();
     toast.success('Đặt hàng thành công!');
     navigate('/');

@@ -5,7 +5,7 @@ export const normalizeProduct = (p) => {
   const totalStock = Number(p.stock ?? variants.reduce((s, v) => s + (v.availableStock ?? v.stock ?? 0), 0));
   const images = (p.images || []).map((img) => ({
     id: img.id,
-    url: `${img.url}${img.url?.includes('?') ? '&' : '?'}v=${p.updatedAt || img.id || Date.now()}`,
+    url: img.url,
     altText: img.altText || p.name,
     isPrimary: img.isPrimary,
   }));

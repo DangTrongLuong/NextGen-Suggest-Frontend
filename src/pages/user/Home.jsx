@@ -1,710 +1,575 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ArrowRight, ShieldCheck, Truck, RotateCcw, Headphones,
-  Star, TrendingUp, Sparkles, ChevronDown, MapPin, Users,
-  Zap, Tag, Flame, Eye, ChevronLeft, ChevronRight, Gift,
-  UserCheck, Shirt, ShoppingBag
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowRight, Search, RotateCcw } from 'lucide-react';
 import ProductCard from '../../components/product/ProductCard';
 import { CardSkeleton } from '../../components/common/Loading';
-import LoginModal from '../../components/common/LoginModal';
 import { useAuth } from '../../context/AuthContext';
+import { recommendationService } from '../../services/recommendationService';
 import { productService } from '../../services/productService';
+import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 import api from '../../services/api';
-import heroBg from '../../assets/background-2.png';
+import toast from 'react-hot-toast';
+import { formatPrice } from '../../utils/formatPrice';
 
 // ─── Animations ──────────────────────────────────────────────────────────────
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 15 },
   visible: (i = 0) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' },
   }),
 };
-const staggerText = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
-const textLine = {
-  hidden: { opacity: 0, y: 40, filter: 'blur(8px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
-
-// ─── Static data ─────────────────────────────────────────────────────────────
-const perks = [
-  { icon: Truck, title: 'Miễn phí vận chuyển', desc: 'Đơn hàng từ 500.000đ', color: 'emerald' },
-  { icon: ShieldCheck, title: 'Thanh toán an toàn', desc: 'Bảo mật 100%', color: 'blue' },
-  { icon: RotateCcw, title: 'Đổi trả dễ dàng', desc: 'Trong vòng 30 ngày', color: 'violet' },
-  { icon: Headphones, title: 'Hỗ trợ 24/7', desc: 'Luôn sẵn sàng hỗ trợ', color: 'amber' },
-];
-
-const perkColors = {
-  emerald: 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100',
-  blue: 'bg-blue-50 text-blue-600 group-hover:bg-blue-100',
-  violet: 'bg-violet-50 text-violet-600 group-hover:bg-violet-100',
-  amber: 'bg-amber-50 text-amber-600 group-hover:bg-amber-100',
-};
-
-// Context-based recommendation tags (static, no backend needed)
-const contextualTags = [
-  { label: 'Phổ biến tại Hà Nội', icon: MapPin, color: 'bg-red-50 text-red-600 border-red-100', filter: 'hanoi' },
-  { label: 'Phổ biến tại TP. HCM', icon: MapPin, color: 'bg-orange-50 text-orange-600 border-orange-100', filter: 'hcm' },
-  { label: 'Xu hướng dành cho nam', icon: Users, color: 'bg-blue-50 text-blue-600 border-blue-100', filter: 'male' },
-  { label: 'Xu hướng dành cho nữ', icon: Users, color: 'bg-pink-50 text-pink-600 border-pink-100', filter: 'female' },
-  { label: 'Khuyến mãi hot nhất', icon: Flame, color: 'bg-rose-50 text-rose-600 border-rose-100', filter: 'promo' },
-  { label: 'Xem nhiều nhất', icon: Eye, color: 'bg-purple-50 text-purple-600 border-purple-100', filter: 'popular' },
-];
-
-// Promotion banners (static)
-const promotions = [
-  {
-    id: 1,
-    title: 'FLASH SALE',
-    subtitle: 'Giảm đến 50%',
-    desc: 'Chỉ trong hôm nay — số lượng có hạn',
-    tag: '⚡ Kết thúc sau 6 giờ',
-    gradient: 'from-rose-600 via-red-600 to-orange-500',
-    link: '/products',
-    emoji: '🔥',
-  },
-  {
-    id: 2,
-    title: 'HÀNG MỚI VỀ',
-    subtitle: 'Bộ sưu tập hè 2025',
-    desc: 'Phong cách trẻ trung, năng động — cập nhật liên tục',
-    tag: '✨ Cập nhật hàng tuần',
-    gradient: 'from-emerald-600 via-teal-600 to-cyan-500',
-    link: '/products?filter=new',
-    emoji: '🌿',
-  },
-  {
-    id: 3,
-    title: 'ĐẶC BIỆT',
-    subtitle: 'Mua 2 tặng 1',
-    desc: 'Áp dụng cho toàn bộ sản phẩm phụ kiện & thời trang',
-    tag: '🎁 Áp dụng tự động',
-    gradient: 'from-violet-600 via-purple-600 to-indigo-600',
-    link: '/products',
-    emoji: '💜',
-  },
-];
-
-// Gender trend sections (static labels)
-const genderTrends = [
-  {
-    key: 'male',
-    label: 'Xu hướng dành cho Nam',
-    Icon: Shirt,
-    desc: 'Phong cách lịch lãm, năng động cho phái mạnh',
-    gradient: 'from-slate-800 to-blue-900',
-    accent: 'bg-blue-500/20 text-blue-100 border-blue-400/30',
-    badgeColor: 'bg-blue-500/30 text-blue-100',
-    tags: ['Áo polo', 'Quần chino', 'Giày sneaker', 'Áo khoác'],
-  },
-  {
-    key: 'female',
-    label: 'Xu hướng dành cho Nữ',
-    Icon: ShoppingBag,
-    desc: 'Thanh lịch, hiện đại và đầy cá tính riêng',
-    gradient: 'from-rose-700 to-pink-800',
-    accent: 'bg-rose-400/20 text-rose-100 border-rose-300/30',
-    badgeColor: 'bg-rose-400/30 text-rose-100',
-    tags: ['Váy hoa', 'Áo croptop', 'Túi xách', 'Sandal'],
-  },
-];
-
-// Regional popular sections
-const regionalSections = [
-  {
-    key: 'hanoi',
-    city: 'Hà Nội',
-    emoji: '🏛️',
-    desc: 'Xu hướng tại thủ đô',
-    color: 'from-rose-600 to-red-700',
-  },
-  {
-    key: 'hcm',
-    city: 'TP. Hồ Chí Minh',
-    emoji: '🌆',
-    desc: 'Thịnh hành tại thành phố năng động',
-    color: 'from-amber-500 to-orange-600',
-  },
-];
 
 // ─── Components ──────────────────────────────────────────────────────────────
 const ProductRowSkeleton = () => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
     {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
   </div>
 );
 
-const SectionHeader = ({ badge, badgeIcon: Icon, title, viewAll, viewAllHref }) => (
-  <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-    className="flex items-end justify-between mb-10">
+const SectionHeader = ({ title, desc, badge, badgeColor = 'emerald', viewAll, viewAllHref }) => (
+  <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3 border-b border-gray-100 pb-4">
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        {Icon && <Icon size={15} className="text-emerald-600" />}
-        <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{badge}</span>
-      </div>
-      <h2 className="text-3xl sm:text-4xl font-black text-gray-900 leading-tight">{title}</h2>
+      {badge && (
+        <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2 border ${
+          badgeColor === 'rose' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+          badgeColor === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+          'bg-emerald-50 text-emerald-600 border-emerald-100'
+        }`}>
+          {badge}
+        </span>
+      )}
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">{title}</h2>
+      {desc && <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">{desc}</p>}
     </div>
     {viewAll && (
       <Link to={viewAllHref || '/products'}
-        className="hidden sm:flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors group shrink-0 ml-4">
-        Xem tất cả <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+        className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-black transition-colors group shrink-0">
+        Xem tất cả <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
       </Link>
     )}
-  </motion.div>
+  </div>
 );
 
-// ─── Promotion Banner Carousel ────────────────────────────────────────────────
-const PromoBannerCarousel = () => {
-  const [idx, setIdx] = useState(0);
-  const [isAuto, setIsAuto] = useState(true);
-
-  useEffect(() => {
-    if (!isAuto) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % promotions.length), 4500);
-    return () => clearInterval(t);
-  }, [isAuto]);
-
-  const go = (dir) => {
-    setIsAuto(false);
-    setIdx(i => (i + dir + promotions.length) % promotions.length);
-  };
-
-  return (
-    <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[280px] sm:h-[340px]">
-      <AnimatePresence mode="wait">
-        {promotions.map((p, i) => i === idx && (
-          <motion.div key={p.id}
-            initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute inset-0 bg-gradient-to-br ${p.gradient} p-8 sm:p-12 flex flex-col justify-center`}>
-            <div className="text-5xl sm:text-6xl mb-4">{p.emoji}</div>
-            <span className="inline-block text-white/70 text-xs font-bold uppercase tracking-widest mb-2">{p.tag}</span>
-            <h3 className="text-white text-3xl sm:text-5xl font-black leading-tight mb-2">{p.title}</h3>
-            <p className="text-white/90 text-xl sm:text-2xl font-bold mb-2">{p.subtitle}</p>
-            <p className="text-white/70 text-sm mb-6 max-w-sm">{p.desc}</p>
-            <Link to={p.link}>
-              <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2.5 px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 text-white font-bold rounded-2xl transition-all text-sm shadow-lg">
-                Xem ngay <ArrowRight size={16} />
-              </motion.button>
-            </Link>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-
-      {/* Nav buttons */}
-      <button onClick={() => go(-1)}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-all backdrop-blur">
-        <ChevronLeft size={18} />
-      </button>
-      <button onClick={() => go(1)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-all backdrop-blur">
-        <ChevronRight size={18} />
-      </button>
-
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {promotions.map((_, i) => (
-          <button key={i} onClick={() => { setIdx(i); setIsAuto(false); }}
-            className={`h-1.5 rounded-full transition-all duration-300 ${i === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ─── Auth Nudge Section ──────────────────────────────────────────────────────
-const AuthNudgeSection = () => {
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState('login');
-  const { user } = useAuth();
-
-  const openModal = (tab) => {
-    setModalTab(tab);
-    setLoginModalOpen(true);
-  };
-
-  if (user) return null;
-
-  const nudgeBenefits = ['🎯 Gợi ý cá nhân', '❤️ Yêu thích', '📦 Theo dõi đơn', '🎁 Ưu đãi thành viên'];
-
-  return (
-    <>
-      <section className="py-16 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t border-emerald-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="bg-white rounded-3xl border border-emerald-100 shadow-xl p-8 sm:p-12 flex flex-col lg:flex-row items-center gap-10">
-
-            {/* Icon + text */}
-            <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 mb-5">
-                <UserCheck size={32} className="text-emerald-600" />
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-gray-900 mb-3">
-                Đăng nhập để trải nghiệm<br className="hidden sm:block" /> cá nhân hoá
-              </h3>
-              <p className="text-gray-500 text-sm leading-relaxed max-w-lg mb-5">
-                Nhận gợi ý sản phẩm phù hợp phong cách của bạn. Theo dõi đơn hàng, lưu yêu thích và nhận ưu đãi độc quyền.
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {nudgeBenefits.map((b) => (
-                  <span key={b} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100">{b}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                onClick={() => openModal('login')}
-                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-emerald-600/25 text-sm">
-                Đăng nhập
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                onClick={() => openModal('register')}
-                className="px-8 py-3.5 bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-bold rounded-2xl transition-colors text-sm">
-                Đăng ký
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <LoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        initialTab={modalTab}
-      />
-    </>
-  );
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 const Home = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { trackSearch } = useBehaviorTracker();
+
+  // Recommendations State
+  const [personal, setPersonal] = useState([]);
+  const [trending, setTrending] = useState([]);
+  const [recent, setRecent] = useState([]);
+  const [youMayNeed, setYouMayNeed] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
+
+  // Sub-states
   const [categories, setCategories] = useState([]);
-  const [loadingFeatured, setLoadingFeatured] = useState(true);
-  const [loadingBest, setLoadingBest] = useState(true);
-  const [loadingNew, setLoadingNew] = useState(true);
-  const [loadingCats, setLoadingCats] = useState(true);
-  const [showAllCategories, setShowAllCategories] = useState(false);
-  const [activeContext, setActiveContext] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [popularSearches, setPopularSearches] = useState(['Ghế xoay', 'Bàn làm việc', 'Kệ tivi']);
+  
+  // Tab index for Personal Suggestions
+  const [activeRecTab, setActiveRecTab] = useState(0); // 0: Dành riêng cho bạn, 1: Có thể bạn thích
+  const [activeBestSellerCat, setActiveBestSellerCat] = useState(null); // Category filter for BestSellers
+
+  // Countdown timer for Flash Sale
+  const [countdown, setCountdown] = useState({ hours: 4, minutes: 23, seconds: 45 });
 
   useEffect(() => {
-    productService.getFeatured()
-      .then(setFeatured).catch(() => setFeatured()).finally(() => setLoadingFeatured(false));
-    productService.getBestSellers()
-      .then(setBestSellers).catch(() => setBestSellers([])).finally(() => setLoadingBest(false));
-    productService.getNewArrivals()
-      .then(setNewArrivals).catch(() => setNewArrivals([])).finally(() => setLoadingNew(false));
-    api.get('/categories')
-      .then((res) => setCategories(res.data.data || []))
-      .catch(() => setCategories([])).finally(() => setLoadingCats(false));
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return { hours: 4, minutes: 0, seconds: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  const normalizeProduct = (p) => ({
-    ...p,
-    price: p.basePrice,
-    originalPrice: p.comparePrice,
-    discount: p.comparePrice > p.basePrice ? Math.round(((p.comparePrice - p.basePrice) / p.comparePrice) * 100) : 0,
-    rating: parseFloat(p.ratingAvg) || 0,
-    reviewCount: p.ratingCount || 0,
-    stock: p.variants?.[0]?.availableStock ?? 0,
-    colors: p.variants?.map((v) => v.name) || [],
-    features: [],
-  });
+  // Typewriter placeholder effect
+  const placeholderPhrases = useMemo(() => [
+    'Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ...',
+    'Tìm kiếm áo thun, quần jean, áo khoác, váy đầm, thời trang nam nữ...',
+    'Tìm kiếm giày thể thao, giày tây, túi xách thời thượng, ví da...',
+    'Tìm kiếm thảm trải sàn, đèn ngủ thông minh, đồ trang trí tinh tế cho ngôi nhà bạn...'
+  ], []);
 
-  const normFeatured = (featured || []).map(normalizeProduct);
-  const normBest = bestSellers.map(normalizeProduct);
-  const normNew = newArrivals.map(normalizeProduct);
+  const [placeholder, setPlaceholder] = useState('');
+
+  useEffect(() => {
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let isDeleting = false;
+    let timer;
+
+    const tick = () => {
+      const currentPhrase = placeholderPhrases[phraseIdx];
+      if (!isDeleting) {
+        setPlaceholder(currentPhrase.substring(0, charIdx + 1));
+        charIdx++;
+        if (charIdx === currentPhrase.length) {
+          isDeleting = true;
+          timer = setTimeout(tick, 2500); // Pause on full phrase
+        } else {
+          timer = setTimeout(tick, 40); // Typing speed
+        }
+      } else {
+        setPlaceholder(currentPhrase.substring(0, charIdx - 1));
+        charIdx--;
+        if (charIdx === 0) {
+          isDeleting = false;
+          phraseIdx = (phraseIdx + 1) % placeholderPhrases.length;
+          timer = setTimeout(tick, 400); // Pause before next phrase
+        } else {
+          timer = setTimeout(tick, 20); // Deleting speed
+        }
+      }
+    };
+
+    tick();
+    return () => clearTimeout(timer);
+  }, [placeholderPhrases]);
+
+  const loadAllData = () => {
+    setLoading(true);
+    // Fetch categories
+    api.get('/categories')
+      .then((res) => setCategories(res.data.data || []))
+      .catch(() => setCategories([]));
+
+    // Fetch popular searches from backend
+    productService.getPopularSearches(5)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setPopularSearches(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load popular searches', err);
+      });
+
+    // Fetch homepage recommendations orchestration API
+    recommendationService.getHomepageRecommendations()
+      .then((data) => {
+        if (data) {
+          setPersonal(data.personal || []);
+          setTrending(data.trending || []);
+          setRecent(data.recent || []);
+          setYouMayNeed(data.youMayNeed || []);
+          setFeatured(data.featured || []);
+          setBestSellers(data.bestSellers || []);
+          setNewArrivals(data.newArrivals || []);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load recommendations', err);
+        toast.error('Có lỗi xảy ra khi nạp sản phẩm gợi ý');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadAllData();
+  }, [user]);
+
+  // Normalize mapping for rendering
+  const normalizeProduct = (p) => {
+    if (!p) return null;
+    return {
+      ...p,
+      price: p.basePrice ?? p.price,
+      originalPrice: p.comparePrice ?? p.originalPrice,
+      discount: p.comparePrice > p.basePrice ? Math.round(((p.comparePrice - p.basePrice) / p.comparePrice) * 100) : (p.discount ?? 0),
+      rating: parseFloat(p.ratingAvg ?? p.rating) || 4.5,
+      reviewCount: (p.ratingCount ?? p.reviewCount) || 12,
+      stock: p.stock ?? 10,
+    };
+  };
+
+  // Memoized listings
+  const normFeatured = useMemo(() => featured.map(normalizeProduct).filter(Boolean), [featured]);
+  const normBest = useMemo(() => bestSellers.map(normalizeProduct).filter(Boolean), [bestSellers]);
+  const normNew = useMemo(() => newArrivals.map(normalizeProduct).filter(Boolean), [newArrivals]);
+  const normTrending = useMemo(() => trending.map(normalizeProduct).filter(Boolean), [trending]);
+  const normPersonal = useMemo(() => personal.map(normalizeProduct).filter(Boolean), [personal]);
+  const normRecent = useMemo(() => recent.map(normalizeProduct).filter(Boolean), [recent]);
+  const normYouMayNeed = useMemo(() => youMayNeed.map(normalizeProduct).filter(Boolean), [youMayNeed]);
+
+  // Filter BestSellers by category dynamically on client side
+  const filteredBestSellers = useMemo(() => {
+    if (!activeBestSellerCat) return normBest;
+    return normBest.filter(p => p.category?.id === activeBestSellerCat || p.category?.name === activeBestSellerCat);
+  }, [normBest, activeBestSellerCat]);
+
+  // BestSeller category list
+  const bestSellerCats = useMemo(() => {
+    const cats = normBest.map(p => p.category).filter(Boolean);
+    const unique = [];
+    const ids = new Set();
+    for (const c of cats) {
+      if (!ids.has(c.id)) {
+        ids.add(c.id);
+        unique.push(c);
+      }
+    }
+    return unique.slice(0, 4);
+  }, [normBest]);
 
   const mainCats = categories.filter((c) => c.parentId === null);
-  const displayedCats = showAllCategories ? mainCats : mainCats.slice(0, 12);
+  const displayedCats = mainCats.slice(0, 10);
+
+  // Search submit handler
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (aiSearchQuery.trim()) {
+      trackSearch(aiSearchQuery.trim());
+      navigate(`/products?search=${encodeURIComponent(aiSearchQuery.trim())}`);
+    }
+  };
+
+  const handlePopularSearchClick = (kw) => {
+    setAiSearchQuery(kw);
+    trackSearch(kw);
+    navigate(`/products?search=${encodeURIComponent(kw)}`);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      {/* ══════════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════════ */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroBg} alt="NIVORA Hero" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25" />
-          <div className="absolute inset-0 bg-emerald-950/15" />
-        </div>
-
-        {/* Ambient glow orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-emerald-500/8 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-teal-400/6 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
-          <div className="max-w-2xl">
-            <motion.div initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white/90 text-sm font-medium mb-8">
-              <Sparkles size={14} className="text-emerald-400" />
-              Bộ sưu tập mới — 2025
-            </motion.div>
-
-            <motion.div variants={staggerText} initial="hidden" animate="visible" className="mb-7">
-              {['PHONG CÁCH', 'RIÊNG', 'CHẤT RIÊNG', 'BẠN.'].map((word, i) => (
-                <motion.h1 key={word} variants={textLine}
-                  className="text-6xl sm:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight"
-                  style={{ textShadow: '0 4px 32px rgba(0,0,0,0.4)' }}>
-                  {i === 1 ? (
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-emerald-400 to-emerald-200">{word}</span>
-                  ) : i === 3 ? (
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400">{word}</span>
-                  ) : (
-                    <span className="text-white">{word}</span>
-                  )}
-                </motion.h1>
-              ))}
-            </motion.div>
-
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
-              className="text-gray-300 text-lg leading-relaxed mb-10 max-w-lg" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
-              Nivora mang đến những thiết kế tinh tế, chất liệu cao cấp và phong cách hiện đại — để bạn luôn tự tin trong mọi khoảnh khắc.
-            </motion.p>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-              className="flex flex-wrap gap-4">
-              <Link to="/products">
-                <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                  className="group inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-bold rounded-2xl transition-colors shadow-2xl shadow-emerald-900/60">
-                  Khám phá ngay <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </motion.button>
-              </Link>
-              <Link to="/products?filter=new">
-                <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-base font-bold rounded-2xl border border-white/25 hover:border-white/40 transition-all">
-                  Hàng mới về
-                </motion.button>
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 to-transparent" />
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          PERKS BAR
-      ══════════════════════════════════════════════ */}
-      <section className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {perks.map(({ icon: Icon, title, desc, color }, i) => (
-              <motion.div key={title} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-                className="flex items-center gap-4 group cursor-default">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110 ${perkColors[color]}`}>
-                  <Icon size={22} />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">{title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          CONTEXTUAL RECOMMENDATION TAGS
-      ══════════════════════════════════════════════ */}
-      <section className="bg-gray-50 py-8 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Gợi ý phổ biến</p>
-          <div className="flex flex-wrap gap-3">
-            {contextualTags.map((tag) => {
-              const Icon = tag.icon;
-              const isActive = activeContext === tag.filter;
-              return (
-                <motion.button key={tag.filter}
-                  whileHover={{ scale: 1.04, y: -1 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => setActiveContext(isActive ? null : tag.filter)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold border transition-all duration-300 shadow-sm ${
-                    isActive
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
-                      : `${tag.color} hover:shadow-md`
-                  }`}>
-                  <Icon size={14} />
-                  {tag.label}
-                </motion.button>
-              );
-            })}
-          </div>
-          {activeContext && (
-            <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              className="text-xs text-gray-500 mt-3 font-medium">
-              💡 Chức năng cá nhân hoá sẽ được tối ưu khi bạn <Link to="/login" className="text-emerald-600 font-bold underline underline-offset-2">đăng nhập</Link>
-            </motion.p>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          PROMO BANNERS + REGIONAL SPOTLIGHT
-      ══════════════════════════════════════════════ */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-6 items-start">
-            {/* Main promo carousel */}
-            <div className="lg:col-span-2">
-              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-5">
-                <div className="flex items-center gap-2">
-                  <Zap size={15} className="text-rose-500" />
-                  <span className="text-xs font-bold text-rose-500 uppercase tracking-widest">Khuyến mãi hot</span>
-                </div>
-                <h2 className="text-2xl font-black text-gray-900 mt-1">Ưu đãi được quan tâm nhiều nhất</h2>
-              </motion.div>
-              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                <PromoBannerCarousel />
-              </motion.div>
+    <div className="min-h-screen bg-white">
+      
+      {/* 1. Hero Banner */}
+      <section className="relative bg-slate-900 border-b border-slate-800 py-20 sm:py-28 text-white overflow-hidden">
+        {/* Subtle radial emerald gradient to inject premium color highlight */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0,transparent_100%)] pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
+            <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
+              Thiết kế không gian sống <span className="font-semibold text-emerald-400">tối giản</span>
+            </h1>
+            <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto mb-8 font-light leading-relaxed">
+              Khám phá các sản phẩm nội thất tinh tế, kết hợp hài hòa giữa công năng sử dụng và tính thẩm mỹ đương đại.
+            </p>
+ 
+            {/* Clean Search Input */}
+            <div className="max-w-xl mx-auto mb-4">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-white border border-slate-700/80 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all duration-200 rounded-lg p-1">
+                <input
+                  value={aiSearchQuery}
+                  onChange={(e) => setAiSearchQuery(e.target.value)}
+                  placeholder={placeholder || "Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ..."}
+                  className="flex-1 bg-transparent px-3 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded transition-all active:scale-95 flex items-center gap-1.5 shadow-md"
+                >
+                  <Search size={13} />
+                  <span>Tìm kiếm</span>
+                </button>
+              </form>
+              <div className="flex items-center justify-center gap-2 mt-3 text-slate-400 text-xs font-normal">
+                <span>Tìm nhiều nhất:</span>
+                {popularSearches.map((kw) => (
+                  <button 
+                    key={kw}
+                    onClick={() => handlePopularSearchClick(kw)} 
+                    className="text-slate-350 hover:text-emerald-400 underline transition-colors"
+                  >
+                    {kw}
+                  </button>
+                ))}
+              </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Regional cards */}
-            <div className="flex flex-col gap-4">
-              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-1">
-                <div className="flex items-center gap-2">
-                  <MapPin size={15} className="text-amber-600" />
-                  <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">Theo khu vực</span>
-                </div>
-                <h2 className="text-2xl font-black text-gray-900 mt-1">Phổ biến trong khu vực</h2>
-              </motion.div>
-              {regionalSections.map((region, i) => (
-                <motion.div key={region.key} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <Link to={`/products?region=${region.key}`}
-                    className={`block relative rounded-2xl overflow-hidden bg-gradient-to-br ${region.color} p-5 cursor-pointer group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5`}>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-3xl mb-2">{region.emoji}</div>
-                        <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-0.5">{region.desc}</p>
-                        <h3 className="text-white text-lg font-black">{region.city}</h3>
+      {/* Main sections container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
+        
+        {/* 2. Danh mục nổi bật */}
+        <section>
+          <SectionHeader badge="Danh mục" badgeColor="emerald" title="Khám phá danh mục" desc="Tìm kiếm sản phẩm dễ dàng theo từng khu vực và công năng sử dụng" />
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded bg-gray-100 animate-pulse" />
+              ))}
+            </div>
+          ) : mainCats.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu danh mục</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {displayedCats.map((cat, i) => (
+                <motion.div key={cat.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                  <Link to={`/products?category=${cat.slug}`}
+                    className="group block relative rounded overflow-hidden aspect-square border border-gray-200/60 bg-white transition-all duration-300 hover:border-gray-900">
+                    {cat.imageUrl ? (
+                      <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                        <span className="text-2xl">{cat.icon || '📦'}</span>
                       </div>
-                      <ArrowRight size={20} className="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all mt-1" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-white font-semibold text-xs sm:text-sm uppercase tracking-wide">{cat.name}</p>
                     </div>
-                    <p className="text-white/60 text-xs mt-2">Xem sản phẩm đang hot tại {region.city} →</p>
                   </Link>
                 </motion.div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
+          )}
+        </section>
 
-      {/* ══════════════════════════════════════════════
-          CATEGORIES
-      ══════════════════════════════════════════════ */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Danh mục" badgeIcon={Tag} title="Mua sắm theo danh mục chính" />
-
-          {loadingCats ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-3xl bg-gray-200 animate-pulse" />
+        {/* 3. Xu hướng mua sắm */}
+        <section>
+          <SectionHeader 
+            badge="Xu hướng"
+            badgeColor="amber"
+            title="Xu hướng mua sắm" 
+            desc="Những mẫu sản phẩm nội thất được khách hàng quan tâm nhiều nhất trong tuần"
+            viewAll 
+            viewAllHref="/products" 
+          />
+          {loading ? <ProductRowSkeleton /> : normTrending.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có xếp hạng xu hướng</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {normTrending.slice(0, 4).map((p, i) => (
+                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                  <ProductCard product={p} />
+                </motion.div>
               ))}
             </div>
-          ) : mainCats.length === 0 ? (
-            <p className="text-center text-gray-400 py-10">Chưa có danh mục chính nào</p>
+          )}
+        </section>
+
+        {/* 4. Sản phẩm nổi bật */}
+        <section>
+          <SectionHeader 
+            badge="Nổi bật"
+            badgeColor="emerald"
+            title="Sản phẩm nổi bật" 
+            desc="Bộ sưu tập sản phẩm thiết kế mới ra mắt tuần này"
+            viewAll 
+            viewAllHref="/products" 
+          />
+          {loading ? <ProductRowSkeleton /> : normNew.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có sản phẩm nổi bật mới</p>
           ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {displayedCats.map((cat, i) => (
-                  <motion.div key={cat.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                    <Link to={`/products?category=${cat.slug}`}
-                      className="group block relative rounded-3xl overflow-hidden aspect-square shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
-                      {cat.imageUrl ? (
-                        <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                          <span className="text-4xl">{cat.icon || '📦'}</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/90 transition-all duration-300" />
-                      <div className="absolute inset-0 rounded-3xl ring-0 group-hover:ring-2 group-hover:ring-emerald-400/50 transition-all duration-300" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <p className="text-white font-bold text-sm group-hover:text-emerald-300 transition-colors">{cat.name}</p>
-                        {cat.productCount > 0 && <p className="text-gray-300 text-xs mt-0.5">{cat.productCount} sản phẩm</p>}
-                      </div>
-                    </Link>
-                  </motion.div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {normNew.slice(0, 4).map((p, i) => (
+                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                  <ProductCard product={p} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 5. Bán chạy nhất */}
+        <section className="bg-gray-50/35 rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-4 pb-4 border-b border-gray-200/60">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Sản phẩm bán chạy nhất</h2>
+              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất</p>
+            </div>
+            
+            {/* Category Filter for Best Sellers */}
+            {bestSellerCats.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setActiveBestSellerCat(null)}
+                  className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
+                    activeBestSellerCat === null
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white text-gray-650 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {bestSellerCats.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveBestSellerCat(cat.id)}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
+                      activeBestSellerCat === cat.id
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-white text-gray-650 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
                 ))}
               </div>
+            )}
+          </div>
 
-              {mainCats.length > 12 && (
-                <div className="text-center mt-10">
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => setShowAllCategories(!showAllCategories)}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 text-gray-700 text-sm font-bold rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md">
-                    {showAllCategories ? 'Thu gọn' : 'Xem thêm danh mục'}
-                    <motion.span animate={{ rotate: showAllCategories ? 180 : 0 }} transition={{ duration: 0.2 }} className="inline-block">
-                      <ChevronDown size={16} />
-                    </motion.span>
-                  </motion.button>
+          {loading ? <ProductRowSkeleton /> : filteredBestSellers.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Không có sản phẩm bán chạy phù hợp</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {filteredBestSellers.slice(0, 4).map((p, i) => (
+                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                  <ProductCard product={p} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 6. Gợi ý cho bạn (Dynamic tab layout) */}
+        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-gray-200/60 pb-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Gợi ý dành cho bạn</h2>
+              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn</p>
+            </div>
+
+            {/* Tabs selection */}
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
+                <button
+                  key={tabLabel}
+                  onClick={() => setActiveRecTab(idx)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
+                    activeRecTab === idx 
+                      ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                      : 'text-gray-500 hover:text-gray-805'
+                  }`}
+                >
+                  {tabLabel}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="min-h-[260px]">
+            {loading ? (
+              <ProductRowSkeleton />
+            ) : (() => {
+              // Determine active suggestions lists
+              const listToRender = activeRecTab === 0 
+                ? (normPersonal.length > 0 ? normPersonal : normFeatured)
+                : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending);
+
+              if (listToRender.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-gray-450 text-xs font-semibold">Chưa có thông tin gợi ý</p>
+                    <p className="text-gray-400 text-[11px] mt-1 font-light">Hãy tiếp tục duyệt sản phẩm để chúng tôi hiển thị gợi ý phù hợp nhất</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {listToRender.slice(0, 4).map((p, i) => (
+                    <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible">
+                      <ProductCard product={p} />
+                    </motion.div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+
+        {/* 7. Sản phẩm đã xem gần đây */}
+        {normRecent.length > 0 && (
+          <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
+            <SectionHeader badge="Lịch sử" badgeColor="emerald" title="Sản phẩm đã xem gần đây" desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {normRecent.slice(0, 6).map((p) => (
+                <div key={p.id} className="group relative bg-white hover:bg-gray-50/50 rounded border border-gray-200/80 p-2.5 transition-all duration-300">
+                  <Link to={`/products/${p.id}`} className="block aspect-square rounded overflow-hidden bg-gray-50 mb-2.5">
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                  </Link>
+                  <h3 className="font-normal text-gray-800 text-xs truncate mb-1">{p.name}</h3>
+                  <p className="text-gray-900 font-semibold text-xs">{formatPrice(p.price)}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 8. Khuyến mãi (Promotions / Banners) */}
+        <section className="border-t border-b border-gray-200/60 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8">
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div className="bg-red-50/35 p-8 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
+              <div>
+                <span className="text-[10px] font-bold text-red-650 uppercase tracking-widest block mb-2">⚡ Khuyến mãi có hạn</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">SIÊU FLASH SALE MÙA HÈ</h3>
+                <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
+                  Cơ hội sở hữu các sản phẩm nội thất sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
+                </p>
+              </div>
+              
+              {/* Countdown */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kết thúc sau:</span>
+                <div className="flex items-center gap-1">
+                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.hours).padStart(2, '0')}</span>
+                  <span className="text-rose-600 font-bold">:</span>
+                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.minutes).padStart(2, '0')}</span>
+                  <span className="text-rose-600 font-bold">:</span>
+                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.seconds).padStart(2, '0')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50/35 p-8 rounded-lg border border-emerald-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
+              <div>
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest block mb-2">🌿 Thành viên độc quyền</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Đặc quyền thành viên Nivora</h3>
+                <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
+                  Đăng ký tài khoản thành viên Nivora ngay hôm nay để nhận mã giảm giá 10% cho đơn hàng đầu tiên, chính sách tích điểm đổi quà và giao hàng ưu tiên.
+                </p>
+              </div>
+              {!user ? (
+                <Link to="/register" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded transition-colors text-center shadow-sm">
+                  Đăng ký tài khoản miễn phí
+                </Link>
+              ) : (
+                <div className="text-emerald-700 font-semibold text-xs flex items-center gap-1">
+                  ✓ Bạn đã kích hoạt tài khoản thành viên Nivora
                 </div>
               )}
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          FEATURED PRODUCTS
-      ══════════════════════════════════════════════ */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Nổi bật" badgeIcon={Star} title="Lựa chọn hàng đầu" viewAll viewAllHref="/products" />
-          {loadingFeatured ? <ProductRowSkeleton /> : normFeatured.length === 0 ? (
-            <p className="text-center text-gray-400 py-10">Chưa có sản phẩm nổi bật</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {normFeatured.map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          GENDER TREND SECTIONS
-      ══════════════════════════════════════════════ */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <TrendingUp size={15} className="text-emerald-600" />
-              <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Xu hướng</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-gray-900">Phong cách theo xu hướng</h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {genderTrends.map((g, idx) => {
-              const GIcon = g.Icon;
-              return (
-                <motion.div key={g.key} custom={idx} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <div className={`rounded-3xl bg-gradient-to-br ${g.gradient} p-7 sm:p-9 shadow-xl relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-300`}>
-                    {/* Background icon watermark */}
-                    <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
-                      <GIcon size={180} className="text-white" strokeWidth={1} />
-                    </div>
-                    {/* Header row */}
-                    <div className="flex items-start gap-4 mb-5">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${g.accent} border`}>
-                        <GIcon size={28} strokeWidth={1.5} />
-                      </div>
-                      <div>
-                        <h3 className="text-white text-xl sm:text-2xl font-black leading-tight">{g.label}</h3>
-                        <p className="text-white/60 text-sm mt-1">{g.desc}</p>
-                      </div>
-                    </div>
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-7">
-                      {g.tags.map((tag) => (
-                        <span key={tag}
-                          className={`px-3 py-1.5 text-xs font-bold rounded-xl border cursor-pointer transition-all hover:scale-105 ${g.accent}`}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <Link to={`/products?trend=${g.key}`}>
-                      <motion.button whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/25 text-white font-bold text-sm rounded-2xl transition-all shadow-sm">
-                        Khám phá ngay <ArrowRight size={15} />
-                      </motion.button>
-                    </Link>
-                  </div>
-                </motion.div>
-              );
-            })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════════════════════════════════
-          PROMO BANNER CTA
-      ══════════════════════════════════════════════ */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/92 via-emerald-800/80 to-gray-900/70" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-full text-white/80 text-xs font-bold uppercase tracking-widest mb-5 backdrop-blur">
-              <Gift size={13} className="text-emerald-400" /> Ưu đãi có hạn
-            </div>
-            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Giảm đến 30%</h2>
-            <p className="text-emerald-100 text-lg mb-10 max-w-md mx-auto">Ưu đãi thời gian có hạn cho các sản phẩm được chọn. Đừng bỏ lỡ!</p>
-            <Link to="/products">
-              <motion.button whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2.5 px-9 py-4 bg-white text-gray-900 text-base font-bold rounded-2xl hover:bg-gray-50 transition-colors shadow-2xl">
-                Mua ngay <ArrowRight size={18} />
-              </motion.button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          BEST SELLERS
-      ══════════════════════════════════════════════ */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Xu hướng" badgeIcon={Flame} title="Bán chạy nhất" viewAll viewAllHref="/products" />
-          {loadingBest ? <ProductRowSkeleton /> : normBest.length === 0 ? (
-            <p className="text-center text-gray-400 py-10">Chưa có sản phẩm bán chạy</p>
+        {/* 9. Đánh giá cao */}
+        <section>
+          <SectionHeader 
+            badge="Đánh giá"
+            badgeColor="emerald"
+            title="Đánh giá cao nhất" 
+            desc="Những sản phẩm nhận được phản hồi hài lòng cao nhất từ khách hàng đã sử dụng"
+            viewAll 
+            viewAllHref="/products" 
+          />
+          {loading ? <ProductRowSkeleton /> : normFeatured.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có sản phẩm xếp hạng tốt</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {normBest.map((p, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {normFeatured.filter(p => p.rating >= 4.5).slice(0, 4).map((p, i) => (
                 <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                   <ProductCard product={p} />
                 </motion.div>
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════════════════════════════════
-          NEW ARRIVALS
-      ══════════════════════════════════════════════ */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Mới nhất" badgeIcon={Sparkles} title="Hàng mới về" viewAll viewAllHref="/products?filter=new" />
-          {loadingNew ? <ProductRowSkeleton /> : normNew.length === 0 ? (
-            <p className="text-center text-gray-400 py-10">Chưa có hàng mới</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {normNew.map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          LOGIN NUDGE (for guest users)
-      ══════════════════════════════════════════════ */}
-      <AuthNudgeSection />
-
+      </div>
     </div>
   );
 };

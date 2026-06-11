@@ -12,6 +12,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { productService } from '../../services/productService';
 import { formatPrice } from '../../utils/formatPrice';
+import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 import clsx from 'clsx';
 
 // ─── Normalize API → component ──────────────────────────────────────────────
@@ -184,6 +185,7 @@ const Gallery = ({ images, activeUrl, onSelect }) => {
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { trackProductView, trackAddToCart, trackWishlist } = useBehaviorTracker();
 
   const [product, setProduct]               = useState(null);
   const [related, setRelated]               = useState([]);
@@ -230,6 +232,10 @@ const ProductDetail = () => {
         })?.url || data.imageUrl || data.images?.[0]?.url || null;
 
         setActiveImageUrl(initImg);
+        // Track product view
+        if (data.id) {
+          trackProductView(data.id);
+        }
         return productService.getRelated(id, 4);
       })
       .then((rel) => setRelated(normalizeProducts(rel || [])))
@@ -365,12 +371,20 @@ const ProductDetail = () => {
       </div>
     );
 
-  const handleAddToCart = () => addToCart(product, quantity, selectedVariant?.id);
+  const handleAddToCart = () => {
+    addToCart(product, quantity, selectedVariant?.id);
+    trackAddToCart(product.id);
+  };
   const handleBuyNow = () => {
     addToCart(product, quantity, selectedVariant?.id);
+    trackAddToCart(product.id);
     navigate('/checkout', {
       state: { buyNow: true, productId: product.id, variantId: selectedVariant?.id },
     });
+  };
+  const handleToggleWishlist = () => {
+    toggleWishlist(product);
+    trackWishlist(product.id);
   };
 
   return (
@@ -630,45 +644,45 @@ const ProductDetail = () => {
           </div>
 
           {/* Actions with premium custom styles and micro-animations */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-2">
-            <Button
-              size="lg"
-              fullWidth
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleAddToCart}
               disabled={currentStock === 0}
               className={clsx(
-                "flex-1 flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:-translate-y-0.5",
+                "flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold transition-all duration-300 shadow-sm border-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none",
                 inCart 
-                  ? "bg-emerald-50 border-2 border-emerald-500 text-emerald-700 shadow-sm"
-                  : "bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 hover:shadow shadow-sm active:scale-98"
+                  ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                  : "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700 hover:shadow shadow-sm active:scale-98"
               )}
             >
-              <ShoppingCart size={18} className={clsx("transition-transform duration-300")} />
+              <ShoppingCart size={16} />
               {inCart ? 'Đã thêm vào giỏ' : 'Thêm vào giỏ hàng'}
-            </Button>
-            <Button
-              size="lg"
-              fullWidth
+            </motion.button>
+            <motion.button
+              whileHover={{ y: -2, scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleBuyNow}
               disabled={currentStock === 0}
-              className="flex-1 flex items-center justify-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold px-6 py-4 rounded-2xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 hover:-translate-y-0.5 hover:scale-102 transition-all duration-300 active:scale-98"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold py-3 px-6 rounded-xl shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <Zap size={18} />
+              <Zap size={16} />
               Mua ngay
-            </Button>
+            </motion.button>
             <button
-              onClick={() => toggleWishlist(product)}
+              onClick={handleToggleWishlist}
               className={clsx(
-                'w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 shadow-sm',
+                'w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 shadow-sm flex-shrink-0',
                 inWishlist
                   ? 'border-red-500 bg-red-50 text-red-500 shadow-red-100'
                   : 'border-gray-200 text-gray-500 bg-white hover:border-red-300 hover:text-red-400',
               )}
             >
-              <Heart size={22} fill={inWishlist ? 'currentColor' : 'none'} className={clsx(inWishlist && "animate-pulse text-red-500")} />
+              <Heart size={20} fill={inWishlist ? 'currentColor' : 'none'} className={clsx(inWishlist && "animate-pulse text-red-500")} />
             </button>
-            <button className="w-14 h-14 rounded-2xl border-2 border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 transform hover:-translate-y-0.5 active:scale-95 shadow-sm transition-all duration-300">
-              <Share2 size={18} />
+            <button className="w-12 h-12 rounded-xl border-2 border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 transform hover:-translate-y-0.5 active:scale-95 shadow-sm transition-all duration-300 flex-shrink-0">
+              <Share2 size={16} />
             </button>
           </div>
         </motion.div>
