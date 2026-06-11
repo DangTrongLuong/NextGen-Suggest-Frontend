@@ -50,6 +50,11 @@ export const productService = {
     return res.data.data;
   },
 
+  getPopularSearches: async (limit = 5) => {
+    const res = await api.get('/products/search/popular', { params: { limit } });
+    return res.data.data || [];
+  },
+
   // Admin
   create: async (data) => {
     const res = await api.post('/admin/products', data);

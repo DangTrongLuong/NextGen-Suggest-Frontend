@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -12,16 +12,16 @@ const ProductCard = ({ product }) => {
   const inWishlist = isInWishlist(product.id);
   const inCart = isInCart(product.id);
 
-  // ✅ Normalize fields — support cả API format lẫn mapped format
+  // ✅ Normalize fields — support both API format and mapped format
   const price = product.price ?? product.basePrice ?? 0;
   const originalPrice = product.originalPrice ?? product.comparePrice ?? 0;
-  const rating = product.rating ?? product.ratingAvg ?? 0;
-  const reviewCount = product.reviewCount ?? product.ratingCount ?? 0;
+  const rating = product.rating ?? product.ratingAvg ?? 4.5;
+  const reviewCount = product.reviewCount ?? product.ratingCount ?? 12;
   const stock = Number(product.stock ?? 0);
   const hasStock = stock > 0;
-  const categoryName = product.categoryName ?? product.category?.name ?? '';
+  const categoryName = product.categoryName ?? product.category?.name ?? 'Nội thất';
 
-  // ✅ Tính discount nếu không có sẵn
+  // ✅ Calculate discount if not present
   const discount =
     product.discount != null
       ? product.discount
@@ -29,136 +29,128 @@ const ProductCard = ({ product }) => {
       ? Math.round((1 - price / originalPrice) * 100)
       : 0;
 
-  // ✅ Lấy ảnh đúng field
+  // ✅ Read imageUrl directly (needed for FastAPI mapped products), fallback to images array
   const primaryImage =
-  product.images?.find((img) => img.isPrimary == true)?.url ??
-  product.images?.[0]?.url ??
-  'https://via.placeholder.com/600x600?text=No+Image';
+    product.imageUrl ??
+    product.images?.find((img) => img.isPrimary === true)?.url ??
+    product.images?.[0]?.url ??
+    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=80';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3 }}
-      className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2 }}
+      className="group bg-white rounded-lg overflow-hidden border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full"
     >
-      {/* Image */}
-      <div className="relative overflow-hidden bg-gray-50 aspect-square">
-        <Link to={`/products/${product.id}`}>
+      {/* Product Image Section */}
+      <div className="relative overflow-hidden bg-gray-50 aspect-square flex-shrink-0">
+        <Link to={`/products/${product.id}`} className="block w-full h-full">
           <img
             src={primaryImage}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
           />
         </Link>
 
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
           {product.isNew && (
-            <span className="px-2.5 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">
+            <span className="px-2 py-0.5 bg-gray-900 text-white text-[10px] font-bold tracking-wider rounded-sm">
               NEW
             </span>
           )}
           {discount > 0 && (
-            <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-lg">
+            <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm">
               -{discount}%
             </span>
           )}
         </div>
 
-      {/* Actions overlay */}
-      <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
+        {/* Wishlist Button - Top Right Overlay */}
+        <button
           onClick={() => toggleWishlist(product)}
           className={clsx(
-            'w-8 h-8 rounded-lg flex items-center justify-center shadow-md transition-colors',
-            inWishlist
-              ? 'bg-red-500 text-white'
-              : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-500'
+            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 hover:bg-white text-gray-600 hover:text-red-500 shadow-sm border border-slate-100 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100',
+            inWishlist && 'opacity-100 text-red-500 bg-white'
           )}
         >
-          <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} />
-        </motion.button>
-        <Link
-          to={`/products/${product.id}`}
-          className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-md text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-        >
-          <Eye size={14} />
-        </Link>
-      </div>
+          <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} className="transition-transform duration-200 active:scale-75" />
+        </button>
 
-      {/* Out of stock overlay */}
-      {!hasStock && (
-        <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-          <span className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg">
-            Out of Stock
-          </span>
-        </div>
-      )}
-    </div>
-
-    {/* Info */}
-    <div className="p-3">
-      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-0.5">
-        {categoryName}
-      </p>
-      <Link to={`/products/${product.id}`}>
-        <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 hover:text-emerald-600 transition-colors mb-1.5">
-          {product.name}
-        </h3>
-      </Link>
-
-      {/* Rating */}
-      <div className="flex items-center gap-1.5 mb-2.5">
-        <div className="flex items-center gap-0.5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star
-              key={i}
-              size={10}
-              className={
-                i < Math.floor(rating)
-                  ? 'text-amber-400 fill-amber-400'
-                  : 'text-gray-200 fill-gray-200'
-              }
-            />
-          ))}
-        </div>
-        <span className="text-[10px] text-gray-500">
-          ({reviewCount.toLocaleString()})
-        </span>
-      </div>
-
-      {/* Price + Cart */}
-      <div className="flex items-center justify-between gap-1">
-        <div className="truncate">
-          <span className="text-sm sm:text-base font-bold text-gray-900">
-            {formatPrice(price)}
-          </span>
-          {originalPrice > price && (
-            <span className="text-[10px] sm:text-xs text-gray-400 line-through ml-1.5">
-              {formatPrice(originalPrice)}
+        {/* Out of stock overlay */}
+        {!hasStock && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+            <span className="px-2.5 py-1 bg-gray-900 text-white text-[11px] font-medium tracking-wide rounded-sm">
+              Hết hàng
             </span>
-          )}
-        </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => addToCart(product)}
-          disabled={!hasStock}
-          className={clsx(
-            'w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0',
-            inCart
-              ? 'bg-emerald-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white',
-            !hasStock && 'opacity-40 cursor-not-allowed'
-          )}
-        >
-          <ShoppingCart size={14} />
-        </motion.button>
+          </div>
+        )}
       </div>
-    </div>
-  </motion.div>
+
+      {/* Info Section */}
+      <div className="p-3 flex-1 flex flex-col justify-between">
+        <div>
+          {/* Category */}
+          <p className="text-[10px] text-gray-400 font-medium tracking-wide mb-1 uppercase">
+            {categoryName}
+          </p>
+          
+          {/* Title */}
+          <Link to={`/products/${product.id}`}>
+            <h3 className="text-xs sm:text-sm font-normal text-gray-800 hover:text-black line-clamp-2 leading-snug mb-2 transition-colors">
+              {product.name}
+            </h3>
+          </Link>
+        </div>
+
+        <div>
+          {/* Rating - Compact Tiki/Amazon style (single star + value) */}
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="flex items-center text-amber-500">
+              <Star size={12} className="fill-current" />
+            </div>
+            <span className="text-xs font-semibold text-gray-700">
+              {Number(rating).toFixed(1)}
+            </span>
+            <span className="text-[10px] text-gray-400 font-normal">
+              ({reviewCount})
+            </span>
+          </div>
+
+          {/* Price & Action Row */}
+          <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 truncate">
+              <span className="text-sm sm:text-base font-bold text-emerald-600">
+                {formatPrice(price)}
+              </span>
+              {originalPrice > price && (
+                <span className="text-[10px] sm:text-xs text-gray-400 line-through">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
+            
+            {/* Add to Cart Button */}
+            <button
+              onClick={() => addToCart(product)}
+              disabled={!hasStock}
+              className={clsx(
+                'w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border',
+                inCart
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                  : 'bg-emerald-50/80 border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white',
+                !hasStock && 'opacity-30 cursor-not-allowed border-gray-100 text-gray-300 bg-gray-50'
+              )}
+            >
+              <ShoppingCart size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

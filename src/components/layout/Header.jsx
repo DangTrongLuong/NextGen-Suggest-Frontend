@@ -169,84 +169,88 @@ const Header = () => {
             </nav>
 
             {/* ── Search Bar (desktop center) ── */}
-            <div ref={searchRef} className="hidden md:flex flex-1 max-w-xs relative">
-              <form onSubmit={handleSearchSubmit} className="w-full">
-                <div className={clsx(
-                  'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-300',
-                  searchFocused
-                    ? 'bg-white border-emerald-400 shadow-md shadow-emerald-100 ring-2 ring-emerald-200'
-                    : 'bg-gray-50/80 border-gray-200 hover:border-gray-300 hover:bg-white'
-                )}>
-                  <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    placeholder="Tìm kiếm sản phẩm..."
-                    className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
-                  />
-                  {searchQuery && (
-                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
-                      <X size={14} className="text-gray-400 hover:text-gray-600" />
-                    </button>
-                  )}
-                </div>
-              </form>
-
-              {/* Search dropdown */}
-              <AnimatePresence>
-                {searchFocused && searchQuery.trim().length >= 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
-                  >
-                    {searchLoading ? (
-                      <div className="px-4 py-6 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</div>
-                    ) : (
-                      <>
-                        {searchResults.map((p) => (
-                          <Link
-                            key={p.id}
-                            to={`/products/${p.id}`}
-                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                          >
-                            <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
-                              <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
-                            </div>
-                          </Link>
-                        ))}
-                        <Link
-                          to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
-                          onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                          className="block px-4 py-3 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
-                        >
-                          Xem tất cả kết quả
-                        </Link>
-                      </>
+            {false && (
+              <div ref={searchRef} className="hidden md:flex flex-1 max-w-xs relative">
+                <form onSubmit={handleSearchSubmit} className="w-full">
+                  <div className={clsx(
+                    'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-300',
+                    searchFocused
+                      ? 'bg-white border-emerald-400 shadow-md shadow-emerald-100 ring-2 ring-emerald-200'
+                      : 'bg-gray-50/80 border-gray-200 hover:border-gray-300 hover:bg-white'
+                  )}>
+                    <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      placeholder="Tìm kiếm sản phẩm..."
+                      className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
+                        <X size={14} className="text-gray-400 hover:text-gray-600" />
+                      </button>
                     )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  </div>
+                </form>
+
+                {/* Search dropdown */}
+                <AnimatePresence>
+                  {searchFocused && searchQuery.trim().length >= 2 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    >
+                      {searchLoading ? (
+                        <div className="px-4 py-6 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
+                      ) : searchResults.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</div>
+                      ) : (
+                        <>
+                          {searchResults.map((p) => (
+                            <Link
+                              key={p.id}
+                              to={`/products/${p.id}`}
+                              onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                            >
+                              <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                                <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
+                              </div>
+                            </Link>
+                          ))}
+                          <Link
+                            to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
+                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
+                            className="block px-4 py-3 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
+                          >
+                            Xem tất cả kết quả
+                          </Link>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* ── Right Actions ── */}
             <div className="flex items-center gap-0.5">
 
               {/* Mobile search icon */}
+              {/*
               <button
                 onClick={() => setSearchFocused(!searchFocused)}
                 className="md:hidden p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 <Search size={20} />
               </button>
+              */}
 
               {/* Wishlist */}
               <Link
@@ -386,6 +390,7 @@ const Header = () => {
         </div>
 
         {/* Mobile search bar */}
+        {/*
         <AnimatePresence>
           {searchFocused && (
             <motion.div
@@ -444,6 +449,7 @@ const Header = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        */}
 
         {/* Mobile Menu */}
         <AnimatePresence>

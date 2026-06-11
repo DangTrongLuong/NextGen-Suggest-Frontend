@@ -3,9 +3,16 @@ import { Trash2, Minus, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../utils/formatPrice';
+import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 
 const CartItem = ({ item }) => {
   const { updateQuantity, removeFromCart } = useCart();
+  const { trackRemoveFromCart } = useBehaviorTracker();
+
+  const handleRemove = () => {
+    removeFromCart(item.id, item.color);
+    trackRemoveFromCart(item.id);
+  };
 
   return (
     <motion.div
@@ -66,7 +73,7 @@ const CartItem = ({ item }) => {
 
       {/* Remove */}
       <button
-        onClick={() => removeFromCart(item.id, item.color)}
+        onClick={handleRemove}
         className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
       >
         <Trash2 size={16} />
