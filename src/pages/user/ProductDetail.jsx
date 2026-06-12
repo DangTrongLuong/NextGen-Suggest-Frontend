@@ -14,6 +14,7 @@ import { productService } from '../../services/productService';
 import { formatPrice } from '../../utils/formatPrice';
 import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 
 // ─── Normalize API → component ──────────────────────────────────────────────
 const normalize = (p) => ({
@@ -372,10 +373,22 @@ const ProductDetail = () => {
     );
 
   const handleAddToCart = () => {
+    const isLoggedIn = !!localStorage.getItem('auth_tokens');
+    if (!isLoggedIn) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      window.dispatchEvent(new Event('open-login-modal'));
+      return;
+    }
     addToCart(product, quantity, selectedVariant?.id);
     trackAddToCart(product.id);
   };
   const handleBuyNow = () => {
+    const isLoggedIn = !!localStorage.getItem('auth_tokens');
+    if (!isLoggedIn) {
+      toast.error('Vui lòng đăng nhập để mua ngay');
+      window.dispatchEvent(new Event('open-login-modal'));
+      return;
+    }
     addToCart(product, quantity, selectedVariant?.id);
     trackAddToCart(product.id);
     navigate('/checkout', {

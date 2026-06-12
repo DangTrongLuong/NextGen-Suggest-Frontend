@@ -34,4 +34,16 @@ export const recommendationService = {
       return null;
     }
   },
+
+  getRecommendationsByLocation: async (location, limit = 8) => {
+    try {
+      const res = await api.get('/recommendations/location', {
+        params: { location, limit }
+      });
+      return res.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch recommendations for location ${location}:`, error);
+      return [];
+    }
+  },
 };
