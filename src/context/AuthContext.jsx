@@ -12,6 +12,8 @@ const saveTokens = (accessToken, refreshToken) => {
 const clearTokens = () => {
   localStorage.removeItem('auth_tokens');
   localStorage.removeItem('user');
+  localStorage.removeItem('nivora_session_id');
+  localStorage.removeItem('nivora_guest_viewed_ids');
 };
 
 const getStoredUser = () => {
@@ -144,12 +146,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Update Profile ─────────────────────────────────────
+  const updateProfile = async (profileData) => {
+    setLoading(true);
+    try {
+      const updatedUser = await authService.updateProfile(profileData);
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      toast.success('Cập nhật hồ sơ thành công!');
+      return { success: true, user: updatedUser };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Cập nhật hồ sơ thất bại';
+      toast.error(msg);
+      return { success: false, error: msg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
   const isAuthenticated = !!user;
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, loginWithGoogle, handleOAuth2Login, isAdmin, isAuthenticated }}
+      value={{ user, loading, login, register, logout, loginWithGoogle, handleOAuth2Login, isAdmin, isAuthenticated, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

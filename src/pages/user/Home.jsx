@@ -65,6 +65,8 @@ const Home = () => {
   const [featured, setFeatured] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
+  const [recsHanoi, setRecsHanoi] = useState([]);
+  const [recsHcm, setRecsHcm] = useState([]);
 
   // Sub-states
   const [categories, setCategories] = useState([]);
@@ -137,6 +139,17 @@ const Home = () => {
 
   const loadAllData = () => {
     setLoading(true);
+    // Clear old states to prevent layout leakage between login/logout transitions
+    setPersonal([]);
+    setTrending([]);
+    setRecent([]);
+    setYouMayNeed([]);
+    setFeatured([]);
+    setBestSellers([]);
+    setNewArrivals([]);
+    setRecsHanoi([]);
+    setRecsHcm([]);
+
     // Fetch categories
     api.get('/categories')
       .then((res) => setCategories(res.data.data || []))
@@ -153,9 +166,19 @@ const Home = () => {
         console.error('Failed to load popular searches', err);
       });
 
+    // Fetch regional recommendations
+    recommendationService.getRecommendationsByLocation('Hà Nội', 4)
+      .then((data) => setRecsHanoi(data || []))
+      .catch(() => setRecsHanoi([]));
+
+    recommendationService.getRecommendationsByLocation('TP. Hồ Chí Minh', 4)
+      .then((data) => setRecsHcm(data || []))
+      .catch(() => setRecsHcm([]));
+
     // Fetch homepage recommendations orchestration API
     recommendationService.getHomepageRecommendations()
       .then((data) => {
+        console.log(`[Frontend Debug] currentUserId: ${user ? user.id : 'guest'}, API response:`, data);
         if (data) {
           setPersonal(data.personal || []);
           setTrending(data.trending || []);
@@ -199,6 +222,8 @@ const Home = () => {
   const normPersonal = useMemo(() => personal.map(normalizeProduct).filter(Boolean), [personal]);
   const normRecent = useMemo(() => recent.map(normalizeProduct).filter(Boolean), [recent]);
   const normYouMayNeed = useMemo(() => youMayNeed.map(normalizeProduct).filter(Boolean), [youMayNeed]);
+  const normHanoi = useMemo(() => recsHanoi.map(normalizeProduct).filter(Boolean), [recsHanoi]);
+  const normHcm = useMemo(() => recsHcm.map(normalizeProduct).filter(Boolean), [recsHcm]);
 
   // Filter BestSellers by category dynamically on client side
   const filteredBestSellers = useMemo(() => {
@@ -423,6 +448,53 @@ const Home = () => {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Regional Recommendations */}
+        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 space-y-12">
+          <div>
+            <SectionHeader 
+              badge="Khu vực"
+              badgeColor="emerald"
+              title="Phổ biến tại Hà Nội" 
+              desc="Những sản phẩm được mua nhiều nhất bởi khách hàng tại khu vực Hà Nội"
+              viewAll 
+              viewAllHref="/products" 
+            />
+            {loading ? <ProductRowSkeleton /> : normHanoi.length === 0 ? (
+              <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực này</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {normHanoi.slice(0, 4).map((p, i) => (
+                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <ProductCard product={p} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-8 border-t border-gray-105">
+            <SectionHeader 
+              badge="Khu vực"
+              badgeColor="emerald"
+              title="Phổ biến tại TP. Hồ Chí Minh" 
+              desc="Những sản phẩm được mua nhiều nhất bởi khách hàng tại khu vực TP. Hồ Chí Minh"
+              viewAll 
+              viewAllHref="/products" 
+            />
+            {loading ? <ProductRowSkeleton /> : normHcm.length === 0 ? (
+              <p className="text-center text-gray-450 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực này</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {normHcm.slice(0, 4).map((p, i) => (
+                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    <ProductCard product={p} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* 6. Gợi ý cho bạn (Dynamic tab layout) */}

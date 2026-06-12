@@ -53,6 +53,12 @@ const Header = () => {
   }, [location.pathname]);
 
   useEffect(() => {
+    const handleOpenLogin = () => setLoginModalOpen(true);
+    window.addEventListener('open-login-modal', handleOpenLogin);
+    return () => window.removeEventListener('open-login-modal', handleOpenLogin);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setSearchFocused(false);

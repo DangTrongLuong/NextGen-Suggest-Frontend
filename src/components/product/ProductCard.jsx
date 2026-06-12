@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { formatPrice } from '../../utils/formatPrice';
+import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { addToCart, isInCart } = useCart();
@@ -97,6 +98,14 @@ const ProductCard = ({ product }) => {
           <p className="text-[10px] text-gray-400 font-medium tracking-wide mb-1 uppercase">
             {categoryName}
           </p>
+
+          {/* Recommendation Reason */}
+          {product.recommendationReason && (
+            <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-100/50 text-[10px] font-semibold leading-normal w-fit">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              {product.recommendationReason}
+            </div>
+          )}
           
           {/* Title */}
           <Link to={`/products/${product.id}`}>
@@ -135,7 +144,15 @@ const ProductCard = ({ product }) => {
             
             {/* Add to Cart Button */}
             <button
-              onClick={() => addToCart(product)}
+              onClick={() => {
+                const isLoggedIn = !!localStorage.getItem('auth_tokens');
+                if (!isLoggedIn) {
+                  toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+                  window.dispatchEvent(new Event('open-login-modal'));
+                  return;
+                }
+                addToCart(product);
+              }}
               disabled={!hasStock}
               className={clsx(
                 'w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border',

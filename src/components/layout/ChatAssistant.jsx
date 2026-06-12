@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { chatbotService } from '../../services/chatbotService';
 import { eventService } from '../../services/eventService';
+import { formatPrice } from '../../utils/formatPrice';
 
 const ChatAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -301,7 +302,7 @@ const ChatAssistant = () => {
                             {msg.suggestedProducts.map((prod) => (
                               <div
                                 key={prod.id || prod.product_id}
-                                className="w-36 rounded-lg overflow-hidden bg-gray-850 border border-gray-800 flex flex-col group transition-colors"
+                                className="w-38 rounded-lg overflow-hidden bg-gray-850 border border-gray-800 flex flex-col group transition-colors"
                               >
                                 <div className="h-24 overflow-hidden bg-gray-900">
                                   <img
@@ -310,16 +311,29 @@ const ChatAssistant = () => {
                                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                                   />
                                 </div>
-                                <div className="p-2 flex-1 flex flex-col justify-between">
+                                <div className="p-2.5 flex-1 flex flex-col justify-between">
                                   <div>
                                     <h4 className="text-[11px] font-normal text-gray-250 line-clamp-2 min-h-[30px] leading-snug">
                                       {prod.name || prod.title}
                                     </h4>
+                                    {(prod.recommendationReason || prod.reason) && (
+                                      <div className="mt-1 flex items-center gap-1 text-[9px] text-emerald-400 font-semibold leading-tight">
+                                        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span className="line-clamp-1">{prod.recommendationReason || prod.reason}</span>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="mt-1.5">
-                                    <p className="text-[12px] font-semibold text-gray-100">
-                                      ${prod.basePrice || prod.price}
-                                    </p>
+                                  <div className="mt-2.5">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <p className="text-[11px] font-bold text-gray-100">
+                                        {formatPrice(prod.price || prod.basePrice || 0)}
+                                      </p>
+                                      {(prod.recommendationScore || prod.score) > 0 && (
+                                        <span className="text-[8px] bg-emerald-950/50 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded font-mono font-bold">
+                                          {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
+                                        </span>
+                                      )}
+                                    </div>
                                     <Link
                                       to={`/products/${prod.id || prod.product_id}`}
                                       onClick={() => toggleChat()}

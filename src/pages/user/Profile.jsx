@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, Package, Edit2, Save, X, ArrowRight, Truck } from 'lucide-react';
+import { User, Mail, Phone, Package, Edit2, Save, X, ArrowRight, Truck, Calendar, Briefcase, Coins, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Breadcrumb from '../../components/layout/Breadcrumb';
 import Button from '../../components/common/Button';
@@ -21,13 +21,37 @@ const STATUS_MAP = {
 };
 
 const Profile = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateProfile } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' });
+  const [form, setForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    age: user?.age || '',
+    gender: user?.gender || '',
+    occupation: user?.occupation || '',
+    income: user?.income || '',
+    maritalStatus: user?.maritalStatus || '',
+  });
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
+
+  useEffect(() => {
+    if (user) {
+      setForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        age: user.age || '',
+        gender: user.gender || '',
+        occupation: user.occupation || '',
+        income: user.income || '',
+        maritalStatus: user.maritalStatus || '',
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     orderService.getMyOrders(0, 4)
@@ -38,9 +62,25 @@ const Profile = () => {
 
   const totalSpent = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
 
-  const handleSave = () => {
-    toast.success('Đã cập nhật thông tin!');
-    setEditing(false);
+  const handleSave = async () => {
+    try {
+      const payload = {
+        name: form.name,
+        phone: form.phone,
+        age: form.age ? parseInt(form.age, 10) : null,
+        gender: form.gender || null,
+        occupation: form.occupation || null,
+        income: form.income ? parseFloat(form.income) : null,
+        maritalStatus: form.maritalStatus || null,
+      };
+      
+      const res = await updateProfile(payload);
+      if (res.success) {
+        setEditing(false);
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi lưu thông tin');
+    }
   };
 
   const avatarUrl = user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`;
@@ -109,26 +149,104 @@ const Profile = () => {
               )}
             </div>
             {editing ? (
-              <div className="space-y-4">
-                <Input label="Họ và tên" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} icon={User} />
-                <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} icon={Mail} />
-                <Input label="Số điện thoại" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} icon={Phone} />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {[
-                  { icon: User, label: 'Họ và tên', value: user.name },
-                  { icon: Mail, label: 'Email', value: user.email },
-                  { icon: Phone, label: 'Số điện thoại', value: user.phone || 'Chưa cập nhật' },
-                ].map(({ icon: Icon, label, value }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0"><Icon size={16} className="text-gray-500" /></div>
-                    <div>
-                      <p className="text-xs text-gray-500">{label}</p>
-                      <p className="text-sm font-medium text-gray-900">{value}</p>
+              <div className="space-y-6">
+                <div className="border-b border-gray-100 pb-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Thông tin liên hệ</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Input label="Họ và tên" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} icon={User} />
+                    <Input label="Số điện thoại" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} icon={Phone} />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-700 mb-1 flex items-center gap-1.5">
+                    <span>Hồ sơ cá nhân hóa gợi ý AI</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">KHUYÊN DÙNG</span>
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Cung cấp các thông tin dưới đây để giúp hệ thống gợi ý AI giới thiệu sản phẩm tối ưu nhất cho nhu cầu của bạn.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Input label="Độ tuổi" type="number" value={form.age} onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))} icon={Calendar} />
+                    
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-gray-700">Giới tính</label>
+                      <select
+                        className="w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 border-gray-200 hover:border-gray-300"
+                        value={form.gender}
+                        onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
+                      >
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+                    </div>
+
+                    <Input label="Nghề nghiệp" value={form.occupation} onChange={(e) => setForm((p) => ({ ...p, occupation: e.target.value }))} icon={Briefcase} />
+                    <Input label="Thu nhập hàng tháng (VND)" type="number" value={form.income} onChange={(e) => setForm((p) => ({ ...p, income: e.target.value }))} icon={Coins} />
+
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">Tình trạng hôn nhân</label>
+                      <select
+                        className="w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 border-gray-200 hover:border-gray-300"
+                        value={form.maritalStatus}
+                        onChange={(e) => setForm((p) => ({ ...p, maritalStatus: e.target.value }))}
+                      >
+                        <option value="">Chọn tình trạng hôn nhân</option>
+                        <option value="Độc thân">Độc thân</option>
+                        <option value="Đã kết hôn">Đã kết hôn</option>
+                        <option value="Đã ly hôn">Đã ly hôn</option>
+                        <option value="Góa phụ/Góa phu">Góa phụ/Góa phu</option>
+                      </select>
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="border-b border-gray-100 pb-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Thông tin liên hệ</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {[
+                      { icon: User, label: 'Họ và tên', value: user.name },
+                      { icon: Mail, label: 'Email', value: user.email },
+                      { icon: Phone, label: 'Số điện thoại', value: user.phone || 'Chưa cập nhật' },
+                    ].map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0"><Icon size={16} className="text-gray-500" /></div>
+                        <div>
+                          <p className="text-xs text-gray-500">{label}</p>
+                          <p className="text-sm font-medium text-gray-900">{value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-1.5">
+                    <span>Hồ sơ cá nhân hóa gợi ý AI</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">KÍCH HOẠT</span>
+                  </h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {[
+                      { icon: Calendar, label: 'Độ tuổi', value: user.age ? `${user.age} tuổi` : 'Chưa cập nhật' },
+                      { icon: User, label: 'Giới tính', value: user.gender || 'Chưa cập nhật' },
+                      { icon: Briefcase, label: 'Nghề nghiệp', value: user.occupation || 'Chưa cập nhật' },
+                      { icon: Coins, label: 'Thu nhập hàng tháng', value: user.income ? formatPrice(user.income) : 'Chưa cập nhật' },
+                      { icon: Heart, label: 'Tình trạng hôn nhân', value: user.maritalStatus || 'Chưa cập nhật', className: 'md:col-span-2' },
+                    ].map(({ icon: Icon, label, value, className = '' }) => (
+                      <div key={label} className={`flex items-center gap-3 ${className}`}>
+                        <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0"><Icon size={16} className="text-emerald-600" /></div>
+                        <div>
+                          <p className="text-xs text-gray-500">{label}</p>
+                          <p className="text-sm font-medium text-gray-900">{value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
