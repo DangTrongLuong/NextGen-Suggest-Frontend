@@ -5,15 +5,27 @@ import { Search } from 'lucide-react';
 
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
+  visible: { transition: { staggerChildren: 0.05 } },
 };
 
-const ProductGrid = ({ products, loading = false }) => {
+const ProductGrid = ({ products, loading = false, placeholderCount = 8 }) => {
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4 w-full col-span-full">
-        <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-        <p className="text-gray-500 text-sm font-semibold animate-pulse">Đang tìm kiếm và xếp hạng sản phẩm bằng AI...</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+        {Array.from({ length: placeholderCount }).map((_, idx) => (
+          <div
+            key={idx}
+            className="bg-white rounded-lg border border-gray-200/80 p-3 flex flex-col justify-between aspect-[1/1.5] w-full animate-pulse"
+          >
+            <div className="bg-gray-150/80 rounded-md w-full aspect-square mb-3"></div>
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="h-2.5 bg-gray-150/80 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-150/80 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-150/80 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-150/80 rounded w-1/2 mt-auto"></div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -33,7 +45,7 @@ const ProductGrid = ({ products, loading = false }) => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
     >
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
@@ -43,3 +55,4 @@ const ProductGrid = ({ products, loading = false }) => {
 };
 
 export default ProductGrid;
+

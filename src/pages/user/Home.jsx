@@ -1,16 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, RotateCcw } from 'lucide-react';
-import ProductCard from '../../components/product/ProductCard';
-import { CardSkeleton } from '../../components/common/Loading';
+import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { recommendationService } from '../../services/recommendationService';
 import { productService } from '../../services/productService';
 import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
+import RecommendationSection from '../../components/product/RecommendationSection';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { formatPrice } from '../../utils/formatPrice';
 
 // ─── Animations ──────────────────────────────────────────────────────────────
 const fadeUp = {
@@ -20,37 +18,6 @@ const fadeUp = {
     transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' },
   }),
 };
-
-// ─── Components ──────────────────────────────────────────────────────────────
-const ProductRowSkeleton = () => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-    {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
-  </div>
-);
-
-const SectionHeader = ({ title, desc, badge, badgeColor = 'emerald', viewAll, viewAllHref }) => (
-  <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3 border-b border-gray-100 pb-4">
-    <div>
-      {badge && (
-        <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2 border ${
-          badgeColor === 'rose' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-          badgeColor === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-          'bg-emerald-50 text-emerald-600 border-emerald-100'
-        }`}>
-          {badge}
-        </span>
-      )}
-      <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">{title}</h2>
-      {desc && <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">{desc}</p>}
-    </div>
-    {viewAll && (
-      <Link to={viewAllHref || '/products'}
-        className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-black transition-colors group shrink-0">
-        Xem tất cả <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-      </Link>
-    )}
-  </div>
-);
 
 const Home = () => {
   const navigate = useNavigate();
@@ -165,7 +132,7 @@ const Home = () => {
       });
 
     // Fetch regional location-based recommendations
-    recommendationService.getLocationBasedRecommendations(4)
+    recommendationService.getLocationBasedRecommendations(20) // Get more items for client-side pagination
       .then((data) => setLocationBasedRecs(data || []))
       .catch(() => setLocationBasedRecs([]));
 
@@ -309,11 +276,19 @@ const Home = () => {
       </section>
 
       {/* Main sections container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
         
         {/* 2. Danh mục nổi bật */}
-        <section>
-          <SectionHeader badge="Danh mục" badgeColor="emerald" title="Khám phá danh mục" desc="Tìm kiếm sản phẩm dễ dàng theo từng khu vực và công năng sử dụng" />
+        <section className="py-8 border-b border-gray-100 pb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3 border-b border-gray-100 pb-4">
+            <div>
+              <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2 border bg-emerald-50 text-emerald-600 border-emerald-100">
+                Danh mục
+              </span>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Khám phá danh mục</h2>
+              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Tìm kiếm sản phẩm dễ dàng theo từng khu vực và công năng sử dụng</p>
+            </div>
+          </div>
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -347,61 +322,42 @@ const Home = () => {
         </section>
 
         {/* 3. Xu hướng mua sắm */}
-        <section>
-          <SectionHeader 
-            badge="Xu hướng"
-            badgeColor="amber"
-            title="Xu hướng mua sắm" 
-            desc="Những sản phẩm nổi bật được khách hàng quan tâm nhiều nhất trong tuần"
-            viewAll 
-            viewAllHref="/products" 
-          />
-          {loading ? <ProductRowSkeleton /> : normTrending.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có xếp hạng xu hướng</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {normTrending.slice(0, 4).map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+        <RecommendationSection
+          badge="Xu hướng"
+          badgeColor="amber"
+          title="Xu hướng mua sắm"
+          desc="Những sản phẩm nổi bật được khách hàng quan tâm nhiều nhất trong tuần"
+          products={normTrending}
+          loading={loading}
+          viewAll
+          viewAllHref="/products"
+          containerClassName="border-b border-gray-100 pb-12"
+        />
 
         {/* 4. Sản phẩm nổi bật */}
-        <section>
-          <SectionHeader 
-            badge="Nổi bật"
-            badgeColor="emerald"
-            title="Sản phẩm nổi bật" 
-            desc="Bộ sưu tập sản phẩm thiết kế mới ra mắt tuần này"
-            viewAll 
-            viewAllHref="/products" 
-          />
-          {loading ? <ProductRowSkeleton /> : normNew.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có sản phẩm nổi bật mới</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {normNew.slice(0, 4).map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+        <RecommendationSection
+          badge="Nổi bật"
+          badgeColor="emerald"
+          title="Sản phẩm nổi bật"
+          desc="Bộ sưu tập sản phẩm thiết kế mới ra mắt tuần này"
+          products={normNew}
+          loading={loading}
+          viewAll
+          viewAllHref="/products"
+          containerClassName="border-b border-gray-100 pb-12"
+        />
 
         {/* 5. Bán chạy nhất */}
-        <section className="bg-gray-50/35 rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-4 pb-4 border-b border-gray-200/60">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Sản phẩm bán chạy nhất</h2>
-              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất</p>
-            </div>
-            
-            {/* Category Filter for Best Sellers */}
-            {bestSellerCats.length > 0 && (
+        <RecommendationSection
+          badge="Bán chạy"
+          badgeColor="emerald"
+          title="Sản phẩm bán chạy nhất"
+          desc="Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất"
+          products={filteredBestSellers}
+          loading={loading}
+          containerClassName="bg-gray-50/35 rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
+          headerExtra={
+            bestSellerCats.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setActiveBestSellerCat(null)}
@@ -427,54 +383,36 @@ const Home = () => {
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-
-          {loading ? <ProductRowSkeleton /> : filteredBestSellers.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Không có sản phẩm bán chạy phù hợp</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {filteredBestSellers.slice(0, 4).map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+            )
+          }
+        />
 
         {/* Regional Recommendations */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
-          <SectionHeader 
-            badge="Khu vực"
-            badgeColor="emerald"
-            title="Thịnh hành theo khu vực nhận hàng" 
-            desc={user ? "Sản phẩm được mua nhiều nhất xung quanh địa chỉ giao hàng của bạn" : "Sản phẩm bán chạy tại các khu vực giao nhận trên toàn quốc"}
-            viewAll 
-            viewAllHref="/products" 
-          />
-          {loading ? <ProductRowSkeleton /> : normLocationBased.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực nhận hàng này</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {normLocationBased.slice(0, 4).map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+        <RecommendationSection
+          badge="Khu vực"
+          badgeColor="emerald"
+          title="Thịnh hành theo khu vực nhận hàng"
+          desc={user ? "Sản phẩm được mua nhiều nhất xung quanh địa chỉ giao hàng của bạn" : "Sản phẩm bán chạy tại các khu vực giao nhận trên toàn quốc"}
+          products={normLocationBased}
+          loading={loading}
+          viewAll
+          viewAllHref="/products"
+          containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
+        />
 
-        {/* 6. Gợi ý cho bạn (Dynamic tab layout) */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-gray-200/60 pb-4">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Gợi ý dành cho bạn</h2>
-              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn</p>
-            </div>
-
-            {/* Tabs selection */}
+        {/* 6. Gợi ý cho bạn */}
+        <RecommendationSection
+          badge="Gợi ý"
+          badgeColor="emerald"
+          title="Gợi ý dành cho bạn"
+          desc="Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn"
+          products={activeRecTab === 0 
+            ? (normPersonal.length > 0 ? normPersonal : normFeatured)
+            : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
+          }
+          loading={loading}
+          containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
+          headerExtra={
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
               {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
                 <button
@@ -490,59 +428,24 @@ const Home = () => {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="min-h-[260px]">
-            {loading ? (
-              <ProductRowSkeleton />
-            ) : (() => {
-              // Determine active suggestions lists
-              const listToRender = activeRecTab === 0 
-                ? (normPersonal.length > 0 ? normPersonal : normFeatured)
-                : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending);
-
-              if (listToRender.length === 0) {
-                return (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-gray-450 text-xs font-semibold">Chưa có thông tin gợi ý</p>
-                    <p className="text-gray-400 text-[11px] mt-1 font-light">Hãy tiếp tục duyệt sản phẩm để chúng tôi hiển thị gợi ý phù hợp nhất</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {listToRender.slice(0, 4).map((p, i) => (
-                    <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible">
-                      <ProductCard product={p} />
-                    </motion.div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        </section>
+          }
+        />
 
         {/* 7. Sản phẩm đã xem gần đây */}
         {normRecent.length > 0 && (
-          <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
-            <SectionHeader badge="Lịch sử" badgeColor="emerald" title="Sản phẩm đã xem gần đây" desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {normRecent.slice(0, 6).map((p) => (
-                <div key={p.id} className="group relative bg-white hover:bg-gray-50/50 rounded border border-gray-200/80 p-2.5 transition-all duration-300">
-                  <Link to={`/products/${p.id}`} className="block aspect-square rounded overflow-hidden bg-gray-50 mb-2.5">
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                  </Link>
-                  <h3 className="font-normal text-gray-800 text-xs truncate mb-1">{p.name}</h3>
-                  <p className="text-gray-900 font-semibold text-xs">{formatPrice(p.price)}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+          <RecommendationSection
+            badge="Lịch sử"
+            badgeColor="emerald"
+            title="Sản phẩm đã xem gần đây"
+            desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây"
+            products={normRecent}
+            loading={loading}
+            containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
+          />
         )}
 
         {/* 8. Khuyến mãi (Promotions / Banners) */}
-        <section className="border-t border-b border-gray-200/60 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8">
+        <section className="border-t border-b border-gray-200/65 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8 my-8">
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="bg-red-50/35 p-8 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
               <div>
@@ -588,27 +491,17 @@ const Home = () => {
         </section>
 
         {/* 9. Đánh giá cao */}
-        <section>
-          <SectionHeader 
-            badge="Đánh giá"
-            badgeColor="emerald"
-            title="Đánh giá cao nhất" 
-            desc="Những sản phẩm nhận được phản hồi hài lòng cao nhất từ khách hàng đã sử dụng"
-            viewAll 
-            viewAllHref="/products" 
-          />
-          {loading ? <ProductRowSkeleton /> : normFeatured.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có sản phẩm xếp hạng tốt</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {normFeatured.filter(p => p.rating >= 4.5).slice(0, 4).map((p, i) => (
-                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+        <RecommendationSection
+          badge="Đánh giá"
+          badgeColor="emerald"
+          title="Đánh giá cao nhất"
+          desc="Những sản phẩm nhận được phản hồi hài lòng cao nhất từ khách hàng đã sử dụng"
+          products={useMemo(() => normFeatured.filter(p => p.rating >= 4.5), [normFeatured])}
+          loading={loading}
+          viewAll
+          viewAllHref="/products"
+          containerClassName="pb-12"
+        />
 
       </div>
     </div>
