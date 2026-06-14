@@ -65,8 +65,7 @@ const Home = () => {
   const [featured, setFeatured] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
-  const [recsHanoi, setRecsHanoi] = useState([]);
-  const [recsHcm, setRecsHcm] = useState([]);
+  const [locationBasedRecs, setLocationBasedRecs] = useState([]);
 
   // Sub-states
   const [categories, setCategories] = useState([]);
@@ -147,8 +146,7 @@ const Home = () => {
     setFeatured([]);
     setBestSellers([]);
     setNewArrivals([]);
-    setRecsHanoi([]);
-    setRecsHcm([]);
+    setLocationBasedRecs([]);
 
     // Fetch categories
     api.get('/categories')
@@ -166,14 +164,10 @@ const Home = () => {
         console.error('Failed to load popular searches', err);
       });
 
-    // Fetch regional recommendations
-    recommendationService.getRecommendationsByLocation('Hà Nội', 4)
-      .then((data) => setRecsHanoi(data || []))
-      .catch(() => setRecsHanoi([]));
-
-    recommendationService.getRecommendationsByLocation('TP. Hồ Chí Minh', 4)
-      .then((data) => setRecsHcm(data || []))
-      .catch(() => setRecsHcm([]));
+    // Fetch regional location-based recommendations
+    recommendationService.getLocationBasedRecommendations(4)
+      .then((data) => setLocationBasedRecs(data || []))
+      .catch(() => setLocationBasedRecs([]));
 
     // Fetch homepage recommendations orchestration API
     recommendationService.getHomepageRecommendations()
@@ -208,8 +202,8 @@ const Home = () => {
       price: p.basePrice ?? p.price,
       originalPrice: p.comparePrice ?? p.originalPrice,
       discount: p.comparePrice > p.basePrice ? Math.round(((p.comparePrice - p.basePrice) / p.comparePrice) * 100) : (p.discount ?? 0),
-      rating: parseFloat(p.ratingAvg ?? p.rating) || 4.5,
-      reviewCount: (p.ratingCount ?? p.reviewCount) || 12,
+      rating: parseFloat(p.ratingAvg ?? p.rating ?? 0),
+      reviewCount: parseInt(p.ratingCount ?? p.reviewCount ?? 0),
       stock: p.stock ?? 10,
     };
   };
@@ -222,8 +216,7 @@ const Home = () => {
   const normPersonal = useMemo(() => personal.map(normalizeProduct).filter(Boolean), [personal]);
   const normRecent = useMemo(() => recent.map(normalizeProduct).filter(Boolean), [recent]);
   const normYouMayNeed = useMemo(() => youMayNeed.map(normalizeProduct).filter(Boolean), [youMayNeed]);
-  const normHanoi = useMemo(() => recsHanoi.map(normalizeProduct).filter(Boolean), [recsHanoi]);
-  const normHcm = useMemo(() => recsHcm.map(normalizeProduct).filter(Boolean), [recsHcm]);
+  const normLocationBased = useMemo(() => locationBasedRecs.map(normalizeProduct).filter(Boolean), [locationBasedRecs]);
 
   // Filter BestSellers by category dynamically on client side
   const filteredBestSellers = useMemo(() => {
@@ -275,10 +268,10 @@ const Home = () => {
           <div className="max-w-3xl mx-auto text-center">
             <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
             <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
-              Thiết kế không gian sống <span className="font-semibold text-emerald-400">tối giản</span>
+              Trải nghiệm mua sắm <span className="font-semibold text-emerald-400">cá nhân hóa AI</span>
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto mb-8 font-light leading-relaxed">
-              Khám phá các sản phẩm nội thất tinh tế, kết hợp hài hòa giữa công năng sử dụng và tính thẩm mỹ đương đại.
+              Khám phá bộ sưu tập sản phẩm phong phú từ thời trang, đồ gia dụng đến các mẫu trang trí nội thất tinh tế.
             </p>
  
             {/* Clean Search Input */}
@@ -359,7 +352,7 @@ const Home = () => {
             badge="Xu hướng"
             badgeColor="amber"
             title="Xu hướng mua sắm" 
-            desc="Những mẫu sản phẩm nội thất được khách hàng quan tâm nhiều nhất trong tuần"
+            desc="Những sản phẩm nổi bật được khách hàng quan tâm nhiều nhất trong tuần"
             viewAll 
             viewAllHref="/products" 
           />
@@ -451,50 +444,26 @@ const Home = () => {
         </section>
 
         {/* Regional Recommendations */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 space-y-12">
-          <div>
-            <SectionHeader 
-              badge="Khu vực"
-              badgeColor="emerald"
-              title="Phổ biến tại Hà Nội" 
-              desc="Những sản phẩm được mua nhiều nhất bởi khách hàng tại khu vực Hà Nội"
-              viewAll 
-              viewAllHref="/products" 
-            />
-            {loading ? <ProductRowSkeleton /> : normHanoi.length === 0 ? (
-              <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực này</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                {normHanoi.slice(0, 4).map((p, i) => (
-                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                    <ProductCard product={p} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="pt-8 border-t border-gray-105">
-            <SectionHeader 
-              badge="Khu vực"
-              badgeColor="emerald"
-              title="Phổ biến tại TP. Hồ Chí Minh" 
-              desc="Những sản phẩm được mua nhiều nhất bởi khách hàng tại khu vực TP. Hồ Chí Minh"
-              viewAll 
-              viewAllHref="/products" 
-            />
-            {loading ? <ProductRowSkeleton /> : normHcm.length === 0 ? (
-              <p className="text-center text-gray-450 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực này</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                {normHcm.slice(0, 4).map((p, i) => (
-                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                    <ProductCard product={p} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+        <section className="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8">
+          <SectionHeader 
+            badge="Khu vực"
+            badgeColor="emerald"
+            title="Thịnh hành theo khu vực nhận hàng" 
+            desc={user ? "Sản phẩm được mua nhiều nhất xung quanh địa chỉ giao hàng của bạn" : "Sản phẩm bán chạy tại các khu vực giao nhận trên toàn quốc"}
+            viewAll 
+            viewAllHref="/products" 
+          />
+          {loading ? <ProductRowSkeleton /> : normLocationBased.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu mua sắm tại khu vực nhận hàng này</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {normLocationBased.slice(0, 4).map((p, i) => (
+                <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                  <ProductCard product={p} />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 6. Gợi ý cho bạn (Dynamic tab layout) */}
@@ -580,7 +549,7 @@ const Home = () => {
                 <span className="text-[10px] font-bold text-red-650 uppercase tracking-widest block mb-2">⚡ Khuyến mãi có hạn</span>
                 <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">SIÊU FLASH SALE MÙA HÈ</h3>
                 <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
-                  Cơ hội sở hữu các sản phẩm nội thất sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
+                  Cơ hội sở hữu các sản phẩm thiết kế sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
                 </p>
               </div>
               

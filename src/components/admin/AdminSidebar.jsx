@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Settings,
-  LogOut, X, ChevronRight, Tag
+  LogOut, X, ChevronRight, Tag, History
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,7 @@ const navItems = [
   { icon: Tag, label: 'Danh mục', to: '/admin/categories' },
   { icon: ShoppingBag, label: 'Đơn hàng', to: '/admin/orders' },
   { icon: Users, label: 'Khách hàng', to: '/admin/customers' },
+  { icon: History, label: 'Lịch sử Import', to: '/admin/import-history' },
   { icon: Settings, label: 'Cài đặt', to: '/admin/settings' },
 ];
 

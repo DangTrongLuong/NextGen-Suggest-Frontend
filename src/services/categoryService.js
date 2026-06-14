@@ -51,4 +51,20 @@ export const categoryService = {
   delete: async (id) => {
     await api.delete(`/admin/categories/${id}`);
   },
+
+  previewCategoryExcel: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/admin/import/categories/preview', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data.data;
+  },
+
+  confirmCategoryImport: async (jobId, rows) => {
+    const res = await api.post('/admin/import/categories/confirm', { jobId, rows });
+    return res.data.data;
+  },
 };

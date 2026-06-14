@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductTable from '../../components/admin/ProductTable';
 import Pagination from '../../components/common/Pagination';
@@ -9,6 +9,7 @@ import { adminService } from '../../services/adminService';
 import { categoryService } from '../../services/categoryService';
 import { normalizeProducts } from '../../utils/productNormalizer';
 import { debounce } from '../../utils/helpers';
+import ImportExcelModal from '../../components/admin/ImportExcelModal';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -19,6 +20,7 @@ const ProductManagement = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const pageSize = 12;
 
   const fetchProducts = useCallback(async (params) => {
@@ -74,12 +76,20 @@ const ProductManagement = () => {
           <h2 className="text-xl font-bold text-gray-900">Sản phẩm</h2>
           <p className="text-sm text-gray-500">{totalElements} sản phẩm</p>
         </div>
-        <Link
-          to="/admin/products/add"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
-        >
-          <Plus size={16} /> Thêm sản phẩm
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-xl transition-colors"
+          >
+            <Upload size={16} /> Import Excel
+          </button>
+          <Link
+            to="/admin/products/add"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+          >
+            <Plus size={16} /> Thêm sản phẩm
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -118,6 +128,14 @@ const ProductManagement = () => {
           )}
         </>
       )}
+      <ImportExcelModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        entityType="product"
+        onPreviewSuccess={() => fetchProducts({ page, size: pageSize, ...(search && { search }), ...(categoryId && { categoryId }) })}
+        previewApi={adminService.previewProductExcel}
+        confirmApi={adminService.confirmProductImport}
+      />
     </div>
   );
 };
