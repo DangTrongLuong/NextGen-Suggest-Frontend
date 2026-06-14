@@ -28,6 +28,7 @@ import CategoryManagement from '../pages/admin/CategoryManagement';
 import AddCategory from '../pages/admin/AddCategory';
 import EditCategory from '../pages/admin/EditCategory';
 import Settings from '../pages/admin/Settings';
+import ImportHistory from '../pages/admin/ImportHistory';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 
 const AppRoutes = () => {
@@ -62,6 +63,7 @@ const AppRoutes = () => {
         <Route path="categories/edit/:id" element={<EditCategory />} />
         <Route path="orders" element={<OrderManagement />} />
         <Route path="customers" element={<CustomerManagement />} />
+        <Route path="import-history" element={<ImportHistory />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

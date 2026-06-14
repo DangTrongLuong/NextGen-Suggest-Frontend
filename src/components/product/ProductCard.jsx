@@ -16,11 +16,11 @@ const ProductCard = ({ product }) => {
   // ✅ Normalize fields — support both API format and mapped format
   const price = product.price ?? product.basePrice ?? 0;
   const originalPrice = product.originalPrice ?? product.comparePrice ?? 0;
-  const rating = product.rating ?? product.ratingAvg ?? 4.5;
-  const reviewCount = product.reviewCount ?? product.ratingCount ?? 12;
+  const rating = product.rating ?? product.ratingAvg ?? 0;
+  const reviewCount = product.reviewCount ?? product.ratingCount ?? 0;
   const stock = Number(product.stock ?? 0);
   const hasStock = stock > 0;
-  const categoryName = product.categoryName ?? product.category?.name ?? 'Nội thất';
+  const categoryName = product.categoryName ?? product.category?.name ?? 'Sản phẩm';
 
   // ✅ Calculate discount if not present
   const discount =
@@ -127,6 +127,14 @@ const ProductCard = ({ product }) => {
             <span className="text-[10px] text-gray-400 font-normal">
               ({reviewCount})
             </span>
+            {product.views !== undefined && product.views !== null && (
+              <>
+                <span className="text-gray-300 text-[10px]">|</span>
+                <span className="text-[10px] text-gray-550 font-light flex items-center gap-0.5">
+                  👁️ {product.views} lượt xem
+                </span>
+              </>
+            )}
           </div>
 
           {/* Price & Action Row */}

@@ -16,13 +16,13 @@ const Checkout = () => {
       <div className="mb-6">
         <Breadcrumb
           items={[
-            { label: 'Cart', to: '/cart' },
-            { label: 'Checkout', to: '/checkout' },
+            { label: 'Giỏ hàng', to: '/cart' },
+            { label: 'Thanh toán', to: '/checkout' },
           ]}
         />
       </div>
 
-      <h1 className="text-2xl font-black text-gray-900 mb-8">Checkout</h1>
+      <h1 className="text-2xl font-black text-gray-900 mb-8">Thanh toán</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">

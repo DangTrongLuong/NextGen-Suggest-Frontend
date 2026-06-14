@@ -11,9 +11,16 @@ const api = axios.create({
   },
 });
 
-// ── Request interceptor: attach JWT ──────────────────────
+// ── Request interceptor: attach JWT and Session ID ────────
 api.interceptors.request.use(
   (config) => {
+    let sessionId = localStorage.getItem('nivora_session_id');
+    if (!sessionId) {
+      sessionId = 'session_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+      localStorage.setItem('nivora_session_id', sessionId);
+    }
+    config.headers['X-Session-Id'] = sessionId;
+
     const stored = localStorage.getItem('auth_tokens');
     if (stored) {
       try {

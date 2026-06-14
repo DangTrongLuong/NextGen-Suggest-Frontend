@@ -46,4 +46,16 @@ export const recommendationService = {
       return [];
     }
   },
+
+  getLocationBasedRecommendations: async (limit = 8) => {
+    try {
+      const res = await api.get('/recommendations/location-based', {
+        params: { limit }
+      });
+      return res.data.data;
+    } catch (error) {
+      console.error('Failed to fetch personalized location-based recommendations:', error);
+      return [];
+    }
+  },
 };

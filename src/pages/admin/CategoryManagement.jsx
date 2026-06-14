@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Search, LayoutList, GitBranch } from 'lucide-react';
+import { Plus, Search, LayoutList, GitBranch, Upload } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import CategoryTable from '../../components/admin/CategoryTable';
 import { Spinner } from '../../components/common/Loading';
 import { categoryService } from '../../services/categoryService';
+import ImportExcelModal from '../../components/admin/ImportExcelModal';
 
 const statusFilters = [
   { key: 'all', label: 'Tất cả' },
@@ -22,6 +23,7 @@ const CategoryManagement = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('table');
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -97,12 +99,20 @@ const CategoryManagement = () => {
             {categories.length} danh mục · {activeCount} đang hoạt động · {rootCount} danh mục gốc
           </p>
         </div>
-        <Link
-          to="/admin/categories/add"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
-        >
-          <Plus size={16} /> Thêm danh mục
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-xl transition-colors"
+          >
+            <Upload size={16} /> Import Excel
+          </button>
+          <Link
+            to="/admin/categories/add"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+          >
+            <Plus size={16} /> Thêm danh mục
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -181,6 +191,14 @@ const CategoryManagement = () => {
           viewMode={viewMode}
         />
       )}
+      <ImportExcelModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        entityType="category"
+        onPreviewSuccess={fetchCategories}
+        previewApi={categoryService.previewCategoryExcel}
+        confirmApi={categoryService.confirmCategoryImport}
+      />
     </div>
   );
 };

@@ -83,4 +83,25 @@ export const adminService = {
     const res = await api.put(`/admin/users/${id}/active`, null, { params: { active } });
     return res.data.data;
   },
+
+  previewProductExcel: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/admin/import/products/preview', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data.data;
+  },
+
+  confirmProductImport: async (jobId, rows) => {
+    const res = await api.post('/admin/import/products/confirm', { jobId, rows });
+    return res.data.data;
+  },
+
+  getImportHistory: async (page = 0, size = 10) => {
+    const res = await api.get('/admin/import/jobs', { params: { page, size } });
+    return res.data.data;
+  },
 };
