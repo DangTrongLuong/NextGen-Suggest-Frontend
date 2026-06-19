@@ -129,50 +129,53 @@ const Header = () => {
             : 'bg-white/95'
         )}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
           <div className="flex items-center justify-between h-16 lg:h-[68px] gap-4">
 
-            {/* ── Logo ── */}
-            <Link
-              to="/"
-              className="flex items-center gap-3 flex-shrink-0 group"
-            >
-              <motion.img
-                src={logoNivora}
-                alt="NIVORA"
-                whileHover={{ scale: 1.04 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                className="h-9 w-auto object-contain rounded-xl shadow-sm group-hover:shadow-glow-sm transition-shadow duration-300"
-              />
-              <span className="text-2xl font-extrabold tracking-wide text-gray-900 group-hover:text-emerald-600 transition-colors duration-300">
-                NIVORA
-              </span>
-            </Link>
+            {/* Group Logo + Desktop Nav together on the left */}
+            <div className="flex items-center gap-8">
+              {/* ── Logo ── */}
+              <Link
+                to="/"
+                className="flex items-center gap-3 flex-shrink-0 group"
+              >
+                <motion.img
+                  src={logoNivora}
+                  alt="NIVORA"
+                  whileHover={{ scale: 1.04 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                  className="h-9 w-auto object-contain rounded-xl shadow-sm group-hover:shadow-glow-sm transition-shadow duration-300"
+                />
+                <span className="text-2xl font-extrabold tracking-wide text-gray-900 group-hover:text-emerald-600 transition-colors duration-300">
+                  NIVORA
+                </span>
+              </Link>
 
-            {/* ── Desktop Nav ── */}
-            <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={(e) => handleNavLinkClick(e, link)}
-                  className={clsx(
-                    'relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-                    location.pathname === link.to
-                      ? 'text-emerald-700 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80'
-                  )}
-                >
-                  {link.label}
-                  {location.pathname === link.to && (
-                    <motion.div
-                      layoutId="nav-indicator"
-                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-emerald-600 rounded-full"
-                    />
-                  )}
-                </Link>
-              ))}
-            </nav>
+              {/* ── Desktop Nav ── */}
+              <nav className="hidden md:flex items-center gap-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={(e) => handleNavLinkClick(e, link)}
+                    className={clsx(
+                      'relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                      location.pathname === link.to
+                        ? 'text-emerald-700 bg-emerald-50'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80'
+                    )}
+                  >
+                    {link.label}
+                    {location.pathname === link.to && (
+                      <motion.div
+                        layoutId="nav-indicator"
+                        className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-emerald-600 rounded-full"
+                      />
+                    )}
+                  </Link>
+                ))}
+              </nav>
+            </div>
 
             {/* ── Search Bar (desktop center) ── */}
             {false && (

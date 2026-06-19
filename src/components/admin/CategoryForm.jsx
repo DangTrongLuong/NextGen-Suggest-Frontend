@@ -7,6 +7,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import { categoryService } from '../../services/categoryService';
 import { uploadService } from '../../services/uploadService';
+import { categoryMainService } from '../../services/categoryMainService';
 
 const generateSlug = (name) =>
   name
@@ -29,6 +30,7 @@ const CategoryForm = ({ initialData = null }) => {
     imageUrl: initialData?.imageUrl || '',
     icon: initialData?.icon || '',
     parentId: initialData?.parentId ?? '',
+    categoryMainId: initialData?.categoryMainId ?? '',
     sortOrder: initialData?.sortOrder ?? 0,
     isActive: initialData?.isActive ?? true,
     seoTitle: initialData?.seoTitle || '',
@@ -36,6 +38,7 @@ const CategoryForm = ({ initialData = null }) => {
   });
 
   const [allCategories, setAllCategories] = useState([]);
+  const [categoryMains, setCategoryMains] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -45,6 +48,10 @@ const CategoryForm = ({ initialData = null }) => {
     categoryService.getAllAdmin()
       .then(setAllCategories)
       .catch(() => setAllCategories([]));
+
+    categoryMainService.getAllAdmin()
+      .then(setCategoryMains)
+      .catch(() => setCategoryMains([]));
   }, []);
 
   // Auto-slug
@@ -122,6 +129,7 @@ const CategoryForm = ({ initialData = null }) => {
       imageUrl: form.imageUrl || null,
       icon: form.icon || null,
       parentId: form.parentId === '' ? null : Number(form.parentId),
+      categoryMainId: form.categoryMainId === '' ? null : Number(form.categoryMainId),
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
       seoTitle: form.seoTitle || null,
@@ -192,6 +200,21 @@ const CategoryForm = ({ initialData = null }) => {
               </button>
             </div>
             {errors.slug && <p className="text-xs text-red-500 mt-1">{errors.slug}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Danh mục chính</label>
+            <select
+              name="categoryMainId"
+              value={form.categoryMainId}
+              onChange={handleChange}
+              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+            >
+              <option value="">Chọn danh mục chính...</option>
+              {categoryMains.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div>

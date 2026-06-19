@@ -64,6 +64,13 @@ const buildAllImages = (product) => {
 const parseTokens = (val) =>
   val ? val.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
+// ─── Check if fieldValue contains selectedValue as a token ───────────────
+const matchesToken = (fieldValue, selectedValue) => {
+  if (!selectedValue) return true;
+  if (!fieldValue) return false;
+  return parseTokens(fieldValue).includes(selectedValue);
+};
+
 // ─── Gallery ────────────────────────────────────────────────────────────────
 const Gallery = ({ images, activeUrl, onSelect }) => {
   const [mainIdx, setMainIdx] = useState(0);
@@ -218,8 +225,8 @@ const ProductDetail = () => {
         const firstVariant = data.variants?.[0] || null;
         setSelectedVariant(firstVariant);
         // Init color/size từ variant đầu hoặc từ product
-        const initColor = firstVariant?.color || parseTokens(data.color)[0] || null;
-        const initSize  = firstVariant?.size  || parseTokens(data.size)[0]  || null;
+        const initColor = parseTokens(firstVariant?.color)[0] || parseTokens(data.color)[0] || null;
+        const initSize  = parseTokens(firstVariant?.size)[0]  || parseTokens(data.size)[0]  || null;
         setSelectedColor(initColor);
         setSelectedSize(initSize);
         // Ảnh active ban đầu = ảnh variant đầu hoặc ảnh product
@@ -227,7 +234,11 @@ const ProductDetail = () => {
           if (img.variantId && firstVariant && Number(img.variantId) === Number(firstVariant.id)) return true;
           if (img.variantId && firstVariant) {
             const v = data.variants?.find((varItem) => Number(varItem.id) === Number(img.variantId));
-            return v && v.color && v.color === firstVariant.color;
+            if (v && v.color && firstVariant.color) {
+              const vColors = parseTokens(v.color);
+              const fColors = parseTokens(firstVariant.color);
+              return vColors.some(c => fColors.includes(c));
+            }
           }
           return false;
         })?.url || data.imageUrl || data.images?.[0]?.url || null;
@@ -257,8 +268,8 @@ const ProductDetail = () => {
       );
       if (matched) {
         setSelectedVariant(matched);
-        if (matched.color) setSelectedColor(matched.color);
-        if (matched.size) setSelectedSize(matched.size);
+        if (matched.color) setSelectedColor(parseTokens(matched.color)[0]);
+        if (matched.size) setSelectedSize(parseTokens(matched.size)[0]);
         setQuantity(1);
       }
     },
@@ -270,16 +281,16 @@ const ProductDetail = () => {
     if (!product?.variants || product.variants.length === 0) return;
 
     // Tìm variant khớp cả màu sắc và kích thước
-    let matched = product.variants.find((v) => v.color === selectedColor && v.size === selectedSize);
+    let matched = product.variants.find((v) => matchesToken(v.color, selectedColor) && matchesToken(v.size, selectedSize));
     
     // Nếu không khớp cả 2, thử tìm variant khớp màu sắc
     if (!matched && selectedColor) {
-      matched = product.variants.find((v) => v.color === selectedColor);
+      matched = product.variants.find((v) => matchesToken(v.color, selectedColor));
     }
     
     // Hoặc thử tìm variant khớp kích thước
     if (!matched && selectedSize) {
-      matched = product.variants.find((v) => v.size === selectedSize);
+      matched = product.variants.find((v) => matchesToken(v.size, selectedSize));
     }
 
     if (matched) {
@@ -292,11 +303,17 @@ const ProductDetail = () => {
       });
 
       // Đồng bộ lại color/size được chọn nếu cần
-      if (matched.color && matched.color !== selectedColor) {
-        setSelectedColor(matched.color);
+      if (matched.color) {
+        const mColors = parseTokens(matched.color);
+        if (!mColors.includes(selectedColor)) {
+          setSelectedColor(mColors[0]);
+        }
       }
-      if (matched.size && matched.size !== selectedSize) {
-        setSelectedSize(matched.size);
+      if (matched.size) {
+        const mSizes = parseTokens(matched.size);
+        if (!mSizes.includes(selectedSize)) {
+          setSelectedSize(mSizes[0]);
+        }
       }
 
       // Xác định ảnh hiển thị
@@ -304,7 +321,11 @@ const ProductDetail = () => {
         if (img.variantId && Number(img.variantId) === Number(matched.id)) return true;
         if (img.variantId) {
           const v = product.variants.find((varItem) => Number(varItem.id) === Number(img.variantId));
-          return v && v.color && v.color === matched.color;
+          if (v && v.color && matched.color) {
+            const vColors = parseTokens(v.color);
+            const mColors = parseTokens(matched.color);
+            return vColors.some(c => mColors.includes(c));
+          }
         }
         return false;
       })?.url;
@@ -343,23 +364,35 @@ const ProductDetail = () => {
 
   const uniqueColors = useMemo(() => {
     if (!product?.variants) return [];
-    return [...new Set(product.variants.map((v) => v.color).filter(Boolean))];
+    const colors = new Set();
+    product.variants.forEach((v) => {
+      if (v.color) {
+        parseTokens(v.color).forEach(c => colors.add(c));
+      }
+    });
+    return [...colors];
   }, [product]);
 
   const uniqueSizes = useMemo(() => {
     if (!product?.variants) return [];
-    return [...new Set(product.variants.map((v) => v.size).filter(Boolean))];
+    const sizes = new Set();
+    product.variants.forEach((v) => {
+      if (v.size) {
+        parseTokens(v.size).forEach(s => sizes.add(s));
+      }
+    });
+    return [...sizes];
   }, [product]);
 
   const isColorDisabled = useCallback((color) => {
     return !product?.variants?.some(
-      (v) => v.color === color && (!selectedSize || v.size === selectedSize) && v.isActive
+      (v) => matchesToken(v.color, color) && (!selectedSize || matchesToken(v.size, selectedSize)) && v.isActive
     );
   }, [product, selectedSize]);
 
   const isSizeDisabled = useCallback((size) => {
     return !product?.variants?.some(
-      (v) => v.size === size && (!selectedColor || v.color === selectedColor) && v.isActive
+      (v) => matchesToken(v.size, size) && (!selectedColor || matchesToken(v.color, selectedColor)) && v.isActive
     );
   }, [product, selectedColor]);
 
@@ -514,7 +547,7 @@ const ProductDetail = () => {
                       {uniqueColors.map((colorKey) => {
                         const isSelected = selectedColor === colorKey;
                         const disabled = isColorDisabled(colorKey);
-                        const firstVariantOfColor = product.variants.find(v => v.color === colorKey);
+                        const firstVariantOfColor = product.variants.find(v => matchesToken(v.color, colorKey));
                         return (
                           <button
                             key={colorKey}

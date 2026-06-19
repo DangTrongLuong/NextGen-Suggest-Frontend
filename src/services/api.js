@@ -103,12 +103,9 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        sessionStorage.setItem('auth_expired_msg', 'Vui lòng đăng nhập để tiếp tục.');
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        } else {
-          window.location.reload();
-        }
+        // Do not force redirect guest users on public pages.
+        // ProtectedRoute will handle restricted pages.
+        return Promise.reject(error);
       }
     }
 

@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /analytics-portal
+Disallow: /monitoring
+Disallow: /internal
+Disallow: /analytics

@@ -2,78 +2,39 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 import { categoryService } from '../../services/categoryService';
-import { useProducts } from '../../context/ProductContext';
-
-const CategoryNode = ({ category, activeCategory, onSelect, depth = 0 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = category.children && category.children.length > 0;
-  const isSelected = activeCategory === category.name || activeCategory === category.slug;
-
-  const handleToggle = (e) => {
-    e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
-
-  const handleSelect = () => {
-    onSelect(category);
-  };
-
-  return (
-    <div className="select-none">
-      <div
-        onClick={handleSelect}
-        style={{ paddingLeft: `${depth * 16 + 12}px` }}
-        className={clsx(
-          'group flex items-center justify-between py-2 pr-3 rounded-xl cursor-pointer text-sm transition-all duration-150',
-          isSelected
-            ? 'bg-emerald-50 text-emerald-700 font-bold'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'
-        )}
-      >
-        <div className="flex items-center gap-2 truncate">
-          {category.icon && <span className="text-base flex-shrink-0">{category.icon}</span>}
-          <span className="truncate">{category.name}</span>
-        </div>
-
-        {hasChildren && (
-          <button
-            onClick={handleToggle}
-            className="p-1 rounded-lg hover:bg-gray-200/50 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-          >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </button>
-        )}
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div className="mt-1 space-y-1">
-          {category.children.map((child) => (
-            <CategoryNode
-              key={child.id}
-              category={child}
-              activeCategory={activeCategory}
-              onSelect={onSelect}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import { categoryMainService } from '../../services/categoryMainService';
 
 const CategoryTreeSidebar = ({ activeCategory, onSelectCategory }) => {
-  const [tree, setTree] = useState([]);
+  const [categoryMains, setCategoryMains] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedMainIds, setExpandedMainIds] = useState([]);
 
   useEffect(() => {
     setLoading(true);
-    categoryService
-      .getTree()
-      .then(setTree)
-      .catch(() => setTree([]))
+    Promise.all([
+      categoryMainService.getAll().catch(() => []),
+      categoryService.getAll().catch(() => []),
+    ])
+      .then(([mains, cats]) => {
+        setCategoryMains(mains);
+        setCategories(cats);
+        // Find category main containing activeCategory slug and auto expand it
+        if (activeCategory && activeCategory !== 'All') {
+          const matchedCat = cats.find(c => c.slug === activeCategory || c.name === activeCategory);
+          if (matchedCat && matchedCat.categoryMainId) {
+            setExpandedMainIds([matchedCat.categoryMainId]);
+          }
+        }
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeCategory]);
+
+  const toggleExpand = (mainId) => {
+    setExpandedMainIds((prev) =>
+      prev.includes(mainId) ? prev.filter((id) => id !== mainId) : [...prev, mainId]
+    );
+  };
 
   if (loading) {
     return (
@@ -91,7 +52,7 @@ const CategoryTreeSidebar = ({ activeCategory, onSelectCategory }) => {
         onClick={() => onSelectCategory('All')}
         className={clsx(
           'flex items-center px-3 py-2.5 rounded-xl cursor-pointer text-sm transition-colors font-medium',
-          activeCategory === 'All'
+          activeCategory === 'All' || !activeCategory
             ? 'bg-emerald-50 text-emerald-700 font-bold'
             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'
         )}
@@ -99,14 +60,55 @@ const CategoryTreeSidebar = ({ activeCategory, onSelectCategory }) => {
         🌐 Tất cả danh mục
       </div>
 
-      {tree.map((cat) => (
-        <CategoryNode
-          key={cat.id}
-          category={cat}
-          activeCategory={activeCategory}
-          onSelect={(c) => onSelectCategory(c.slug)}
-        />
-      ))}
+      {categoryMains.map((main) => {
+        const isExpanded = expandedMainIds.includes(main.id);
+        const subCats = categories.filter((c) => c.categoryMainId === main.id);
+
+        return (
+          <div key={main.id} className="select-none">
+            <div
+              onClick={() => toggleExpand(main.id)}
+              className="group flex items-center justify-between py-2 px-3 rounded-xl cursor-pointer text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-950 font-semibold"
+            >
+              <div className="flex items-center gap-2 truncate">
+                {main.imageUrl ? (
+                  <img src={main.imageUrl} alt={main.name} className="w-5 h-5 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <span className="text-base flex-shrink-0">📦</span>
+                )}
+                <span className="truncate">{main.name}</span>
+              </div>
+              {subCats.length > 0 && (
+                <div className="text-gray-400">
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </div>
+              )}
+            </div>
+
+            {isExpanded && subCats.length > 0 && (
+              <div className="mt-1 pl-6 pr-2 border-l-2 border-emerald-100 flex flex-col gap-0.5">
+                {subCats.map((child) => {
+                  const isSelected = activeCategory === child.slug || activeCategory === child.name;
+                  return (
+                    <button
+                      key={child.id}
+                      onClick={() => onSelectCategory(child.slug)}
+                      className={clsx(
+                        'w-full py-1.5 px-2 rounded-lg text-left text-xs font-semibold transition-all cursor-pointer',
+                        isSelected
+                          ? 'bg-emerald-50 text-emerald-700 font-bold'
+                          : 'text-gray-500 hover:text-emerald-600 hover:bg-gray-50/30'
+                      )}
+                    >
+                      {child.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

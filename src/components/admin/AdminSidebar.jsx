@@ -11,6 +11,7 @@ import logoNivora from '../../assets/logo-nivora.jpg';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
   { icon: Package, label: 'Sản phẩm', to: '/admin/products' },
+  { icon: Tag, label: 'Danh mục chính', to: '/admin/category-mains' },
   { icon: Tag, label: 'Danh mục', to: '/admin/categories' },
   { icon: ShoppingBag, label: 'Đơn hàng', to: '/admin/orders' },
   { icon: Users, label: 'Khách hàng', to: '/admin/customers' },

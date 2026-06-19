@@ -6,6 +6,8 @@ const pageTitles = {
   '/admin': 'Dashboard',
   '/admin/products': 'Sản phẩm',
   '/admin/products/add': 'Thêm sản phẩm',
+  '/admin/category-mains': 'Danh mục chính',
+  '/admin/category-mains/add': 'Thêm danh mục chính',
   '/admin/categories': 'Danh mục',
   '/admin/categories/add': 'Thêm danh mục',
   '/admin/orders': 'Đơn hàng',

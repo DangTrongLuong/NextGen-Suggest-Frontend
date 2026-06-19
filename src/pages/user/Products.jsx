@@ -7,15 +7,19 @@ import ProductCard from '../../components/product/ProductCard';
 import Pagination from '../../components/common/Pagination';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
+import { categoryMainService } from '../../services/categoryMainService';
 import { normalizeProducts } from '../../utils/productNormalizer';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategorySlug = searchParams.get('category') || null;
+  const selectedCategoryMainSlug = searchParams.get('categoryMain') || null;
   const searchQueryParam = searchParams.get('search') || '';
 
   const [categories, setCategories] = useState([]);
+  const [categoryMains, setCategoryMains] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingCategoryMains, setLoadingCategoryMains] = useState(true);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -23,18 +27,15 @@ const Products = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [sortBy, setSortBy] = useState('newest');
   const [searchInput, setSearchInput] = useState('');
-  const [categoryPage, setCategoryPage] = useState(0);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   // Search-specific pagination (load-more pattern, not URL-based)
   const [searchPage, setSearchPage] = useState(0);
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
-  // States for Category Pagination & Search
-  const [paginatedParentCategories, setPaginatedParentCategories] = useState([]);
-  const [loadingParentCategories, setLoadingParentCategories] = useState(true);
-  const [totalCatPages, setTotalCatPages] = useState(0);
+  // States for Category Search
   const [categorySearchInput, setCategorySearchInput] = useState('');
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [expandedMainIds, setExpandedMainIds] = useState([]);
 
   // Mobile sidebar open state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -52,48 +53,51 @@ const Products = () => {
     });
   };
 
-  // Fetch all categories once (for context/lookup/breadcrumbs)
+  // Fetch all categories and category mains once
   useEffect(() => {
     setLoadingCategories(true);
+    setLoadingCategoryMains(true);
+    
     categoryService.getAll()
       .then((data) => setCategories(data || []))
       .catch(() => setCategories([]))
       .finally(() => setLoadingCategories(false));
+
+    categoryMainService.getAll()
+      .then((data) => setCategoryMains(data || []))
+      .catch(() => setCategoryMains([]))
+      .finally(() => setLoadingCategoryMains(false));
   }, []);
 
   // Debounce Category Search Input
   useEffect(() => {
     const handler = setTimeout(() => {
       setCategorySearchQuery(categorySearchInput);
-      setCategoryPage(0); // Reset page to 0 when search query changes
     }, 300);
     return () => clearTimeout(handler);
   }, [categorySearchInput]);
 
-  // Fetch paginated parent categories (not dependent on selectedCategorySlug)
+  // Auto-expand CategoryMain if its slug is selected in URL
   useEffect(() => {
-    const fetchParentCats = async () => {
-      setLoadingParentCategories(true);
-      try {
-        const data = await categoryService.getPaginated({
-          page: categoryPage,
-          size: 10,
-          parentOnly: true,
-          search: categorySearchQuery.trim() || undefined
-        });
-        setPaginatedParentCategories(data?.content || []);
-        setTotalCatPages(data?.totalPages || 0);
-      } catch (err) {
-        console.error('Failed to fetch paginated parent categories:', err);
-        setPaginatedParentCategories([]);
-        setTotalCatPages(0);
-      } finally {
-        setLoadingParentCategories(false);
+    if (selectedCategoryMainSlug && categoryMains.length > 0) {
+      const selectedMain = categoryMains.find((cm) => cm.slug === selectedCategoryMainSlug);
+      if (selectedMain && !expandedMainIds.includes(selectedMain.id)) {
+        setExpandedMainIds((prev) => [...prev, selectedMain.id]);
       }
-    };
+    }
+  }, [selectedCategoryMainSlug, categoryMains]);
 
-    fetchParentCats();
-  }, [categoryPage, categorySearchQuery]);
+  // If a sub-category is selected, auto-expand its CategoryMain
+  useEffect(() => {
+    if (selectedCategorySlug && categories.length > 0 && categoryMains.length > 0) {
+      const selectedCat = categories.find((c) => c.slug === selectedCategorySlug);
+      if (selectedCat && selectedCat.categoryMainId) {
+        if (!expandedMainIds.includes(selectedCat.categoryMainId)) {
+          setExpandedMainIds((prev) => [...prev, selectedCat.categoryMainId]);
+        }
+      }
+    }
+  }, [selectedCategorySlug, categories, categoryMains]);
 
   // Sync search input with URL param + reset search pagination on new query
   useEffect(() => {
@@ -168,6 +172,7 @@ const Products = () => {
           sortBy: sortField,
           sortDir,
           ...(selectedCategorySlug && { categorySlug: selectedCategorySlug }),
+          ...(selectedCategoryMainSlug && { categoryMainSlug: selectedCategoryMainSlug }),
         };
 
         const data = await productService.getAll(params);
@@ -186,7 +191,7 @@ const Products = () => {
     };
 
     fetchBrowse();
-  }, [selectedCategorySlug, searchQueryParam, sortBy, productPage]);
+  }, [selectedCategorySlug, selectedCategoryMainSlug, searchQueryParam, sortBy, productPage]);
 
   // Filter Categories Helper
   const currentCategory = useMemo(() => {
@@ -194,15 +199,19 @@ const Products = () => {
     return categories.find((c) => c.slug === selectedCategorySlug);
   }, [selectedCategorySlug, categories]);
 
-  const activeParentId = useMemo(() => {
-    if (!selectedCategorySlug || categories.length === 0) return null;
-    const current = categories.find((c) => c.slug === selectedCategorySlug);
-    if (!current) return null;
-    return current.parentId === null ? current.id : current.parentId;
-  }, [selectedCategorySlug, categories]);
-
-  const getChildrenForParent = (parentId) => {
-    return categories.filter((c) => c.parentId === parentId);
+  const handleSelectCategoryMain = (slug) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (slug) {
+        next.set('categoryMain', slug);
+        next.delete('category');
+      } else {
+        next.delete('categoryMain');
+      }
+      next.set('page', '1');
+      return next;
+    });
+    setIsMobileSidebarOpen(false);
   };
 
   const handleSelectCategory = (slug) => {
@@ -210,6 +219,7 @@ const Products = () => {
       const next = new URLSearchParams(prev);
       if (slug) {
         next.set('category', slug);
+        next.delete('categoryMain');
       } else {
         next.delete('category');
       }
@@ -233,6 +243,28 @@ const Products = () => {
     });
   };
 
+  const toggleExpandMain = (mainId) => {
+    setExpandedMainIds((prev) =>
+      prev.includes(mainId) ? prev.filter((id) => id !== mainId) : [...prev, mainId]
+    );
+  };
+
+  const getCategoriesForMain = (mainId) => {
+    return categories.filter((c) => c.categoryMainId === mainId);
+  };
+
+  const filteredCategoryMains = useMemo(() => {
+    if (!categorySearchQuery.trim()) return categoryMains;
+    const query = categorySearchQuery.toLowerCase();
+    return categoryMains.filter((main) => {
+      const matchMain = main.name.toLowerCase().includes(query) || (main.slug || '').toLowerCase().includes(query);
+      const hasMatchingChild = categories.some(
+        (c) => c.categoryMainId === main.id && (c.name.toLowerCase().includes(query) || (c.slug || '').toLowerCase().includes(query))
+      );
+      return matchMain || hasMatchingChild;
+    });
+  }, [categoryMains, categories, categorySearchQuery]);
+
   // Only show skeleton on first page of search (not when appending more)
   const showSkeleton = loadingProducts && (searchQueryParam.trim() ? searchPage === 0 : true);
 
@@ -255,15 +287,24 @@ const Products = () => {
           onChange={(e) => setCategorySearchInput(e.target.value)}
           className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 focus:bg-white focus:border-emerald-450 focus:ring-2 focus:ring-emerald-100 rounded-xl text-xs outline-none transition-all font-semibold placeholder-gray-400 text-gray-750"
         />
-        <Search size={13} className="absolute right-3 text-gray-400" />
+        <Search size={13} className="absolute right-3 text-gray-450" />
       </div>
 
-      {/* Parent categories list */}
+      {/* Category mains list */}
       <div className="flex flex-col gap-1">
         <button
-          onClick={() => handleSelectCategory(null)}
+          onClick={() => {
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete('category');
+              next.delete('categoryMain');
+              next.set('page', '1');
+              return next;
+            });
+            setIsMobileSidebarOpen(false);
+          }}
           className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left transition-all cursor-pointer text-sm ${
-            !selectedCategorySlug
+            !selectedCategorySlug && !selectedCategoryMainSlug
               ? 'bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/10'
               : 'text-gray-700 hover:bg-gray-50 font-semibold hover:text-emerald-600'
           }`}
@@ -272,56 +313,66 @@ const Products = () => {
           <span className="truncate">Tất cả sản phẩm</span>
         </button>
 
-        {loadingParentCategories ? (
+        {loadingCategoryMains || loadingCategories ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-9 bg-gray-100 animate-pulse rounded-xl" />
           ))
-        ) : paginatedParentCategories.length === 0 ? (
-          <p className="text-xs text-gray-400 font-medium text-center py-4">Không tìm thấy danh mục.</p>
+        ) : filteredCategoryMains.length === 0 ? (
+          <p className="text-xs text-gray-400 font-medium text-center py-4">Không tìm thấy danh mục chính.</p>
         ) : (
-          paginatedParentCategories.map((cat) => {
-            const isExpanded = cat.id === activeParentId;
-            const isSelected = cat.slug === selectedCategorySlug;
-            const children = getChildrenForParent(cat.id);
+          filteredCategoryMains.map((main) => {
+            const isExpanded = expandedMainIds.includes(main.id);
+            const isSelected = main.slug === selectedCategoryMainSlug;
+            const subCats = getCategoriesForMain(main.id);
 
             return (
-              <div key={cat.id} className="flex flex-col">
-                <button
-                  onClick={() => handleSelectCategory(cat.slug)}
-                  className={`flex items-center justify-between w-full px-3 py-2 rounded-xl text-left transition-all group cursor-pointer text-sm ${
-                    isSelected
-                      ? 'bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/10'
-                      : isExpanded
-                      ? 'bg-emerald-50/80 text-emerald-800 font-bold border border-emerald-100/50'
-                      : 'text-gray-750 hover:bg-gray-50 font-semibold hover:text-emerald-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
+              <div key={main.id} className="flex flex-col">
+                <div className="flex items-center justify-between w-full rounded-xl transition-all hover:bg-gray-50 group">
+                  <button
+                    onClick={() => handleSelectCategoryMain(main.slug)}
+                    className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all group cursor-pointer text-sm ${
+                      isSelected
+                        ? 'bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/10'
+                        : isExpanded
+                        ? 'bg-emerald-50/80 text-emerald-800 font-bold border border-emerald-100/50'
+                        : 'text-gray-750 font-semibold hover:text-emerald-600'
+                    }`}
+                  >
                     <div className="w-6 h-6 rounded-lg overflow-hidden bg-gray-55 flex-shrink-0 flex items-center justify-center text-xs font-semibold">
-                      {cat.imageUrl ? (
-                        <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                      {main.imageUrl ? (
+                        <img src={main.imageUrl} alt={main.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{cat.icon || '📦'}</span>
+                        <span>📦</span>
                       )}
                     </div>
                     <span className="truncate">
-                      {cat.name}
+                      {main.name}
                     </span>
-                  </div>
-                  {children.length > 0 && (
-                    <ChevronRight
-                      size={13}
-                      className={`flex-shrink-0 transition-transform ${
-                        isExpanded ? 'rotate-90 text-emerald-600' : 'text-gray-400 group-hover:text-emerald-600'
-                      } ${isSelected ? 'text-white' : ''}`}
-                    />
+                  </button>
+                  {subCats.length > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpandMain(main.id);
+                      }}
+                      className={`p-2 rounded-xl hover:bg-gray-200/55 transition-colors ${
+                        isSelected ? 'text-white' : 'text-gray-400 group-hover:text-emerald-600'
+                      }`}
+                    >
+                      <ChevronRight
+                        size={13}
+                        className={`transition-transform ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </button>
                   )}
-                </button>
+                </div>
 
                 {/* Subcategories (accordion-style) */}
-                {isExpanded && children.length > 0 && (
+                {isExpanded && subCats.length > 0 && (
                   <div className="pl-6 pr-2 py-1 mt-1 mb-1 border-l-2 border-emerald-100 flex flex-col gap-0.5">
-                    {children.map((child) => {
+                    {subCats.map((child) => {
                       const isChildSelected = child.slug === selectedCategorySlug;
                       return (
                         <button
@@ -344,29 +395,6 @@ const Products = () => {
           })
         )}
       </div>
-
-      {/* Category Pagination */}
-      {totalCatPages > 1 && (
-        <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-100 mt-1">
-          <button
-            disabled={categoryPage === 0}
-            onClick={() => setCategoryPage((p) => Math.max(0, p - 1))}
-            className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors cursor-pointer flex items-center justify-center"
-          >
-            <ChevronLeft size={13} className="text-gray-650" />
-          </button>
-          <span className="text-[10px] text-gray-500 font-bold">
-            Trang {categoryPage + 1} / {totalCatPages}
-          </span>
-          <button
-            disabled={categoryPage >= totalCatPages - 1}
-            onClick={() => setCategoryPage((p) => Math.min(totalCatPages - 1, p + 1))}
-            className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors cursor-pointer flex items-center justify-center"
-          >
-            <ChevronRight size={13} className="text-gray-650" />
-          </button>
-        </div>
-      )}
     </div>
   );
 
@@ -375,7 +403,7 @@ const Products = () => {
       
       {/* ── BREADCRUMB (Edge-to-edge) ── */}
       <div className="w-full bg-white border-b border-gray-100 shadow-sm py-4 mb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 flex items-center justify-between">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-500 font-medium">
             <Link to="/" className="hover:text-emerald-600 transition-colors flex items-center gap-1">
               <Home size={15} /> Trang chủ
@@ -404,7 +432,7 @@ const Products = () => {
       </div>
 
       {/* ── MAIN CONTENT CONTAINER ── */}
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-16 flex-grow">
+      <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 pb-16 flex-grow">
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* LEFT SIDEBAR (Desktop only) */}
@@ -447,6 +475,8 @@ const Products = () => {
                 <h2 className="text-lg font-black text-gray-900">
                   {searchQueryParam.trim()
                     ? `Kết quả tìm kiếm: "${searchQueryParam.trim()}"`
+                    : selectedCategoryMainSlug
+                    ? (categoryMains.find(cm => cm.slug === selectedCategoryMainSlug)?.name || 'Danh mục chính')
                     : currentCategory ? currentCategory.name : 'Tất cả sản phẩm'}
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5 font-semibold">
@@ -500,8 +530,8 @@ const Products = () => {
 
             {/* Products Grid */}
             {showSkeleton ? (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8">
-                {Array.from({ length: 6 }).map((_, i) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6 mb-8">
+                {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="aspect-[3/4] bg-white border border-gray-100 rounded-2xl animate-pulse p-3 flex flex-col justify-end gap-2.5">
                     <div className="h-3 bg-gray-200 rounded w-2/3" />
                     <div className="h-3 bg-gray-200 rounded w-1/2" />
@@ -514,7 +544,7 @@ const Products = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6 mb-8">
                   {products.map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
