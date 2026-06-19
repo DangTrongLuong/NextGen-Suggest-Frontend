@@ -27,9 +27,20 @@ import CustomerManagement from '../pages/admin/CustomerManagement';
 import CategoryManagement from '../pages/admin/CategoryManagement';
 import AddCategory from '../pages/admin/AddCategory';
 import EditCategory from '../pages/admin/EditCategory';
+import CategoryMainManagement from '../pages/admin/CategoryMainManagement';
+import AddCategoryMain from '../pages/admin/AddCategoryMain';
+import EditCategoryMain from '../pages/admin/EditCategoryMain';
 import Settings from '../pages/admin/Settings';
 import ImportHistory from '../pages/admin/ImportHistory';
 import ProtectedRoute from '../components/common/ProtectedRoute';
+
+// Analytics Portal Layouts & Pages
+import AnalyticsLayout from '../analytics-portal/layouts/AnalyticsLayout';
+import AnalyticsLogin from '../analytics-portal/pages/Login';
+import AnalyticsDashboard from '../analytics-portal/pages/Dashboard';
+import SearchHistory from '../analytics-portal/pages/SearchHistory';
+import TopProducts from '../analytics-portal/pages/TopProducts';
+import SystemHealth from '../analytics-portal/pages/SystemHealth';
 
 const AppRoutes = () => {
   return (
@@ -61,10 +72,22 @@ const AppRoutes = () => {
         <Route path="categories" element={<CategoryManagement />} />
         <Route path="categories/add" element={<AddCategory />} />
         <Route path="categories/edit/:id" element={<EditCategory />} />
+        <Route path="category-mains" element={<CategoryMainManagement />} />
+        <Route path="category-mains/add" element={<AddCategoryMain />} />
+        <Route path="category-mains/edit/:id" element={<EditCategoryMain />} />
         <Route path="orders" element={<OrderManagement />} />
         <Route path="customers" element={<CustomerManagement />} />
         <Route path="import-history" element={<ImportHistory />} />
         <Route path="settings" element={<Settings />} />
+      </Route>
+
+      {/* Analytics Portal Routes */}
+      <Route path="/analytics-portal/login" element={<AnalyticsLogin />} />
+      <Route path="/analytics-portal" element={<AnalyticsLayout />}>
+        <Route index element={<AnalyticsDashboard />} />
+        <Route path="history" element={<SearchHistory />} />
+        <Route path="top-products" element={<TopProducts />} />
+        <Route path="health" element={<SystemHealth />} />
       </Route>
 
       {/* Fallback */}

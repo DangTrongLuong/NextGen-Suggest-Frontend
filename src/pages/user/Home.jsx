@@ -35,7 +35,7 @@ const Home = () => {
   const [locationBasedRecs, setLocationBasedRecs] = useState([]);
 
   // Sub-states
-  const [categories, setCategories] = useState([]);
+  const [categoryMains, setCategoryMains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiSearchQuery, setAiSearchQuery] = useState('');
   const [popularSearches, setPopularSearches] = useState(['Ghế xoay', 'Bàn làm việc', 'Kệ tivi']);
@@ -115,10 +115,10 @@ const Home = () => {
     setNewArrivals([]);
     setLocationBasedRecs([]);
 
-    // Fetch categories
-    api.get('/categories')
-      .then((res) => setCategories(res.data.data || []))
-      .catch(() => setCategories([]));
+    // Fetch category mains
+    api.get('/category-mains')
+      .then((res) => setCategoryMains(res.data.data || []))
+      .catch(() => setCategoryMains([]));
 
     // Fetch popular searches from backend
     productService.getPopularSearches(5)
@@ -205,8 +205,7 @@ const Home = () => {
     return unique.slice(0, 4);
   }, [normBest]);
 
-  const mainCats = categories.filter((c) => c.parentId === null);
-  const displayedCats = mainCats.slice(0, 10);
+  const displayedCats = categoryMains.slice(0, 10);
 
   // Search submit handler
   const handleSearchSubmit = (e) => {
@@ -295,13 +294,13 @@ const Home = () => {
                 <div key={i} className="aspect-square rounded bg-gray-100 animate-pulse" />
               ))}
             </div>
-          ) : mainCats.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu danh mục</p>
+          ) : categoryMains.length === 0 ? (
+            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu danh mục chính</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {displayedCats.map((cat, i) => (
                 <motion.div key={cat.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <Link to={`/products?category=${cat.slug}`}
+                  <Link to={`/products?categoryMain=${cat.slug}`}
                     className="group block relative rounded overflow-hidden aspect-square border border-gray-200/60 bg-white transition-all duration-300 hover:border-gray-900">
                     {cat.imageUrl ? (
                       <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
