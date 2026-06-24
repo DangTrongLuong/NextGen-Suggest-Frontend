@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 
 // Layouts
 import UserLayout from '../layouts/UserLayout';
@@ -42,6 +42,15 @@ import SearchHistory from '../analytics-portal/pages/SearchHistory';
 import TopProducts from '../analytics-portal/pages/TopProducts';
 import SystemHealth from '../analytics-portal/pages/SystemHealth';
 
+const ProductsRouteHandler = () => {
+  const { categoryMainSlug } = useParams();
+  const isNumeric = /^\d+$/.test(categoryMainSlug);
+  if (isNumeric) {
+    return <ProductDetail idOverride={categoryMainSlug} />;
+  }
+  return <Products />;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -49,7 +58,11 @@ const AppRoutes = () => {
       <Route element={<UserLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
+        {/* Handles both product detail and category main browse */}
+        <Route path="/products/:categoryMainSlug" element={<ProductsRouteHandler />} />
+        <Route path="/products/:categoryMainSlug/:categorySlug" element={<Products />} />
+        <Route path="/products/:categoryMainSlug/:parentSlug/:childSlug" element={<Products />} />
+        <Route path="/products/:categoryMainSlug/:parentSlug/:childSlug/:leafSlug" element={<Products />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
         <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
