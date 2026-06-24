@@ -190,8 +190,9 @@ const Gallery = ({ images, activeUrl, onSelect }) => {
 };
 
 // ─── Main component ──────────────────────────────────────────────────────────
-const ProductDetail = () => {
-  const { id } = useParams();
+const ProductDetail = ({ idOverride }) => {
+  const { id: paramId } = useParams();
+  const id = idOverride || paramId;
   const navigate = useNavigate();
   const { trackProductView, trackAddToCart, trackWishlist } = useBehaviorTracker();
 

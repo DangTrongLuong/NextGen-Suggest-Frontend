@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header';
+import CategoryNavBar from '../components/layout/CategoryNavBar';
 import Footer from '../components/layout/Footer';
 import ChatAssistant from '../components/layout/ChatAssistant';
 import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
@@ -12,11 +13,12 @@ const UserLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 pt-16">
+      <CategoryNavBar />
+      <main className="flex-1 pt-28">
         <motion.div
           key={location.pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
         >
           <Outlet />

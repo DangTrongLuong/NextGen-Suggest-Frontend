@@ -125,8 +125,8 @@ const Header = () => {
         className={clsx(
           'fixed top-0 left-0 right-0 z-40 transition-all duration-500',
           scrolled
-            ? 'glass-nav shadow-sm border-b border-white/60'
-            : 'bg-white/95'
+            ? 'bg-white shadow-sm border-b border-gray-100'
+            : 'bg-white'
         )}
       >
         <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
