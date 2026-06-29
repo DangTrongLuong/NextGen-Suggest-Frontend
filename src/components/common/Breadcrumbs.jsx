@@ -11,7 +11,7 @@ const Breadcrumbs = ({ items = [] }) => {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center flex-wrap gap-1.5 py-3 px-4 bg-white/60 backdrop-blur-sm border border-gray-150/50 rounded-2xl text-xs font-semibold text-gray-500 shadow-sm"
+      className="flex items-center flex-wrap gap-1.5 text-sm font-bold text-gray-500"
     >
       <Link
         to="/"
@@ -27,7 +27,7 @@ const Breadcrumbs = ({ items = [] }) => {
         to="/products"
         className="hover:text-emerald-600 transition-colors duration-200"
       >
-        Danh mục
+        Sản phẩm
       </Link>
 
       {items.map((item, index) => {
