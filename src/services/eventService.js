@@ -32,4 +32,7 @@ export const eventService = {
       console.error('Error tracking behavior event:', error);
     }
   },
+  trackEvent: async ({ eventType, productId = null, queryText = null }) => {
+    return eventService.track(eventType, productId, queryText);
+  },
 };

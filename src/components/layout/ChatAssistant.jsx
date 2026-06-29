@@ -4,16 +4,18 @@ import { Link } from 'react-router-dom';
 import { chatbotService } from '../../services/chatbotService';
 import { eventService } from '../../services/eventService';
 import { formatPrice } from '../../utils/formatPrice';
+import { MessageSquare, Sparkles, Send, X, Bot, Trash2 } from 'lucide-react';
+
+const INITIAL_GREETING = {
+  role: 'assistant',
+  content: 'Xin chào! Tôi là trợ lý mua sắm của Nivora. Tôi có thể giúp gì cho bạn hôm nay? Bạn có thể yêu cầu tôi tìm kiếm sản phẩm, tư vấn kích thước hoặc so sánh các sản phẩm nhé!',
+  suggestedProducts: [],
+  isGreeting: true
+};
 
 const ChatAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: 'Xin chào! Tôi là trợ lý mua sắm của Nivora. Tôi có thể giúp gì cho bạn hôm nay? Bạn có thể yêu cầu tôi tìm kiếm sản phẩm, tư vấn kích thước hoặc so sánh các sản phẩm nhé!',
-      suggestedProducts: []
-    }
-  ]);
+  const [messages, setMessages] = useState([INITIAL_GREETING]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -61,11 +63,14 @@ const ChatAssistant = () => {
     }).catch(() => {});
 
     try {
-      // Build conversation history (sending max 10 messages)
-      const chatHistory = [...messages, newUserMessage].map(m => ({
-        role: m.role,
-        content: m.content
-      })).slice(-10);
+      // Build conversation history:
+      // - Exclude the initial greeting (isGreeting flag) — it wastes a context slot
+      // - Keep up to the last 12 real messages (6 full user↔AI turns = 6 conversations)
+      const allMsgs = [...messages, newUserMessage];
+      const chatHistory = allMsgs
+        .filter(m => !m.isGreeting)
+        .map(m => ({ role: m.role, content: m.content }))
+        .slice(-12);
 
       const response = await chatbotService.sendChatMessage(chatHistory);
 
@@ -196,7 +201,7 @@ const ChatAssistant = () => {
         .map(c => c.trim());
     });
 
-    let tableHtml = '<div class="overflow-x-auto my-3 rounded-lg border border-gray-700/60"><table class="min-w-full text-xs text-left text-gray-300">';
+    let tableHtml = '<div class="overflow-x-auto custom-scrollbar my-3 rounded-lg border border-gray-700/60"><table class="min-w-full text-xs text-left text-gray-300">';
     tableHtml += '<thead class="bg-gray-800/80 text-white font-bold uppercase border-b border-gray-700/60"><tr>';
     headers.forEach(h => {
       tableHtml += `<th class="px-3 py-2">${h}</th>`;
@@ -216,22 +221,37 @@ const ChatAssistant = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
+      {/* Floating AI Tooltip Label */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="absolute right-16 top-1/2 -translate-y-1/2 mr-2 bg-slate-900 border border-slate-800 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap hidden sm:flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            Trợ Lý AI tư vấn
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Glowing background ring */}
+      <span className="absolute -inset-1 rounded-full bg-emerald-500/30 blur-sm animate-pulse pointer-events-none"></span>
+
       {/* Chat Bubble Toggle Button */}
       <motion.button
         onClick={toggleChat}
-        className="w-14 h-14 rounded-full flex items-center justify-center text-white bg-gradient-to-tr from-gray-850 to-gray-700 border border-gray-600 shadow-lg hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-none"
+        className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-gradient-to-tr from-emerald-600 to-teal-500 border border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200 focus:outline-none"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-6 h-6" strokeWidth={2.5} />
         ) : (
           <div className="relative">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
+            <MessageSquare className="w-6 h-6" strokeWidth={2} />
+            <Sparkles className="w-3.5 h-3.5 text-yellow-300 absolute -top-1.5 -right-1.5 animate-bounce" />
           </div>
         )}
       </motion.button>
@@ -244,30 +264,40 @@ const ChatAssistant = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute bottom-18 right-0 w-[380px] max-w-[calc(100vw-2rem)] h-[540px] rounded-xl flex flex-col overflow-hidden bg-gray-900 border border-gray-800 shadow-2xl z-50 text-white"
+            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full h-full sm:w-[380px] sm:h-[580px] rounded-none sm:rounded-xl flex flex-col overflow-hidden bg-gray-900 border-none sm:border sm:border-gray-800 shadow-2xl z-50 text-white"
           >
             {/* Header */}
-            <div className="px-4 py-3.5 bg-gray-950 border-b border-gray-800 flex items-center justify-between">
+            <div className="px-4 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 border-b border-emerald-500/20 flex items-center justify-between shadow-md">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center relative">
-                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-gray-950"></span>
+                <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center relative">
+                  <Bot className="w-5 h-5 text-white" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-emerald-600"></span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xs sm:text-sm tracking-wide text-gray-100">Hỗ trợ khách hàng</h3>
-                  <p className="text-[10px] text-gray-400 font-medium">Trực tuyến hỗ trợ tư vấn mua sắm</p>
+                  <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white flex items-center gap-1.5">
+                    Trợ Lý Mua Sắm AI
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />
+                  </h3>
+                  <p className="text-[10px] text-emerald-100 font-medium opacity-90">Tự động trả lời 24/7</p>
                 </div>
               </div>
-              <button
-                onClick={toggleChat}
-                className="text-gray-400 hover:text-white hover:bg-gray-800 p-1 rounded-lg transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-1">
+                {messages.length > 1 && (
+                  <button
+                    onClick={() => setMessages([INITIAL_GREETING])}
+                    title="Xoá lịch sử trò chuyện"
+                    className="text-white/60 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={toggleChat}
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Message Area */}
@@ -279,32 +309,30 @@ const ChatAssistant = () => {
                 >
                   <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     {msg.role !== 'user' && (
-                      <div className="w-6 h-6 rounded-full bg-gray-800 border border-gray-750 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
+                      <div className="w-7 h-7 rounded-full bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-4 h-4 text-emerald-400" />
                       </div>
                     )}
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div
-                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm leading-relaxed border ${
+                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm leading-relaxed border max-w-full overflow-x-auto ${
                           msg.role === 'user'
-                            ? 'bg-gray-800 border-gray-700 text-white rounded-tr-none'
-                            : 'bg-gray-850 border-gray-800 text-gray-200 rounded-tl-none'
+                            ? 'bg-emerald-600 border-none text-white rounded-tr-none shadow-md'
+                            : 'bg-slate-800/90 border border-slate-700/50 text-gray-100 rounded-tl-none shadow-sm'
                         }`}
                         dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }}
                       />
                       
                       {/* Suggested Products List */}
                       {msg.suggestedProducts && msg.suggestedProducts.length > 0 && (
-                        <div className="mt-3 overflow-x-auto scrollbar-hide py-1">
-                          <div className="flex gap-2.5 w-max">
+                        <div className="mt-3 py-1">
+                          <div className="grid grid-cols-2 gap-2.5">
                             {msg.suggestedProducts.map((prod) => (
                               <div
                                 key={prod.id || prod.product_id}
-                                className="w-38 rounded-lg overflow-hidden bg-gray-850 border border-gray-800 flex flex-col group transition-colors"
+                                className="w-full rounded-lg overflow-hidden bg-slate-800 border border-slate-700/60 flex flex-col group transition-colors shadow-sm"
                               >
-                                <div className="h-24 overflow-hidden bg-gray-900">
+                                <div className="h-24 overflow-hidden bg-slate-900">
                                   <img
                                     src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
                                     alt={prod.name || prod.title}
@@ -313,7 +341,7 @@ const ChatAssistant = () => {
                                 </div>
                                 <div className="p-2.5 flex-1 flex flex-col justify-between">
                                   <div>
-                                    <h4 className="text-[11px] font-normal text-gray-250 line-clamp-2 min-h-[30px] leading-snug">
+                                    <h4 className="text-[11px] font-normal text-gray-200 line-clamp-2 min-h-[30px] leading-snug">
                                       {prod.name || prod.title}
                                     </h4>
                                     {(prod.recommendationReason || prod.reason) && (
@@ -324,12 +352,12 @@ const ChatAssistant = () => {
                                     )}
                                   </div>
                                   <div className="mt-2.5">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <p className="text-[11px] font-bold text-gray-100">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                      <p className="text-[11px] font-bold text-white">
                                         {formatPrice(prod.price || prod.basePrice || 0)}
                                       </p>
                                       {(prod.recommendationScore || prod.score) > 0 && (
-                                        <span className="text-[8px] bg-emerald-950/50 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded font-mono font-bold">
+                                        <span className="text-[8px] bg-emerald-950/50 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded font-mono font-bold w-max">
                                           {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
                                         </span>
                                       )}
@@ -337,7 +365,7 @@ const ChatAssistant = () => {
                                     <Link
                                       to={`/products/${prod.id || prod.product_id}`}
                                       onClick={() => toggleChat()}
-                                      className="block text-center mt-2 py-1 text-[10px] font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded transition-all"
+                                      className="block text-center mt-2 py-1 text-[10px] font-medium text-gray-200 hover:text-white bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded transition-all"
                                     >
                                       Xem chi tiết
                                     </Link>
@@ -352,37 +380,35 @@ const ChatAssistant = () => {
                   </div>
                 </div>
               ))}
-
+ 
               {/* Typing Indicator */}
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex gap-2.5 max-w-[85%]">
-                    <div className="w-6 h-6 rounded-full bg-gray-800 border border-gray-750 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
+                    <div className="w-7 h-7 rounded-full bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-4 h-4 text-emerald-400" />
                     </div>
-                    <div className="px-3 py-2 bg-gray-850 border border-gray-800 rounded-xl rounded-tl-none flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <div className="px-3.5 py-2.5 bg-slate-800/90 border border-slate-700/50 rounded-xl rounded-tl-none flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                     </div>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
-
+ 
             {/* Quick Prompts Area */}
             {messages.length === 1 && !isLoading && (
               <div className="px-4 pb-2">
-                <p className="text-[10px] text-gray-500 mb-1.5 font-medium">Tìm kiếm nhanh:</p>
+                <p className="text-[10px] text-gray-400 mb-1.5 font-medium">Gợi ý câu hỏi:</p>
                 <div className="flex flex-col gap-1.5">
                   {quickPrompts.map((p, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSendMessage(p.text)}
-                      className="text-left px-3 py-1.5 text-xs rounded bg-gray-850 hover:bg-gray-800 border border-gray-800 text-gray-300 hover:text-white transition-all focus:outline-none"
+                      className="text-left px-3 py-1.5 text-xs rounded bg-slate-850 hover:bg-slate-800 border border-slate-700/60 text-gray-300 hover:text-white transition-all focus:outline-none cursor-pointer"
                     >
                       {p.text}
                     </button>
@@ -390,9 +416,9 @@ const ChatAssistant = () => {
                 </div>
               </div>
             )}
-
+ 
             {/* Chat Input Footer */}
-            <div className="p-3 bg-gray-950 border-t border-gray-800 flex gap-2 items-center">
+            <div className="p-3 bg-slate-950 border-t border-slate-850 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputMessage}
@@ -400,16 +426,14 @@ const ChatAssistant = () => {
                 onKeyDown={handleKeyPress}
                 placeholder="Hỏi về sản phẩm, giá bán, so sánh..."
                 disabled={isLoading}
-                className="flex-1 bg-gray-850 text-xs sm:text-sm rounded-lg px-3 py-2 border border-gray-800 text-gray-250 focus:outline-none focus:border-gray-700 disabled:opacity-50 transition-colors"
+                className="flex-1 bg-slate-800/80 text-xs sm:text-sm rounded-lg px-3 py-2 border border-slate-700 text-gray-200 focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
-                className="w-8 h-8 rounded-lg bg-gray-850 hover:bg-gray-800 border border-gray-750 text-white flex items-center justify-center disabled:opacity-40 transition-colors"
+                className="w-9 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center disabled:opacity-40 transition-colors shadow-md focus:outline-none active:scale-95 cursor-pointer"
               >
-                <svg className="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </motion.div>
