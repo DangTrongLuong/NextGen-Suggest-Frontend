@@ -108,13 +108,7 @@ const CategoryNavBar = () => {
   return (
     <div
       ref={navBarRef}
-      className={clsx(
-        'w-full z-30 transition-all duration-300',
-        'fixed top-16 lg:top-[68px] left-0 right-0',
-        scrolled 
-          ? 'bg-emerald-900 shadow-md border-b border-emerald-800' 
-          : 'bg-emerald-900 border-b border-emerald-850'
-      )}
+      className="w-full z-30 fixed top-16 lg:top-[68px] left-0 right-0 bg-white border-b border-gray-100"
     >
       {/* ── DESKTOP & TABLET NAVBAR ── */}
       <div className="hidden md:block max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
@@ -144,10 +138,10 @@ const CategoryNavBar = () => {
                     onKeyDown={(e) => handleMainKeyDown(e, index, main)}
                     onClick={() => navigate(`/products/${main.slug}`)}
                     className={clsx(
-                      'px-4 py-2 text-xs font-black tracking-wider uppercase rounded-xl transition-all duration-200 cursor-pointer outline-none focus:bg-emerald-850',
+                      'px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-xl transition-all duration-200 cursor-pointer outline-none',
                       isOpened
-                        ? 'text-white bg-emerald-800 shadow-inner'
-                        : 'text-emerald-100 hover:text-white hover:bg-emerald-800/40'
+                        ? 'text-emerald-600 bg-emerald-50/60 shadow-inner'
+                        : 'text-gray-650 hover:text-gray-900 hover:bg-gray-100/50'
                     )}
                   >
                     {main.name}
@@ -160,27 +154,27 @@ const CategoryNavBar = () => {
           {/* Quick link for All Categories */}
           <Link
             to="/products"
-            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-emerald-200 hover:text-white transition-colors"
+            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-gray-600 hover:text-emerald-600 transition-colors group"
           >
-            <Grid size={13} className="text-emerald-300" />
+            <Grid size={13} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
             <span>Tất cả danh mục</span>
           </Link>
         </nav>
       </div>
 
       {/* ── MOBILE NAVBAR TRIGGER ── */}
-      <div className="md:hidden w-full h-11 px-4 flex items-center justify-between border-t border-emerald-800/35">
+      <div className="md:hidden w-full h-11 px-4 flex items-center justify-between bg-white">
         <button
           onClick={() => setMobileDrawerOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black uppercase text-white bg-emerald-800 hover:bg-emerald-750 active:scale-95 transition-all outline-none"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase text-emerald-650 bg-emerald-50/60 hover:bg-emerald-100/60 active:scale-95 transition-all outline-none"
         >
-          <Menu size={14} className="text-emerald-200" />
+          <Menu size={14} className="text-emerald-500" />
           <span>Danh mục sản phẩm</span>
         </button>
 
         <Link
           to="/products"
-          className="text-xs font-bold text-emerald-200 hover:text-white transition-colors"
+          className="text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors"
         >
           Tất cả sản phẩm
         </Link>
@@ -227,13 +221,13 @@ const CategoryNavBar = () => {
               className="md:hidden fixed top-0 left-0 bottom-0 w-[290px] max-w-[85%] bg-white z-50 shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
-              <div className="p-4 border-b border-emerald-950/20 flex items-center justify-between bg-emerald-900 text-white">
-                <span className="text-sm font-black tracking-wide uppercase">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white text-gray-900">
+                <span className="text-sm font-bold tracking-wide uppercase text-gray-800">
                   Danh mục sản phẩm
                 </span>
                 <button
                   onClick={() => setMobileDrawerOpen(false)}
-                  className="p-1.5 rounded-lg text-emerald-200 hover:text-white hover:bg-emerald-800 transition-colors"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -248,7 +242,7 @@ const CategoryNavBar = () => {
                     const hasSub = rootCats.length > 0;
 
                     return (
-                      <div key={main.id} className="border-b border-gray-55/60 last:border-0">
+                      <div key={main.id} className="border-b border-gray-200 last:border-0">
                         {/* CategoryMain Row */}
                         <button
                           onClick={() => {
@@ -317,7 +311,7 @@ const CategoryNavBar = () => {
                                     {/* Level 1 Row */}
                                     <button
                                       onClick={() => {
-                                        if (hasLevel2) {
+                                        if (hasSub) {
                                           setExpandedLevel1Id(isLevel1Expanded ? null : level1Cat.id);
                                         } else {
                                           navigate(`/products/${main.slug}/${level1Cat.slug}`);

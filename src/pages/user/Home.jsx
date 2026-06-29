@@ -1,28 +1,26 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { recommendationService } from '../../services/recommendationService';
-import { productService } from '../../services/productService';
 import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 import RecommendationSection from '../../components/product/RecommendationSection';
+import ProductCard from '../../components/product/ProductCard';
+import { productService } from '../../services/productService';
+import heroBannerImg from '../../assets/hero-banner.png';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 // ─── Animations ──────────────────────────────────────────────────────────────
-const fadeUp = {
-  hidden: { opacity: 0, y: 15 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' },
-  }),
-};
 
 const Home = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { trackSearch } = useBehaviorTracker();
+
+  // Search parameters and states
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Recommendations State
   const [personal, setPersonal] = useState([]);
@@ -37,8 +35,6 @@ const Home = () => {
   // Sub-states
   const [categoryMains, setCategoryMains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [aiSearchQuery, setAiSearchQuery] = useState('');
-  const [popularSearches, setPopularSearches] = useState(['Ghế xoay', 'Bàn làm việc', 'Kệ tivi']);
   
   // Tab index for Personal Suggestions
   const [activeRecTab, setActiveRecTab] = useState(0); // 0: Dành riêng cho bạn, 1: Có thể bạn thích
@@ -59,53 +55,8 @@ const Home = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Typewriter placeholder effect
-  const placeholderPhrases = useMemo(() => [
-    'Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ...',
-    'Tìm kiếm áo thun, quần jean, áo khoác, váy đầm, thời trang nam nữ...',
-    'Tìm kiếm giày thể thao, giày tây, túi xách thời thượng, ví da...',
-    'Tìm kiếm thảm trải sàn, đèn ngủ thông minh, đồ trang trí tinh tế cho ngôi nhà bạn...'
-  ], []);
-
-  const [placeholder, setPlaceholder] = useState('');
-
-  useEffect(() => {
-    let phraseIdx = 0;
-    let charIdx = 0;
-    let isDeleting = false;
-    let timer;
-
-    const tick = () => {
-      const currentPhrase = placeholderPhrases[phraseIdx];
-      if (!isDeleting) {
-        setPlaceholder(currentPhrase.substring(0, charIdx + 1));
-        charIdx++;
-        if (charIdx === currentPhrase.length) {
-          isDeleting = true;
-          timer = setTimeout(tick, 2500); // Pause on full phrase
-        } else {
-          timer = setTimeout(tick, 40); // Typing speed
-        }
-      } else {
-        setPlaceholder(currentPhrase.substring(0, charIdx - 1));
-        charIdx--;
-        if (charIdx === 0) {
-          isDeleting = false;
-          phraseIdx = (phraseIdx + 1) % placeholderPhrases.length;
-          timer = setTimeout(tick, 400); // Pause before next phrase
-        } else {
-          timer = setTimeout(tick, 20); // Deleting speed
-        }
-      }
-    };
-
-    tick();
-    return () => clearTimeout(timer);
-  }, [placeholderPhrases]);
-
   const loadAllData = () => {
     setLoading(true);
-    // Clear old states to prevent layout leakage between login/logout transitions
     setPersonal([]);
     setTrending([]);
     setRecent([]);
@@ -120,26 +71,14 @@ const Home = () => {
       .then((res) => setCategoryMains(res.data.data || []))
       .catch(() => setCategoryMains([]));
 
-    // Fetch popular searches from backend
-    productService.getPopularSearches(5)
-      .then((data) => {
-        if (data && data.length > 0) {
-          setPopularSearches(data);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load popular searches', err);
-      });
-
     // Fetch regional location-based recommendations
-    recommendationService.getLocationBasedRecommendations(20) // Get more items for client-side pagination
+    recommendationService.getLocationBasedRecommendations(20)
       .then((data) => setLocationBasedRecs(data || []))
       .catch(() => setLocationBasedRecs([]));
 
     // Fetch homepage recommendations orchestration API
     recommendationService.getHomepageRecommendations()
       .then((data) => {
-        console.log(`[Frontend Debug] currentUserId: ${user ? user.id : 'guest'}, API response:`, data);
         if (data) {
           setPersonal(data.personal || []);
           setTrending(data.trending || []);
@@ -175,6 +114,33 @@ const Home = () => {
     };
   };
 
+  // Fetch search results when query parameter changes
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setSearchLoading(true);
+    productService.searchPaginated(searchQuery.trim(), {
+      page: 0,
+      size: 20,
+      rerank: true,
+    })
+    .then((data) => {
+      const normalized = (data?.content || []).map(normalizeProduct).filter(Boolean);
+      setSearchResults(normalized);
+    })
+    .catch((err) => {
+      console.error('Failed to search homepage products:', err);
+      toast.error('Không thể tìm kiếm sản phẩm. Vui lòng thử lại.');
+      setSearchResults([]);
+    })
+    .finally(() => {
+      setSearchLoading(false);
+    });
+  }, [searchQuery]);
+
   // Memoized listings
   const normFeatured = useMemo(() => featured.map(normalizeProduct).filter(Boolean), [featured]);
   const normBest = useMemo(() => bestSellers.map(normalizeProduct).filter(Boolean), [bestSellers]);
@@ -205,302 +171,277 @@ const Home = () => {
     return unique.slice(0, 4);
   }, [normBest]);
 
-  const displayedCats = categoryMains.slice(0, 10);
-
-  // Search submit handler
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (aiSearchQuery.trim()) {
-      trackSearch(aiSearchQuery.trim());
-      navigate(`/products?search=${encodeURIComponent(aiSearchQuery.trim())}`);
-    }
-  };
-
-  const handlePopularSearchClick = (kw) => {
-    setAiSearchQuery(kw);
-    trackSearch(kw);
-    navigate(`/products?search=${encodeURIComponent(kw)}`);
-  };
-
   return (
     <div className="min-h-screen bg-white">
       
       {/* 1. Hero Banner */}
-      <section className="relative bg-slate-900 border-b border-slate-800 py-20 sm:py-28 text-white overflow-hidden">
-        {/* Subtle radial emerald gradient to inject premium color highlight */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0,transparent_100%)] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
-            <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
-              Trải nghiệm mua sắm <span className="font-semibold text-emerald-400">cá nhân hóa AI</span>
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto mb-8 font-light leading-relaxed">
-              Khám phá bộ sưu tập sản phẩm phong phú từ thời trang, đồ gia dụng đến các mẫu trang trí nội thất tinh tế.
-            </p>
- 
-            {/* Clean Search Input */}
-            <div className="max-w-xl mx-auto mb-4">
-              <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-white border border-slate-700/80 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all duration-200 rounded-lg p-1">
-                <input
-                  value={aiSearchQuery}
-                  onChange={(e) => setAiSearchQuery(e.target.value)}
-                  placeholder={placeholder || "Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ..."}
-                  className="flex-1 bg-transparent px-3 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
-                />
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded transition-all active:scale-95 flex items-center gap-1.5 shadow-md"
+      {!searchQuery && (
+        <section 
+          className="relative border-b border-gray-100 text-white overflow-hidden flex items-center h-[420px] lg:h-[520px] bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroBannerImg})` }}
+        >
+          {/* Dark overlay for readability */}
+          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
+            <div className="max-w-2xl text-left">
+              <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
+              <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
+                Không gian sống <span className="font-semibold text-emerald-400 block sm:inline">hiện đại</span>
+              </h1>
+              <p className="text-gray-200 text-xs sm:text-sm max-w-lg mb-8 font-light leading-relaxed">
+                Khám phá hàng nghìn sản phẩm nội thất và thời trang được tuyển chọn.
+              </p>
+   
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  to="/products"
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 border border-emerald-600 hover:border-emerald-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md uppercase tracking-wider text-center min-w-[130px]"
                 >
-                  <Search size={13} />
-                  <span>Tìm kiếm</span>
-                </button>
-              </form>
-              <div className="flex items-center justify-center gap-2 mt-3 text-slate-400 text-xs font-normal">
-                <span>Tìm nhiều nhất:</span>
-                {popularSearches.map((kw) => (
-                  <button 
-                    key={kw}
-                    onClick={() => handlePopularSearchClick(kw)} 
-                    className="text-slate-350 hover:text-emerald-400 underline transition-colors"
-                  >
-                    {kw}
-                  </button>
-                ))}
+                  Mua ngay
+                </Link>
+                <Link
+                  to="/products"
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md backdrop-blur-sm uppercase tracking-wider text-center min-w-[130px]"
+                >
+                  Khám phá bộ sưu tập
+                </Link>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Main sections container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
         
-        {/* 2. Danh mục nổi bật */}
-        <section className="py-8 border-b border-gray-100 pb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3 border-b border-gray-100 pb-4">
-            <div>
-              <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2 border bg-emerald-50 text-emerald-600 border-emerald-100">
-                Danh mục
-              </span>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">Khám phá danh mục</h2>
-              <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">Tìm kiếm sản phẩm dễ dàng theo từng khu vực và công năng sử dụng</p>
+        {searchQuery ? (
+          <section className="py-4 min-h-[400px]">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3 border-b border-gray-100 pb-4">
+              <div>
+                <span className="inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-2 border bg-emerald-50 text-emerald-600 border-emerald-100">
+                  Kết quả tìm kiếm
+                </span>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight uppercase">
+                  Kết quả tìm kiếm cho: "{searchQuery}"
+                </h2>
+                <p className="text-gray-400 text-xs sm:text-sm mt-1.5 font-light">
+                  Tìm thấy {searchResults.length} sản phẩm phù hợp
+                </p>
+              </div>
             </div>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded bg-gray-100 animate-pulse" />
-              ))}
-            </div>
-          ) : categoryMains.length === 0 ? (
-            <p className="text-center text-gray-400 text-xs py-10">Chưa có dữ liệu danh mục chính</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {displayedCats.map((cat, i) => (
-                <motion.div key={cat.id} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <Link to={`/products?categoryMain=${cat.slug}`}
-                    className="group block relative rounded overflow-hidden aspect-square border border-gray-200/60 bg-white transition-all duration-300 hover:border-gray-900">
-                    {cat.imageUrl ? (
-                      <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                        <span className="text-2xl">{cat.icon || '📦'}</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="text-white font-semibold text-xs sm:text-sm uppercase tracking-wide">{cat.name}</p>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* 3. Xu hướng mua sắm */}
-        <RecommendationSection
-          badge="Xu hướng"
-          badgeColor="amber"
-          title="Xu hướng mua sắm"
-          desc="Những sản phẩm nổi bật được khách hàng quan tâm nhiều nhất trong tuần"
-          products={normTrending}
-          loading={loading}
-          viewAll
-          viewAllHref="/products"
-          containerClassName="border-b border-gray-100 pb-12"
-        />
-
-        {/* 4. Sản phẩm nổi bật */}
-        <RecommendationSection
-          badge="Nổi bật"
-          badgeColor="emerald"
-          title="Sản phẩm nổi bật"
-          desc="Bộ sưu tập sản phẩm thiết kế mới ra mắt tuần này"
-          products={normNew}
-          loading={loading}
-          viewAll
-          viewAllHref="/products"
-          containerClassName="border-b border-gray-100 pb-12"
-        />
-
-        {/* 5. Bán chạy nhất */}
-        <RecommendationSection
-          badge="Bán chạy"
-          badgeColor="emerald"
-          title="Sản phẩm bán chạy nhất"
-          desc="Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất"
-          products={filteredBestSellers}
-          loading={loading}
-          containerClassName="bg-gray-50/35 rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
-          headerExtra={
-            bestSellerCats.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setActiveBestSellerCat(null)}
-                  className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
-                    activeBestSellerCat === null
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-white text-gray-650 border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  Tất cả
-                </button>
-                {bestSellerCats.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveBestSellerCat(cat.id)}
-                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
-                      activeBestSellerCat === cat.id
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : 'bg-white text-gray-650 border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
+            {searchLoading ? (
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-pulse">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="aspect-[3/4] rounded-2xl bg-gray-100 p-4 flex flex-col justify-end gap-3">
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
                 ))}
               </div>
-            )
-          }
-        />
+            ) : searchResults.length === 0 ? (
+              <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <p className="text-gray-500 text-sm font-semibold">
+                  Không tìm thấy sản phẩm nào phù hợp với "{searchQuery}".
+                </p>
+                <p className="text-gray-400 text-xs mt-1.5 font-light">
+                  Vui lòng thử tìm kiếm với từ khóa khác hoặc xóa bớt ký tự.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {searchResults.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            {/* 3. Bán chạy nhất */}
+            <RecommendationSection
+              badge="Bán chạy"
+              badgeColor="emerald"
+              title="Sản phẩm bán chạy nhất"
+              desc="Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất"
+              products={filteredBestSellers}
+              loading={loading}
+              containerClassName="border-b border-gray-100 pb-12"
+              headerExtra={
+                bestSellerCats.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setActiveBestSellerCat(null)}
+                      className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
+                        activeBestSellerCat === null
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-gray-655 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      Tất cả
+                    </button>
+                    {bestSellerCats.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setActiveBestSellerCat(cat.id)}
+                        className={`px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
+                          activeBestSellerCat === cat.id
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                            : 'bg-white text-gray-655 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                )
+              }
+            />
 
-        {/* Regional Recommendations */}
-        <RecommendationSection
-          badge="Khu vực"
-          badgeColor="emerald"
-          title="Thịnh hành theo khu vực nhận hàng"
-          desc={user ? "Sản phẩm được mua nhiều nhất xung quanh địa chỉ giao hàng của bạn" : "Sản phẩm bán chạy tại các khu vực giao nhận trên toàn quốc"}
-          products={normLocationBased}
-          loading={loading}
-          viewAll
-          viewAllHref="/products"
-          containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
-        />
+            {/* 4. Khuyến mãi (Promotions / Banners) */}
+            <section className="border-t border-b border-gray-200/65 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8 my-8">
+              <div className="grid md:grid-cols-2 gap-6 items-center">
+                <div className="bg-red-50/35 p-8 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
+                  <div>
+                    <span className="text-[10px] font-bold text-red-650 uppercase tracking-widest block mb-2">⚡ Khuyến mãi có hạn</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">SIÊU FLASH SALE MÙA HÈ</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
+                      Cơ hội sở hữu các sản phẩm thiết kế sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
+                    </p>
+                  </div>
+                  
+                  {/* Countdown */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kết thúc sau:</span>
+                    <div className="flex items-center gap-1">
+                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.hours).padStart(2, '0')}</span>
+                      <span className="text-rose-600 font-bold">:</span>
+                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.minutes).padStart(2, '0')}</span>
+                      <span className="text-rose-600 font-bold">:</span>
+                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.seconds).padStart(2, '0')}</span>
+                    </div>
+                  </div>
+                </div>
 
-        {/* 6. Gợi ý cho bạn */}
-        <RecommendationSection
-          badge="Gợi ý"
-          badgeColor="emerald"
-          title="Gợi ý dành cho bạn"
-          desc="Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn"
-          products={activeRecTab === 0 
-            ? (normPersonal.length > 0 ? normPersonal : normFeatured)
-            : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
-          }
-          loading={loading}
-          containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
-          headerExtra={
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-              {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
-                <button
-                  key={tabLabel}
-                  onClick={() => setActiveRecTab(idx)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
-                    activeRecTab === idx 
-                      ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                      : 'text-gray-500 hover:text-gray-805'
-                  }`}
-                >
-                  {tabLabel}
-                </button>
-              ))}
-            </div>
-          }
-        />
+                <div className="bg-emerald-50/35 p-8 rounded-lg border border-emerald-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest block mb-2">🌿 Thành viên độc quyền</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Đặc quyền thành viên Nivora</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
+                      Đăng ký tài khoản thành viên Nivora ngay hôm nay để nhận mã giảm giá 10% cho đơn hàng đầu tiên, chính sách tích điểm đổi quà và giao hàng ưu tiên.
+                    </p>
+                  </div>
+                  {!user ? (
+                    <Link to="/register" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-750 text-white text-xs font-semibold rounded transition-colors text-center shadow-sm">
+                      Đăng ký tài khoản miễn phí
+                    </Link>
+                  ) : (
+                    <div className="text-emerald-700 font-semibold text-xs flex items-center gap-1">
+                      ✓ Bạn đã kích hoạt tài khoản thành viên Nivora
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
 
-        {/* 7. Sản phẩm đã xem gần đây */}
-        {normRecent.length > 0 && (
-          <RecommendationSection
-            badge="Lịch sử"
-            badgeColor="emerald"
-            title="Sản phẩm đã xem gần đây"
-            desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây"
-            products={normRecent}
-            loading={loading}
-            containerClassName="bg-white rounded-xl border border-slate-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-6 sm:p-8 border-b border-gray-100 pb-12"
-          />
+            {/* 5. Sản phẩm nổi bật (New Arrivals) */}
+            <RecommendationSection
+              badge="Mới về"
+              badgeColor="emerald"
+              title="Sản phẩm mới ra mắt"
+              desc="Bộ sưu tập sản phẩm thiết kế mới ra mắt tuần này"
+              products={normNew}
+              loading={loading}
+              viewAll
+              viewAllHref="/products"
+              containerClassName="border-b border-gray-100 pb-12"
+            />
+
+            {/* 6. Gợi ý cho bạn */}
+            <RecommendationSection
+              badge="Gợi ý"
+              badgeColor="emerald"
+              title="Gợi ý dành cho bạn"
+              desc="Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn"
+              products={activeRecTab === 0 
+                ? (normPersonal.length > 0 ? normPersonal : normFeatured)
+                : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
+              }
+              loading={loading}
+              containerClassName="bg-white border-b border-gray-100 pb-12"
+              headerExtra={
+                <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                  {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
+                    <button
+                      key={tabLabel}
+                      onClick={() => setActiveRecTab(idx)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
+                        activeRecTab === idx 
+                          ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                          : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      {tabLabel}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
+
+            {/* 7. Xu hướng mua sắm */}
+            <RecommendationSection
+              badge="Xu hướng"
+              badgeColor="amber"
+              title="Xu hướng mua sắm"
+              desc="Những sản phẩm nổi bật được khách hàng quan tâm nhiều nhất trong tuần"
+              products={normTrending}
+              loading={loading}
+              viewAll
+              viewAllHref="/products"
+              containerClassName="border-b border-gray-100 pb-12"
+            />
+
+            {/* 8. Thịnh hành theo khu vực */}
+            <RecommendationSection
+              badge="Khu vực"
+              badgeColor="emerald"
+              title="Thịnh hành theo khu vực nhận hàng"
+              desc={user ? "Sản phẩm được mua nhiều nhất xung quanh địa chỉ giao hàng của bạn" : "Sản phẩm bán chạy tại các khu vực giao nhận trên toàn quốc"}
+              products={normLocationBased}
+              loading={loading}
+              viewAll
+              viewAllHref="/products"
+              containerClassName="border-b border-gray-100 pb-12"
+            />
+
+            {/* 9. Đánh giá cao nhất */}
+            <RecommendationSection
+              badge="Đánh giá"
+              badgeColor="emerald"
+              title="Đánh giá cao nhất"
+              desc="Những sản phẩm nhận được phản hồi hài lòng cao nhất từ khách hàng đã sử dụng"
+              products={useMemo(() => normFeatured.filter(p => p.rating >= 4.5), [normFeatured])}
+              loading={loading}
+              viewAll
+              viewAllHref="/products"
+              containerClassName="border-b border-gray-100 pb-12"
+            />
+
+            {/* 10. Sản phẩm đã xem gần đây */}
+            {normRecent.length > 0 && (
+              <RecommendationSection
+                badge="Lịch sử"
+                badgeColor="emerald"
+                title="Sản phẩm đã xem gần đây"
+                desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây"
+                products={normRecent}
+                loading={loading}
+                containerClassName="pb-12"
+              />
+            )}
+          </>
         )}
-
-        {/* 8. Khuyến mãi (Promotions / Banners) */}
-        <section className="border-t border-b border-gray-200/65 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8 my-8">
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div className="bg-red-50/35 p-8 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
-              <div>
-                <span className="text-[10px] font-bold text-red-650 uppercase tracking-widest block mb-2">⚡ Khuyến mãi có hạn</span>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">SIÊU FLASH SALE MÙA HÈ</h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
-                  Cơ hội sở hữu các sản phẩm thiết kế sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
-                </p>
-              </div>
-              
-              {/* Countdown */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kết thúc sau:</span>
-                <div className="flex items-center gap-1">
-                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.hours).padStart(2, '0')}</span>
-                  <span className="text-rose-600 font-bold">:</span>
-                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.minutes).padStart(2, '0')}</span>
-                  <span className="text-rose-600 font-bold">:</span>
-                  <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.seconds).padStart(2, '0')}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-emerald-50/35 p-8 rounded-lg border border-emerald-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
-              <div>
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest block mb-2">🌿 Thành viên độc quyền</span>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Đặc quyền thành viên Nivora</h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
-                  Đăng ký tài khoản thành viên Nivora ngay hôm nay để nhận mã giảm giá 10% cho đơn hàng đầu tiên, chính sách tích điểm đổi quà và giao hàng ưu tiên.
-                </p>
-              </div>
-              {!user ? (
-                <Link to="/register" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded transition-colors text-center shadow-sm">
-                  Đăng ký tài khoản miễn phí
-                </Link>
-              ) : (
-                <div className="text-emerald-700 font-semibold text-xs flex items-center gap-1">
-                  ✓ Bạn đã kích hoạt tài khoản thành viên Nivora
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* 9. Đánh giá cao */}
-        <RecommendationSection
-          badge="Đánh giá"
-          badgeColor="emerald"
-          title="Đánh giá cao nhất"
-          desc="Những sản phẩm nhận được phản hồi hài lòng cao nhất từ khách hàng đã sử dụng"
-          products={useMemo(() => normFeatured.filter(p => p.rating >= 4.5), [normFeatured])}
-          loading={loading}
-          viewAll
-          viewAllHref="/products"
-          containerClassName="pb-12"
-        />
 
       </div>
     </div>

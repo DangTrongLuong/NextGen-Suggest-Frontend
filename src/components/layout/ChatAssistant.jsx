@@ -37,10 +37,7 @@ const ChatAssistant = () => {
     const nextState = !isOpen;
     setIsOpen(nextState);
     if (nextState) {
-      eventService.trackEvent({
-        eventType: 'view_chat',
-        properties: { timestamp: new Date().toISOString() }
-      }).catch(() => {});
+      eventService.track('view_chat').catch(() => {});
     }
   };
 
@@ -57,10 +54,7 @@ const ChatAssistant = () => {
     setIsLoading(true);
 
     // Track user message event
-    eventService.trackEvent({
-      eventType: 'chat_message_sent',
-      properties: { messageLength: text.length }
-    }).catch(() => {});
+    eventService.track('chat_message_sent', null, text).catch(() => {});
 
     try {
       // Build conversation history:

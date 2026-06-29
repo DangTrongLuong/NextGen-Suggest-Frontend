@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @import "tailwindcss";
 
 @layer base {
@@ -27,9 +29,6 @@
     --danger:  #ef4444;
     --info:    #3b82f6;
 
-    /* Typography */
-    --font-sans: 'Nunito', -apple-system, sans-serif;
-
     /* Radius */
     --radius-sm:  4px;
     --radius-md:  8px;
@@ -42,6 +41,9 @@
     --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1);
+
+    /* Typography */
+    --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   * {
@@ -52,10 +54,24 @@
     scroll-behavior: smooth;
   }
 
-  body {
-    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
+   body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+   line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+/* Heading phải đậm */
+h1 { font-weight: 800; }
+h2 { font-weight: 700; }
+h3 { font-weight: 600; }
+h4 { font-weight: 600; }
+
+/* text nhấn mạnh */
+strong { font-weight: 600; }
 }
 
 @layer utilities {

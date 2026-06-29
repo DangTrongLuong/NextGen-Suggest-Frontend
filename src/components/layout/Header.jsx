@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,7 +17,7 @@ import { formatPrice } from '../../utils/formatPrice';
 
 const navLinks = [
   { label: 'Trang chủ', to: '/' },
-  { label: 'Danh mục', to: '/products' },
+  { label: 'Sản phẩm', to: '/products' },
   { label: 'Đơn hàng', to: '/orders' },
 ];
 
@@ -33,12 +33,57 @@ const Header = () => {
 
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
-
   const { cartCount } = useCart();
   const { wishlist } = useWishlist();
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Typewriter placeholder phrases
+  const placeholderPhrases = useMemo(() => [
+    'Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ...',
+    'Tìm kiếm áo thun, quần jean, áo khoác, váy đầm, thời trang nam nữ...',
+    'Tìm kiếm giày thể thao, giày tây, túi xách thời thượng, ví da...',
+    'Tìm kiếm thảm trải sàn, đèn ngủ thông minh, đồ trang trí tinh tế cho ngôi nhà bạn...'
+  ], []);
+
+  const [placeholder, setPlaceholder] = useState('');
+
+  useEffect(() => {
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let isDeleting = false;
+    let timer;
+
+    const tick = () => {
+      const currentPhrase = placeholderPhrases[phraseIdx];
+      if (!isDeleting) {
+        setPlaceholder(currentPhrase.substring(0, charIdx + 1));
+        charIdx++;
+        if (charIdx === currentPhrase.length) {
+          isDeleting = true;
+          timer = setTimeout(tick, 2500);
+        } else {
+          timer = setTimeout(tick, 40);
+        }
+      } else {
+        setPlaceholder(currentPhrase.substring(0, charIdx - 1));
+        charIdx--;
+        if (charIdx === 0) {
+          isDeleting = false;
+          phraseIdx = (phraseIdx + 1) % placeholderPhrases.length;
+          timer = setTimeout(tick, 400);
+        } else {
+          timer = setTimeout(tick, 20);
+        }
+      }
+    };
+
+    tick();
+    return () => clearTimeout(timer);
+  }, [placeholderPhrases]);
+
+
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -103,7 +148,7 @@ const Header = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchFocused(false);
       setSearchResults([]);
       setSearchQuery('');
@@ -162,7 +207,7 @@ const Header = () => {
                       'relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                       location.pathname === link.to
                         ? 'text-emerald-700 bg-emerald-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80'
+                        : 'text-gray-650 hover:text-gray-900 hover:bg-gray-50/80'
                     )}
                   >
                     {link.label}
@@ -178,88 +223,84 @@ const Header = () => {
             </div>
 
             {/* ── Search Bar (desktop center) ── */}
-            {false && (
-              <div ref={searchRef} className="hidden md:flex flex-1 max-w-xs relative">
-                <form onSubmit={handleSearchSubmit} className="w-full">
-                  <div className={clsx(
-                    'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-300',
-                    searchFocused
-                      ? 'bg-white border-emerald-400 shadow-md shadow-emerald-100 ring-2 ring-emerald-200'
-                      : 'bg-gray-50/80 border-gray-200 hover:border-gray-300 hover:bg-white'
-                  )}>
-                    <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
-                    <input
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => setSearchFocused(true)}
-                      placeholder="Tìm kiếm sản phẩm..."
-                      className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
-                    />
-                    {searchQuery && (
-                      <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
-                        <X size={14} className="text-gray-400 hover:text-gray-600" />
-                      </button>
-                    )}
-                  </div>
-                </form>
-
-                {/* Search dropdown */}
-                <AnimatePresence>
-                  {searchFocused && searchQuery.trim().length >= 2 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                      transition={{ duration: 0.18 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
-                    >
-                      {searchLoading ? (
-                        <div className="px-4 py-6 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
-                      ) : searchResults.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</div>
-                      ) : (
-                        <>
-                          {searchResults.map((p) => (
-                            <Link
-                              key={p.id}
-                              to={`/products/${p.id}`}
-                              onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                            >
-                              <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
-                                <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
-                              </div>
-                            </Link>
-                          ))}
-                          <Link
-                            to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
-                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                            className="block px-4 py-3 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
-                          >
-                            Xem tất cả kết quả
-                          </Link>
-                        </>
-                      )}
-                    </motion.div>
+            <div ref={searchRef} className="hidden md:flex flex-1 max-w-[450px] lg:max-w-[500px] xl:max-w-[550px] mx-4 relative">
+              <form onSubmit={handleSearchSubmit} className="w-full">
+                <div className={clsx(
+                  'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-300',
+                  searchFocused
+                    ? 'bg-white border-emerald-400 shadow-md shadow-emerald-100 ring-2 ring-emerald-200'
+                    : 'bg-gray-50/80 border-gray-200 hover:border-gray-300 hover:bg-white'
+                )}>
+                  <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
+                    className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
+                  />
+                  {searchQuery && (
+                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
+                      <X size={14} className="text-gray-400 hover:text-gray-600" />
+                    </button>
                   )}
-                </AnimatePresence>
-              </div>
-            )}
+                </div>
+              </form>
+
+              {/* Search dropdown */}
+              <AnimatePresence>
+                {searchFocused && searchQuery.trim().length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                  >
+                    {searchLoading ? (
+                      <div className="px-4 py-6 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</div>
+                    ) : (
+                      <>
+                        {searchResults.map((p) => (
+                          <Link
+                            key={p.id}
+                            to={`/products/${p.id}`}
+                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                              <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
+                            </div>
+                          </Link>
+                        ))}
+                        <Link
+                          to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
+                          onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
+                          className="block px-4 py-3 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
+                        >
+                          Xem tất cả kết quả
+                        </Link>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* ── Right Actions ── */}
             <div className="flex items-center gap-0.5">
 
               {/* Mobile search icon */}
-              {/*
               <button
                 onClick={() => setSearchFocused(!searchFocused)}
                 className="md:hidden p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 <Search size={20} />
               </button>
-              */}
 
               {/* Wishlist */}
               <Link
@@ -399,7 +440,6 @@ const Header = () => {
         </div>
 
         {/* Mobile search bar */}
-        {/*
         <AnimatePresence>
           {searchFocused && (
             <motion.div
@@ -416,7 +456,7 @@ const Header = () => {
                       autoFocus
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
-                      placeholder="Tìm kiếm sản phẩm..."
+                      placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
                       className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                     />
                   </div>
@@ -458,7 +498,6 @@ const Header = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        */}
 
         {/* Mobile Menu */}
         <AnimatePresence>
@@ -485,7 +524,7 @@ const Header = () => {
                         'block px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                         location.pathname === link.to
                           ? 'text-emerald-700 bg-emerald-50'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          : 'text-gray-700 hover:bg-gray-55'
                       )}
                     >
                       {link.label}

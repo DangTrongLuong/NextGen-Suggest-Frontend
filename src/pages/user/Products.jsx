@@ -325,7 +325,7 @@ const Products = () => {
     if (currentCategoryMain) {
       return currentCategoryMain.name;
     }
-    return 'Tất cả sản phẩm';
+    return '';
   }, [searchQueryParam, currentCategory, currentCategoryMain]);
 
   // Determine product details status text
@@ -363,10 +363,53 @@ const Products = () => {
   };
 
   const renderFilterContent = () => {
-    const hasAnyFilter = !!(minPrice || maxPrice || minRating);
+    const hasAnyFilter = !!(minPrice || maxPrice || minRating || searchInput.trim() || sortBy !== 'newest');
 
     return (
       <div className="space-y-6">
+        {/* Section: Tìm kiếm */}
+        <div className="border-b border-gray-100 pb-5">
+          <h4 className="font-extrabold text-xs text-gray-900 uppercase tracking-widest mb-3">
+            Tìm kiếm sản phẩm
+          </h4>
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-xs outline-none w-full transition-all font-semibold placeholder-gray-400 text-gray-750"
+            />
+            <button
+              type="submit"
+              className="absolute right-3 text-gray-450 hover:text-emerald-600 transition-colors"
+            >
+              <Search size={14} />
+            </button>
+          </form>
+        </div>
+
+        {/* Section: Sắp xếp */}
+        <div className="border-b border-gray-100 pb-5">
+          <h4 className="font-extrabold text-xs text-gray-900 uppercase tracking-widest mb-3">
+            Sắp xếp theo
+          </h4>
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:bg-white transition-all w-full">
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setProductPage(0);
+              }}
+              className="bg-transparent text-xs font-bold text-gray-700 outline-none w-full cursor-pointer"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="price-asc">Giá thấp → cao</option>
+              <option value="price-desc">Giá cao → thấp</option>
+            </select>
+          </div>
+        </div>
+
         {/* Active Filters Summary & Reset */}
         {hasAnyFilter && (
           <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50 flex items-center justify-between">
@@ -374,7 +417,17 @@ const Products = () => {
               Đang áp dụng bộ lọc
             </span>
             <button
-              onClick={handleClearAllFilters}
+              onClick={() => {
+                handleClearAllFilters();
+                setSearchInput('');
+                setSortBy('newest');
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.delete('search');
+                  next.set('page', '1');
+                  return next;
+                });
+              }}
               className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase tracking-wider cursor-pointer"
             >
               <RotateCcw size={10} />
@@ -535,7 +588,7 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-gray-50/30 flex flex-col">
       {/* ── BREADCRUMBS BAR (Edge-to-edge container) ── */}
-      <div className="w-full bg-white border-b border-gray-100 shadow-sm py-4 mb-6">
+      <div className="w-full py-4 mb-2">
         <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
           <Breadcrumbs items={breadcrumbItems} />
         </div>
@@ -544,75 +597,33 @@ const Products = () => {
       {/* ── MAIN CONTENT AREA ── */}
       <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 pb-16 flex-grow">
         
-        {/* Title, Search, and Sort Header card */}
-        <section className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Sleek Page Header (Plain text, no bulky card) */}
+        <div className="flex items-center justify-between mb-6 px-1">
           <div>
-            <h2 className="text-xl font-black text-gray-900 leading-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
               {pageTitle}
-            </h2>
-            <p className="text-xs text-gray-500 mt-1 font-semibold flex items-center gap-1.5">
-              {searchQueryParam.trim() && (
-                <Sparkles size={12} className="text-emerald-500" />
-              )}
-              <span>{totalItemsText}</span>
-            </p>
+            </h1>
+            {/* {totalProducts > 0 && (
+              <p className="text-xs text-gray-400 mt-1 font-semibold flex items-center gap-1">
+                {searchQueryParam.trim() && <Sparkles size={12} className="text-emerald-500 animate-pulse" />}
+                <span>Tìm thấy {totalProducts} sản phẩm</span>
+              </p>
+            )} */}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Search Input Form */}
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-              <input
-                type="text"
-                placeholder="Tìm kiếm thông minh..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-xs outline-none w-full sm:w-56 transition-all font-semibold placeholder-gray-400 text-gray-750"
-              />
-              <button
-                type="submit"
-                className="absolute right-3 text-gray-450 hover:text-emerald-600 transition-colors"
-              >
-                <Search size={14} />
-              </button>
-            </form>
-
-            {/* Mobile Filter Button */}
-            {!searchQueryParam.trim() && (
-              <button
-                type="button"
-                onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-white transition-all text-xs font-bold text-gray-700 cursor-pointer"
-              >
-                <Filter size={14} className="text-emerald-600" />
-                <span>Bộ lọc</span>
-                {(minPrice || maxPrice || minRating) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                )}
-              </button>
+          {/* Mobile Search & Filter Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="lg:hidden flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-all text-xs font-bold text-gray-700 cursor-pointer shadow-sm"
+          >
+            <Filter size={14} className="text-emerald-600" />
+            <span>Tìm kiếm & Bộ lọc</span>
+            {(minPrice || maxPrice || minRating || searchInput.trim() || sortBy !== 'newest') && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             )}
-
-            {/* Sort Dropdown (Only show when rendering product grid) */}
-            {!searchQueryParam.trim() && (
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:bg-white transition-all">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                  Sắp xếp:
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setProductPage(0);
-                  }}
-                  className="bg-transparent text-xs font-bold text-gray-700 outline-none pr-6 cursor-pointer"
-                >
-                  <option value="newest">Mới nhất</option>
-                  <option value="price-asc">Giá thấp → cao</option>
-                  <option value="price-desc">Giá cao → thấp</option>
-                </select>
-              </div>
-            )}
-          </div>
-        </section>
+          </button>
+        </div>
 
         {/* ── DRILL-DOWN CATEGORY GRID VIEW (When category has subcategories or loading) ── */}
         {!searchQueryParam.trim() && (activeCategoryMainSlug || activeCategorySlug) && (
@@ -697,19 +708,17 @@ const Products = () => {
         {/* ── TWO-COLUMN SPLIT LAYOUT FOR SIDEBAR & PRODUCTS ── */}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column: Sticky Sidebar Filter */}
-          {!searchQueryParam.trim() && (
-            <aside className="hidden lg:block w-64 lg:w-72 flex-shrink-0">
-              <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm sticky top-32 max-h-[calc(100vh-160px)] overflow-y-auto">
-                <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-5">
-                  <Filter className="text-emerald-600" size={16} />
-                  <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wide">
-                    Bộ lọc sản phẩm
-                  </h3>
-                </div>
-                {renderFilterContent()}
+          <aside className="hidden lg:block w-64 lg:w-72 flex-shrink-0">
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm sticky top-32 max-h-[calc(100vh-160px)] overflow-y-auto">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-5">
+                <Filter className="text-emerald-600" size={16} />
+                <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wide">
+                  Bộ lọc sản phẩm
+                </h3>
               </div>
-            </aside>
-          )}
+              {renderFilterContent()}
+            </div>
+          </aside>
 
           {/* Right Column: Products Display Area */}
           <div className="flex-1 min-w-0">
