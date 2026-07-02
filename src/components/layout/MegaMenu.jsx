@@ -17,10 +17,10 @@ const MegaMenu = ({ categoryMain, categories = [], onClose, isNested = false }) 
       exit={isNested ? undefined : { opacity: 0, y: 8 }}
       transition={isNested ? undefined : { duration: 0.2, ease: 'easeOut' }}
       className={clsx(
-        'bg-white overflow-hidden',
+        'bg-white',
         isNested
-          ? 'w-full h-full'
-          : 'absolute left-0 right-0 w-full border-t border-gray-100 shadow-2xl z-50'
+          ? 'w-full h-full overflow-hidden'
+          : 'absolute left-0 right-0 w-full border-t border-gray-100 shadow-2xl z-50 max-h-[calc(100vh-130px)] overflow-y-auto'
       )}
       style={isNested ? undefined : { top: '100%' }}
       onMouseEnter={isNested ? undefined : (e) => e.stopPropagation()}
