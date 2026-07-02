@@ -183,56 +183,16 @@ const Products = () => {
           .filter((c) => getCategoryMainId(c) === mainId && !getParentId(c) && getIsActive(c))
           .sort((a, b) => getSortOrder(a) - getSortOrder(b));
       }
-    } else if (currentCategoryMain) {
+    } else {
       // Sibling is the list of all category mains
       const getSortOrderMain = (m) => m.sortOrder ?? m.display_order ?? m.displayOrder ?? 0;
       return [...categoryMains].sort((a, b) => getSortOrderMain(a) - getSortOrderMain(b));
     }
-    return [];
   }, [currentCategory, currentCategoryMain, categories, categoryMains]);
 
-  // ── SEARCH FETCHING ──────────────────────────────────────────────────
+  // ── FETCH PRODUCTS (Unified Search & Browse) ───────────────────────
   useEffect(() => {
-    if (!searchQueryParam.trim()) return;
-
-    const fetchSearch = async () => {
-      if (searchPage === 0) {
-        setLoadingProducts(true);
-        setProducts([]);
-      } else {
-        setLoadingMore(true);
-      }
-      try {
-        const data = await productService.searchPaginated(searchQueryParam.trim(), {
-          page: searchPage,
-          size: 12,
-          rerank: true,
-        });
-        const newProducts = normalizeProducts(data?.content) || [];
-        if (searchPage === 0) {
-          setProducts(newProducts);
-        } else {
-          setProducts((prev) => [...prev, ...newProducts]);
-        }
-        setTotalProducts(data?.totalElements || 0);
-        setHasMoreSearch(!data?.last);
-      } catch (err) {
-        console.error('Search failed:', err);
-        toast.error('Không thể tìm kiếm sản phẩm. Vui lòng thử lại.');
-      } finally {
-        setLoadingProducts(false);
-        setLoadingMore(false);
-      }
-    };
-
-    fetchSearch();
-  }, [searchQueryParam, searchPage]);
-
-  // ── BROWSE FETCHING ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (searchQueryParam.trim()) return;
-
-    const fetchBrowse = async () => {
+    const fetchProducts = async () => {
       setLoadingProducts(true);
       try {
         let sortField = 'createdAt';
@@ -257,13 +217,22 @@ const Products = () => {
           ...(minRating && { minRating: parseFloat(minRating) }),
         };
 
-        const data = await productService.getAll(params);
+        let data;
+        if (searchQueryParam.trim()) {
+          data = await productService.searchPaginated(searchQueryParam.trim(), {
+            ...params,
+            rerank: true
+          });
+        } else {
+          data = await productService.getAll(params);
+        }
+
         setProducts(normalizeProducts(data?.content) || []);
         setTotalProducts(data?.totalElements || 0);
         setTotalPages(data?.totalPages || 0);
       } catch (err) {
         console.error('Failed to fetch products:', err);
-        toast.error('Không thể tải sản phẩm.');
+        toast.error('Không thể tải danh sách sản phẩm.');
         setProducts([]);
         setTotalProducts(0);
         setTotalPages(0);
@@ -272,7 +241,7 @@ const Products = () => {
       }
     };
 
-    fetchBrowse();
+    fetchProducts();
   }, [
     activeCategorySlug,
     activeCategoryMainSlug,
@@ -317,7 +286,7 @@ const Products = () => {
   // Determine current Page title
   const pageTitle = useMemo(() => {
     if (searchQueryParam.trim()) {
-      return `Kết quả tìm kiếm: "${searchQueryParam.trim()}"`;
+      return '';
     }
     if (currentCategory) {
       return currentCategory.name;
@@ -348,18 +317,24 @@ const Products = () => {
 
   const getSiblingLink = (sibling) => {
     const isCategoryMain = sibling.parentId === undefined && sibling.categoryMainId === undefined && sibling.parent_id === undefined && sibling.category_main_id === undefined;
+    
+    // Preserves search params when switching sibling categories
+    const searchParamsCopy = new URLSearchParams(location.search);
+    searchParamsCopy.set('page', '1');
+    const queryString = searchParamsCopy.toString() ? `?${searchParamsCopy.toString()}` : '';
+
     if (isCategoryMain) {
-      return `/products/${sibling.slug}`;
+      return `/products/${sibling.slug}${queryString}`;
     }
     const segments = location.pathname.split('/').filter(Boolean);
     if (segments.length > 2) {
       segments[segments.length - 1] = sibling.slug;
-      return '/' + segments.join('/');
+      return '/' + segments.join('/') + queryString;
     }
     if (currentCategoryMain) {
-      return `/products/${currentCategoryMain.slug}/${sibling.slug}`;
+      return `/products/${currentCategoryMain.slug}/${sibling.slug}${queryString}`;
     }
-    return `/products/${sibling.slug}`;
+    return `/products/${sibling.slug}${queryString}`;
   };
 
   const renderFilterContent = () => {
@@ -600,7 +575,7 @@ const Products = () => {
         {/* Sleek Page Header (Plain text, no bulky card) */}
         <div className="flex items-center justify-between mb-6 px-1">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
+            <h1 className="text-base sm:text-lg font-semibold text-gray-800 leading-tight">
               {pageTitle}
             </h1>
             {/* {totalProducts > 0 && (
@@ -757,33 +732,8 @@ const Products = () => {
                     ))}
                   </div>
 
-                  {/* Search Xem thêm load-more Pagination */}
-                  {searchQueryParam.trim() && hasMoreSearch && (
-                    <div className="flex justify-center mt-2 mb-8">
-                      <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setSearchPage((prev) => prev + 1)}
-                        disabled={loadingMore}
-                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-60 text-white text-xs font-bold rounded-2xl shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer"
-                      >
-                        {loadingMore ? (
-                          <>
-                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Đang tải thêm...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles size={14} />
-                            Xem thêm sản phẩm
-                          </>
-                        )}
-                      </motion.button>
-                    </div>
-                  )}
-
-                  {/* Browse URL-based Standard Pagination */}
-                  {!searchQueryParam.trim() && totalPages > 1 && (
+                  {/* Unified Standard Pagination */}
+                  {totalPages > 1 && (
                     <div className="flex justify-center mt-4 mb-8">
                       <Pagination
                         currentPage={productPage + 1}

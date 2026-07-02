@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart, Heart, Search, User, Menu, X,
@@ -38,6 +38,13 @@ const Header = () => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Synchronize search query state with the URL query parameter
+  const urlSearch = searchParams.get('search') || '';
+  useEffect(() => {
+    setSearchQuery(urlSearch);
+  }, [urlSearch]);
 
   // Typewriter placeholder phrases
   const placeholderPhrases = useMemo(() => [
@@ -148,10 +155,9 @@ const Header = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchFocused(false);
       setSearchResults([]);
-      setSearchQuery('');
     }
   };
 
@@ -240,7 +246,23 @@ const Header = () => {
                     className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
                   />
                   {searchQuery && (
-                    <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchResults([]);
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.delete('search');
+                          next.set('page', '1');
+                          return next;
+                        });
+                        if (!location.pathname.startsWith('/products')) {
+                          navigate('/products');
+                        }
+                      }}
+                      className="cursor-pointer flex items-center justify-center"
+                    >
                       <X size={14} className="text-gray-400 hover:text-gray-600" />
                     </button>
                   )}
