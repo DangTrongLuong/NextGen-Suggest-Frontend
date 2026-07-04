@@ -224,19 +224,19 @@ const ChatAssistant = () => {
             exit={{ opacity: 0, x: 20 }}
             className="absolute right-16 top-1/2 -translate-y-1/2 mr-2 bg-slate-900 border border-slate-800 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap hidden sm:flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
             Trợ Lý AI tư vấn
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Glowing background ring */}
-      <span className="absolute -inset-1 rounded-full bg-emerald-500/30 blur-sm animate-pulse pointer-events-none"></span>
+      <span className="absolute -inset-1 rounded-full bg-primary/20 blur-sm animate-pulse pointer-events-none"></span>
 
       {/* Chat Bubble Toggle Button */}
       <motion.button
         onClick={toggleChat}
-        className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-gradient-to-tr from-emerald-600 to-teal-500 border border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200 focus:outline-none"
+        className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-primary hover:bg-primary-hover border border-primary/30 shadow-lg hover:shadow-primary/20 active:scale-95 transition-all duration-200 focus:outline-none cursor-pointer"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -258,21 +258,21 @@ const ChatAssistant = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full h-full sm:w-[380px] sm:h-[580px] rounded-none sm:rounded-xl flex flex-col overflow-hidden bg-gray-900 border-none sm:border sm:border-gray-800 shadow-2xl z-50 text-white"
+            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full h-full sm:w-[380px] sm:h-[580px] rounded-none sm:rounded-2xl flex flex-col overflow-hidden bg-slate-950 border-none sm:border sm:border-slate-800 shadow-2xl z-50 text-white"
           >
             {/* Header */}
-            <div className="px-4 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 border-b border-emerald-500/20 flex items-center justify-between shadow-md">
+            <div className="px-4 py-3.5 bg-primary border-b border-primary-hover/20 flex items-center justify-between shadow-md">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center relative">
                   <Bot className="w-5 h-5 text-white" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-emerald-600"></span>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-primary"></span>
                 </div>
                 <div>
                   <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white flex items-center gap-1.5">
                     Trợ Lý Mua Sắm AI
                     <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />
                   </h3>
-                  <p className="text-[10px] text-emerald-100 font-medium opacity-90">Tự động trả lời 24/7</p>
+                  <p className="text-[10px] text-blue-100 font-medium opacity-90">Tự động trả lời 24/7</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -280,14 +280,14 @@ const ChatAssistant = () => {
                   <button
                     onClick={() => setMessages([INITIAL_GREETING])}
                     title="Xoá lịch sử trò chuyện"
-                    className="text-white/60 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                    className="text-white/60 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   onClick={toggleChat}
-                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -303,16 +303,16 @@ const ChatAssistant = () => {
                 >
                   <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     {msg.role !== 'user' && (
-                      <div className="w-7 h-7 rounded-full bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-4 h-4 text-emerald-400" />
+                      <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-4 h-4 text-primary" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <div
                         className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm leading-relaxed border max-w-full overflow-x-auto ${
                           msg.role === 'user'
-                            ? 'bg-emerald-600 border-none text-white rounded-tr-none shadow-md'
-                            : 'bg-slate-800/90 border border-slate-700/50 text-gray-100 rounded-tl-none shadow-sm'
+                            ? 'bg-primary border-none text-white rounded-tr-none shadow-md'
+                            : 'bg-slate-900 border border-slate-800/80 text-gray-150 rounded-tl-none shadow-sm'
                         }`}
                         dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }}
                       />
@@ -324,9 +324,9 @@ const ChatAssistant = () => {
                             {msg.suggestedProducts.map((prod) => (
                               <div
                                 key={prod.id || prod.product_id}
-                                className="w-full rounded-lg overflow-hidden bg-slate-800 border border-slate-700/60 flex flex-col group transition-colors shadow-sm"
+                                className="w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex flex-col group transition-colors shadow-sm"
                               >
-                                <div className="h-24 overflow-hidden bg-slate-900">
+                                <div className="h-24 overflow-hidden bg-slate-950">
                                   <img
                                     src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
                                     alt={prod.name || prod.title}
@@ -335,12 +335,12 @@ const ChatAssistant = () => {
                                 </div>
                                 <div className="p-2.5 flex-1 flex flex-col justify-between">
                                   <div>
-                                    <h4 className="text-[11px] font-normal text-gray-200 line-clamp-2 min-h-[30px] leading-snug">
+                                    <h4 className="text-[11px] font-normal text-gray-250 line-clamp-2 min-h-[30px] leading-snug">
                                       {prod.name || prod.title}
                                     </h4>
                                     {(prod.recommendationReason || prod.reason) && (
-                                      <div className="mt-1 flex items-center gap-1 text-[9px] text-emerald-400 font-semibold leading-tight">
-                                        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                      <div className="mt-1 flex items-center gap-1 text-[9px] text-accent font-semibold leading-tight">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
                                         <span className="line-clamp-1">{prod.recommendationReason || prod.reason}</span>
                                       </div>
                                     )}
@@ -351,7 +351,7 @@ const ChatAssistant = () => {
                                         {formatPrice(prod.price || prod.basePrice || 0)}
                                       </p>
                                       {(prod.recommendationScore || prod.score) > 0 && (
-                                        <span className="text-[8px] bg-emerald-950/50 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded font-mono font-bold w-max">
+                                        <span className="text-[8px] bg-accent/10 text-accent border border-accent/30 px-1.5 py-0.5 rounded font-mono font-bold w-max">
                                           {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
                                         </span>
                                       )}
@@ -359,7 +359,7 @@ const ChatAssistant = () => {
                                     <Link
                                       to={`/products/${prod.id || prod.product_id}`}
                                       onClick={() => toggleChat()}
-                                      className="block text-center mt-2 py-1 text-[10px] font-medium text-gray-200 hover:text-white bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded transition-all"
+                                      className="block text-center mt-2 py-1 text-[10px] font-semibold text-gray-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all"
                                     >
                                       Xem chi tiết
                                     </Link>
@@ -379,13 +379,13 @@ const ChatAssistant = () => {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex gap-2.5 max-w-[85%]">
-                    <div className="w-7 h-7 rounded-full bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-4 h-4 text-emerald-400" />
+                    <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-4 h-4 text-primary" />
                     </div>
-                    <div className="px-3.5 py-2.5 bg-slate-800/90 border border-slate-700/50 rounded-xl rounded-tl-none flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <div className="px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl rounded-tl-none flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                     </div>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ const ChatAssistant = () => {
                     <button
                       key={idx}
                       onClick={() => handleSendMessage(p.text)}
-                      className="text-left px-3 py-1.5 text-xs rounded bg-slate-850 hover:bg-slate-800 border border-slate-700/60 text-gray-300 hover:text-white transition-all focus:outline-none cursor-pointer"
+                      className="text-left px-3 py-1.5 text-xs rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-gray-300 hover:text-white transition-all focus:outline-none cursor-pointer"
                     >
                       {p.text}
                     </button>
@@ -412,7 +412,7 @@ const ChatAssistant = () => {
             )}
  
             {/* Chat Input Footer */}
-            <div className="p-3 bg-slate-950 border-t border-slate-850 flex gap-2 items-center">
+            <div className="p-3 bg-slate-950 border-t border-slate-900 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputMessage}
@@ -420,12 +420,12 @@ const ChatAssistant = () => {
                 onKeyDown={handleKeyPress}
                 placeholder="Hỏi về sản phẩm, giá bán, so sánh..."
                 disabled={isLoading}
-                className="flex-1 bg-slate-800/80 text-xs sm:text-sm rounded-lg px-3 py-2 border border-slate-700 text-gray-200 focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
+                className="flex-1 bg-slate-900 text-xs sm:text-sm rounded-xl px-3 py-2 border border-slate-800 text-gray-200 focus:outline-none focus:border-primary disabled:opacity-50 transition-colors"
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
-                className="w-9 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center disabled:opacity-40 transition-colors shadow-md focus:outline-none active:scale-95 cursor-pointer"
+                className="w-9 h-9 rounded-xl bg-primary hover:bg-primary-hover text-white flex items-center justify-center disabled:opacity-40 transition-colors shadow-md focus:outline-none active:scale-95 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>

@@ -41,9 +41,9 @@ const ProductCard = ({ product }) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -3 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
-      className="group bg-white rounded-lg overflow-hidden border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full"
+      className="group bg-white rounded-xl overflow-hidden border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full"
     >
       {/* Product Image Section */}
       <div className="relative overflow-hidden bg-gray-50 aspect-square flex-shrink-0">
@@ -59,12 +59,12 @@ const ProductCard = ({ product }) => {
         {/* Badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
           {product.isNew && (
-            <span className="px-2 py-0.5 bg-gray-900 text-white text-[10px] font-bold tracking-wider rounded-sm">
+            <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-bold tracking-wider rounded-sm">
               NEW
             </span>
           )}
           {discount > 0 && (
-            <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm">
+            <span className="px-2 py-0.5 bg-accent text-white text-[10px] font-bold rounded-sm">
               -{discount}%
             </span>
           )}
@@ -74,7 +74,7 @@ const ProductCard = ({ product }) => {
         <button
           onClick={() => toggleWishlist(product)}
           className={clsx(
-            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 hover:bg-white text-gray-600 hover:text-red-500 shadow-sm border border-slate-100 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100',
+            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 hover:bg-white text-gray-650 hover:text-red-500 shadow-sm border border-gray-100 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100',
             inWishlist && 'opacity-100 text-red-500 bg-white'
           )}
         >
@@ -84,7 +84,7 @@ const ProductCard = ({ product }) => {
         {/* Out of stock overlay */}
         {!hasStock && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
-            <span className="px-2.5 py-1 bg-gray-900 text-white text-[11px] font-medium tracking-wide rounded-sm">
+            <span className="px-2.5 py-1 bg-gray-400 text-white text-[11px] font-medium tracking-wide rounded-sm">
               Hết hàng
             </span>
           </div>
@@ -101,15 +101,15 @@ const ProductCard = ({ product }) => {
 
           {/* Recommendation Reason */}
           {product.recommendationReason && (
-            <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-100/50 text-[10px] font-semibold leading-normal w-fit">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[10px] font-semibold leading-normal w-fit">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
               {product.recommendationReason}
             </div>
           )}
           
           {/* Title */}
           <Link to={`/products/${product.id}`}>
-            <h3 className="text-xs sm:text-sm font-normal text-gray-800 hover:text-black line-clamp-2 leading-snug mb-2 transition-colors">
+            <h3 className="text-xs sm:text-sm font-normal text-gray-900 hover:text-black line-clamp-2 leading-snug mb-2 transition-colors">
               {product.name}
             </h3>
           </Link>
@@ -140,7 +140,7 @@ const ProductCard = ({ product }) => {
           {/* Price & Action Row */}
           <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 truncate">
-              <span className="text-sm sm:text-base font-bold text-emerald-600">
+              <span className="text-sm sm:text-base font-bold text-accent">
                 {formatPrice(price)}
               </span>
               {originalPrice > price && (
@@ -163,7 +163,7 @@ const ProductCard = ({ product }) => {
               }}
               disabled={!hasStock}
               className={clsx(
-                'w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border',
+                'w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border cursor-pointer',
                 inCart
                   ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                   : 'bg-emerald-50/80 border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white',

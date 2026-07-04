@@ -2,17 +2,92 @@
 
 @import "tailwindcss";
 
+@theme {
+  /* Alias emerald to green so all emerald utility classes render green */
+  --color-emerald-50: #f0fdf4;
+  --color-emerald-100: #dcfce7;
+  --color-emerald-200: #bbf7d0;
+  --color-emerald-300: #86efac;
+  --color-emerald-400: #4ade80;
+  --color-emerald-500: #22c55e;
+  --color-emerald-600: #16a34a;
+  --color-emerald-700: #15803d;
+  --color-emerald-800: #166534;
+  --color-emerald-900: #14532d;
+  --color-emerald-950: #052e16;
+
+  /* Redefine gray, zinc, neutral, slate to match the design system */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f3f4f6;
+  --color-zinc-200: #e5e7eb;
+  --color-zinc-300: #d1d5db;
+  --color-zinc-400: #9ca3af;
+  --color-zinc-500: #6b7280;
+  --color-zinc-600: #4b5563;
+  --color-zinc-700: #374151;
+  --color-zinc-800: #1f2937;
+  --color-zinc-900: #111827;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f3f4f6;
+  --color-slate-200: #e5e7eb;
+  --color-slate-300: #d1d5db;
+  --color-slate-400: #9ca3af;
+  --color-slate-500: #6b7280;
+  --color-slate-600: #4b5563;
+  --color-slate-700: #374151;
+  --color-slate-800: #1f2937;
+  --color-slate-900: #111827;
+  
+  /* Primary and status colors */
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-accent: #f97316;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  
+  /* Apple / Vercel style rounded corners */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+}
+
 @layer base {
   :root {
     /* Primary palette */
-    --primary-50:  #ecfdf5;
-    --primary-100: #d1fae5;
-    --primary-500: #10b981;
-    --primary-600: #059669;
-    --primary-700: #047857;
+    --primary-50:  #f0fdf4;
+    --primary-100: #dcfce7;
+    --primary-500: #16a34a;
+    --primary-600: #15803d;
+    --primary-700: #166534;
 
     /* Neutral */
-    --gray-50:  #f9fafb;
+    --gray-50:  #fafafa;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
     --gray-300: #d1d5db;
@@ -24,14 +99,14 @@
     --gray-900: #111827;
 
     /* Semantic */
-    --success: #10b981;
+    --success: #22c55e;
     --warning: #f59e0b;
     --danger:  #ef4444;
     --info:    #3b82f6;
 
     /* Radius */
-    --radius-sm:  4px;
-    --radius-md:  8px;
+    --radius-sm:  8px;
+    --radius-md:  12px;
     --radius-lg:  12px;
     --radius-xl:  16px;
     --radius-2xl: 24px;
@@ -54,24 +129,23 @@
     scroll-behavior: smooth;
   }
 
-   body {
-  font-family: var(--font-sans);
-  font-weight: 400;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-   line-height: 1.6;
-  letter-spacing: -0.01em;
-}
+  body {
+    background-color: #fafafa;
+    color: #374151;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
 
-/* Heading phải đậm */
-h1 { font-weight: 800; }
-h2 { font-weight: 700; }
-h3 { font-weight: 600; }
-h4 { font-weight: 600; }
-
-/* text nhấn mạnh */
-strong { font-weight: 600; }
+  h1 { font-weight: 800; color: #111827; }
+  h2 { font-weight: 700; color: #111827; }
+  h3 { font-weight: 600; color: #111827; }
+  h4 { font-weight: 600; color: #111827; }
+  strong { font-weight: 600; }
 }
 
 @layer utilities {
@@ -98,14 +172,14 @@ strong { font-weight: 600; }
 
   /* ── Text gradients ── */
   .text-gradient {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #16a34a, #15803d);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-gradient-gold {
-    background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+    background: linear-gradient(135deg, #f97316, #ea580c);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -113,26 +187,26 @@ strong { font-weight: 600; }
 
   /* ── Premium shadows ── */
   .shadow-glow-emerald {
-    box-shadow: 0 0 24px rgba(16, 185, 129, 0.35), 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 0 24px rgba(22, 163, 74, 0.25), 0 4px 16px rgba(0,0,0,0.08);
   }
 
   .shadow-glow-sm {
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 12px rgba(22, 163, 74, 0.15);
   }
 
   .shadow-card {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.04);
   }
 
   .shadow-card-hover {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 24px 64px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 24px 64px rgba(0,0,0,0.06);
   }
 
   /* ── Animated gradient border ── */
   .gradient-border {
     position: relative;
     background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, #10b981, #059669, #34d399) border-box;
+                linear-gradient(135deg, #16a34a, #15803d, #86efac) border-box;
     border: 2px solid transparent;
   }
 
@@ -152,7 +226,7 @@ strong { font-weight: 600; }
     background: linear-gradient(
       to right,
       rgba(255,255,255,0) 0%,
-      rgba(255,255,255,0.25) 50%,
+      rgba(255,255,255,0.2) 50%,
       rgba(255,255,255,0) 100%
     );
     transform: skewX(-20deg);
@@ -184,17 +258,17 @@ strong { font-weight: 600; }
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(16, 185, 129, 0.35);
+    background: rgba(22, 163, 74, 0.25);
     border-radius: 9999px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(16, 185, 129, 0.65);
+    background: rgba(22, 163, 74, 0.45);
   }
 
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+    scrollbar-color: rgba(22, 163, 74, 0.25) transparent;
   }
 
   /* ── Floating orb animation ── */

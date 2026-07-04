@@ -193,7 +193,15 @@ const Products = () => {
   // ── FETCH PRODUCTS (Unified Search & Browse) ───────────────────────
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoadingProducts(true);
+      const isSearch = !!searchQueryParam.trim();
+      const isAppend = isSearch && searchPage > 0;
+
+      if (isAppend) {
+        setLoadingMore(true);
+      } else {
+        setLoadingProducts(true);
+      }
+
       try {
         let sortField = 'createdAt';
         let sortDir = 'desc';
@@ -205,8 +213,10 @@ const Products = () => {
           sortDir = 'desc';
         }
 
+        const currentPageIndex = isSearch ? searchPage : productPage;
+
         const params = {
-          page: productPage,
+          page: currentPageIndex,
           size: 12,
           sortBy: sortField,
           sortDir,
@@ -218,7 +228,7 @@ const Products = () => {
         };
 
         let data;
-        if (searchQueryParam.trim()) {
+        if (isSearch) {
           data = await productService.searchPaginated(searchQueryParam.trim(), {
             ...params,
             rerank: true
@@ -227,17 +237,31 @@ const Products = () => {
           data = await productService.getAll(params);
         }
 
-        setProducts(normalizeProducts(data?.content) || []);
+        const newProducts = normalizeProducts(data?.content) || [];
+        
+        if (isAppend) {
+          setProducts(prev => [...prev, ...newProducts]);
+        } else {
+          setProducts(newProducts);
+        }
+
         setTotalProducts(data?.totalElements || 0);
         setTotalPages(data?.totalPages || 0);
+
+        if (isSearch) {
+          setHasMoreSearch(currentPageIndex + 1 < (data?.totalPages || 0));
+        }
       } catch (err) {
         console.error('Failed to fetch products:', err);
         toast.error('Không thể tải danh sách sản phẩm.');
-        setProducts([]);
-        setTotalProducts(0);
-        setTotalPages(0);
+        if (!isAppend) {
+          setProducts([]);
+          setTotalProducts(0);
+          setTotalPages(0);
+        }
       } finally {
         setLoadingProducts(false);
+        setLoadingMore(false);
       }
     };
 
@@ -248,6 +272,7 @@ const Products = () => {
     searchQueryParam,
     sortBy,
     productPage,
+    searchPage,
     minPrice,
     maxPrice,
     minRating
@@ -573,24 +598,14 @@ const Products = () => {
       <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 pb-16 flex-grow">
         
         {/* Sleek Page Header (Plain text, no bulky card) */}
-        <div className="flex items-center justify-between mb-6 px-1">
-          <div>
-            <h1 className="text-base sm:text-lg font-semibold text-gray-800 leading-tight">
-              {pageTitle}
-            </h1>
-            {/* {totalProducts > 0 && (
-              <p className="text-xs text-gray-400 mt-1 font-semibold flex items-center gap-1">
-                {searchQueryParam.trim() && <Sparkles size={12} className="text-emerald-500 animate-pulse" />}
-                <span>Tìm thấy {totalProducts} sản phẩm</span>
-              </p>
-            )} */}
-          </div>
+        <div className="flex items-center justify-between mb-6 px-1 lg:hidden">
+          <div />
 
           {/* Mobile Search & Filter Trigger Button */}
           <button
             type="button"
             onClick={() => setIsMobileFilterOpen(true)}
-            className="lg:hidden flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-all text-xs font-bold text-gray-700 cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-all text-xs font-bold text-gray-700 cursor-pointer shadow-sm"
           >
             <Filter size={14} className="text-emerald-600" />
             <span>Tìm kiếm & Bộ lọc</span>
@@ -602,20 +617,18 @@ const Products = () => {
 
         {/* ── DRILL-DOWN CATEGORY GRID VIEW (When category has subcategories or loading) ── */}
         {!searchQueryParam.trim() && (activeCategoryMainSlug || activeCategorySlug) && (
-          <div className="mb-12">
+          <div className="mb-10">
             {loadingCategories ? (
               <>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 animate-pulse">
                   Đang tải danh mục...
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-                  {Array.from({ length: 4 }).map((_, i) => (
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <div
                       key={i}
-                      className="aspect-square bg-white border border-gray-100 rounded-3xl animate-pulse p-4 flex flex-col justify-end gap-3"
-                    >
-                      <div className="h-3 bg-gray-200 rounded w-2/3 mx-auto animate-pulse" />
-                    </div>
+                      className="h-8 w-24 bg-gray-100 rounded-full animate-pulse"
+                    />
                   ))}
                 </div>
               </>
@@ -625,7 +638,7 @@ const Products = () => {
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
                     Danh mục con
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                  <div className="flex flex-wrap gap-2.5 sm:gap-3">
                     {childCategories.map((child, index) => {
                       const linkTo = location.pathname.endsWith('/')
                         ? `${location.pathname}${child.slug}`
@@ -634,41 +647,15 @@ const Products = () => {
                       return (
                         <motion.div
                           key={child.id}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.04, duration: 0.25 }}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.02, duration: 0.2 }}
                         >
                           <Link
                             to={linkTo}
-                            className="group flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-3 transition-all duration-300 hover:shadow-xl hover:border-emerald-100 hover:-translate-y-1"
+                            className="inline-flex items-center px-4 py-2.5 bg-white hover:bg-emerald-50/50 border border-gray-200/80 hover:border-emerald-300 rounded-full text-xs font-bold text-gray-700 hover:text-emerald-600 transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md cursor-pointer uppercase tracking-wider"
                           >
-                            {/* Category Thumbnail Aspect Square */}
-                            <div className="aspect-square w-full rounded-2xl overflow-hidden bg-gray-50 mb-3 border border-gray-50/50 flex items-center justify-center relative">
-                              {child.imageUrl ? (
-                                <img
-                                  src={child.imageUrl}
-                                  alt={child.name}
-                                  loading="lazy"
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                              ) : (
-                                <FolderOpen className="text-gray-300 w-1/3 h-1/3 stroke-[1.5]" />
-                              )}
-                              
-                              {/* Interactive hover overlay */}
-                              <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                                  <ArrowRight size={14} className="text-emerald-600" />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Metadata */}
-                            <div className="px-1 text-center sm:text-left">
-                              <h3 className="font-extrabold text-gray-800 text-xs truncate group-hover:text-emerald-600 transition-colors uppercase tracking-wider">
-                                {child.name}
-                              </h3>
-                            </div>
+                            {child.name}
                           </Link>
                         </motion.div>
                       );
@@ -732,15 +719,40 @@ const Products = () => {
                     ))}
                   </div>
 
-                  {/* Unified Standard Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex justify-center mt-4 mb-8">
-                      <Pagination
-                        currentPage={productPage + 1}
-                        totalPages={totalPages}
-                        onPageChange={(p) => setProductPage(p - 1)}
-                      />
-                    </div>
+                  {/* Pagination or See More button */}
+                  {searchQueryParam.trim() ? (
+                    hasMoreSearch && (
+                      <div className="flex justify-center mt-6 mb-8">
+                        <button
+                          type="button"
+                          disabled={loadingMore}
+                          onClick={() => setSearchPage(prev => prev + 1)}
+                          className="cursor-pointer inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                        >
+                          {loadingMore ? (
+                            <>
+                              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                              Đang tải...
+                            </>
+                          ) : (
+                            <>
+                              Xem thêm sản phẩm
+                              <ArrowRight size={14} />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    totalPages > 1 && (
+                      <div className="flex justify-center mt-4 mb-8">
+                        <Pagination
+                          currentPage={productPage + 1}
+                          totalPages={totalPages}
+                          onPageChange={(p) => setProductPage(p - 1)}
+                        />
+                      </div>
+                    )
                   )}
                 </>
               )}
