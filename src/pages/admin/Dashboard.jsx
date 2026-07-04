@@ -19,7 +19,7 @@ const colorMap = {
 };
 
 const chartColors = [
-  '#10b981', // Emerald
+  '#16a34a', // Primary Green
   '#3b82f6', // Blue
   '#8b5cf6', // Purple
   '#f59e0b', // Amber
@@ -239,8 +239,8 @@ const Dashboard = () => {
               <svg className="w-full h-full" viewBox={`0 0 ${lineChart.width} ${lineChart.height}`} preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#16a34a" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
                 {/* Grid Lines */}
@@ -255,7 +255,7 @@ const Dashboard = () => {
                 <path
                   d={lineChart.linePath}
                   fill="none"
-                  stroke="#10b981"
+                  stroke="#16a34a"
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -268,8 +268,8 @@ const Dashboard = () => {
                     cx={p.x}
                     cy={p.y}
                     r={hoveredPoint?.date === p.date ? 6 : 4}
-                    fill={hoveredPoint?.date === p.date ? '#10b981' : '#ffffff'}
-                    stroke="#10b981"
+                    fill={hoveredPoint?.date === p.date ? '#16a34a' : '#ffffff'}
+                    stroke="#16a34a"
                     strokeWidth="2.5"
                     className="cursor-pointer transition-all"
                     onMouseEnter={() => setHoveredPoint(p)}
@@ -315,7 +315,7 @@ const Dashboard = () => {
                     width={bar.w}
                     height={bar.h}
                     rx="4"
-                    fill={hoveredBar?.date === bar.date ? '#2563eb' : '#3b82f6'}
+                    fill={hoveredBar?.date === bar.date ? '#16a34a' : '#22c55e'}
                     className="cursor-pointer transition-all duration-200"
                     onMouseEnter={() => setHoveredBar(bar)}
                     onMouseLeave={() => setHoveredBar(null)}

@@ -14,6 +14,7 @@ import LoginModal from '../common/LoginModal';
 import logoNivora from '../../assets/logo-nivora.jpg';
 import toast from 'react-hot-toast';
 import { formatPrice } from '../../utils/formatPrice';
+import SearchPopup from './SearchPopup';
 
 const navLinks = [
   { label: 'Trang chủ', to: '/' },
@@ -26,8 +27,6 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
@@ -114,7 +113,6 @@ const Header = () => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setSearchFocused(false);
-        setSearchResults([]);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setUserMenuOpen(false);
@@ -128,36 +126,11 @@ const Header = () => {
     setSearchQuery(q);
   };
 
-  useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      setSearchLoading(false);
-      return;
-    }
-
-    const delayDebounce = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const results = await productService.search(searchQuery.trim(), true, 8);
-        setSearchResults(results.slice(0, 5));
-      } catch (err) {
-        console.error('Failed to fetch search results:', err);
-        setSearchResults([]);
-        toast.error('Không thể tìm kiếm. Vui lòng thử lại.');
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchFocused(false);
-      setSearchResults([]);
     }
   };
 
@@ -269,47 +242,18 @@ const Header = () => {
                 </div>
               </form>
 
-              {/* Search dropdown */}
+              {/* Search popup & suggestions */}
               <AnimatePresence>
-                {searchFocused && searchQuery.trim().length >= 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
-                  >
-                    {searchLoading ? (
-                      <div className="px-4 py-6 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</div>
-                    ) : (
-                      <>
-                        {searchResults.map((p) => (
-                          <Link
-                            key={p.id}
-                            to={`/products/${p.id}`}
-                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                          >
-                            <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
-                              <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
-                            </div>
-                          </Link>
-                        ))}
-                        <Link
-                          to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
-                          onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                          className="block px-4 py-3 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
-                        >
-                          Xem tất cả kết quả
-                        </Link>
-                      </>
-                    )}
-                  </motion.div>
-                )}
+                <SearchPopup
+                  isOpen={searchFocused}
+                  searchQuery={searchQuery}
+                  onSelectKeyword={(kw) => {
+                    setSearchQuery(kw);
+                    navigate(`/products?search=${encodeURIComponent(kw)}`);
+                    setSearchFocused(false);
+                  }}
+                  onClose={() => setSearchFocused(false)}
+                />
               </AnimatePresence>
             </div>
 
@@ -374,9 +318,9 @@ const Header = () => {
                     className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
                   >
                     <img
-                      src={user.avatar || user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=10b981&color=fff`}
+                      src={user.avatar || user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=16a34a&color=fff`}
                       alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover bg-gray-200 ring-2 ring-emerald-200"
+                      className="w-8 h-8 rounded-full object-cover bg-gray-250 ring-2 ring-emerald-100"
                     />
                     <ChevronDown
                       size={14}
@@ -470,7 +414,7 @@ const Header = () => {
               exit={{ height: 0, opacity: 0 }}
               className="md:hidden border-t border-gray-100 bg-white overflow-hidden"
             >
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 relative">
                 <form onSubmit={handleSearchSubmit}>
                   <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-200 transition-all">
                     <Search size={15} className="text-gray-400 flex-shrink-0" />
@@ -483,39 +427,18 @@ const Header = () => {
                     />
                   </div>
                 </form>
-                {searchQuery.trim().length >= 2 && (
-                  <div className="mt-2 space-y-1">
-                    {searchLoading ? (
-                      <p className="px-3 py-2.5 text-sm text-gray-500">Đang tìm kiếm...</p>
-                    ) : searchResults.length === 0 ? (
-                      <p className="px-3 py-2.5 text-sm text-gray-500">Không tìm thấy sản phẩm phù hợp</p>
-                    ) : (
-                      <>
-                        {searchResults.map((p) => (
-                          <Link
-                            key={p.id}
-                            to={`/products/${p.id}`}
-                            onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); }}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-                          >
-                            <img src={p.imageUrl || (p.images?.find(img => img.isPrimary)?.url ?? p.images?.[0]?.url ?? '')} alt={p.name} className="w-9 h-9 rounded-lg object-cover" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 line-clamp-1">{p.name}</p>
-                              <p className="text-xs text-emerald-600 font-semibold">{formatPrice(p.basePrice)}</p>
-                            </div>
-                          </Link>
-                        ))}
-                        <Link
-                          to={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
-                          onClick={() => { setSearchFocused(false); setSearchResults([]); setSearchQuery(''); setMobileOpen(false); }}
-                          className="block px-3 py-2.5 text-center text-sm font-semibold text-emerald-600 hover:bg-emerald-50 rounded-xl"
-                        >
-                          Xem tất cả kết quả
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                )}
+                
+                <SearchPopup
+                  isOpen={searchFocused}
+                  searchQuery={searchQuery}
+                  onSelectKeyword={(kw) => {
+                    setSearchQuery(kw);
+                    navigate(`/products?search=${encodeURIComponent(kw)}`);
+                    setSearchFocused(false);
+                    setMobileOpen(false);
+                  }}
+                  onClose={() => setSearchFocused(false)}
+                />
               </div>
             </motion.div>
           )}

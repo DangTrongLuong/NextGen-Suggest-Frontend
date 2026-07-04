@@ -5,12 +5,14 @@ import { ShoppingCart, Heart, Star, Check, Minus, Plus, Share2, Zap, ChevronLeft
 import ProductReview from '../../components/product/ProductReview';
 import ProductCard from '../../components/product/ProductCard';
 import { normalizeProducts } from '../../utils/productNormalizer';
-import Breadcrumb from '../../components/layout/Breadcrumb';
+import Breadcrumbs from '../../components/common/Breadcrumbs';
 import Button from '../../components/common/Button';
 import { PageLoader } from '../../components/common/Loading';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { productService } from '../../services/productService';
+import { categoryService } from '../../services/categoryService';
+import { categoryMainService } from '../../services/categoryMainService';
 import { formatPrice } from '../../utils/formatPrice';
 import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
 import clsx from 'clsx';
@@ -207,8 +209,18 @@ const ProductDetail = ({ idOverride }) => {
   // URL ảnh đang active (để Gallery scroll đến đúng chỗ)
   const [activeImageUrl, setActiveImageUrl] = useState(null);
 
+  const [categoryMains, setCategoryMains]   = useState([]);
+  const [breadcrumbs, setBreadcrumbs]       = useState([]);
+
   const { addToCart, isInCart }     = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+
+  // Load category mains on mount
+  useEffect(() => {
+    categoryMainService.getAll()
+      .then((data) => setCategoryMains(data || []))
+      .catch(() => setCategoryMains([]));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -222,6 +234,16 @@ const ProductDetail = ({ idOverride }) => {
       .getById(id)
       .then((data) => {
         setProduct(normalize(data));
+        
+        // Fetch breadcrumbs for product's category if available
+        if (data.category?.slug) {
+          categoryService.getBreadcrumb(data.category.slug)
+            .then(setBreadcrumbs)
+            .catch(() => setBreadcrumbs([]));
+        } else {
+          setBreadcrumbs([]);
+        }
+
         // Chọn variant đầu tiên mặc định
         const firstVariant = data.variants?.[0] || null;
         setSelectedVariant(firstVariant);
@@ -385,6 +407,35 @@ const ProductDetail = ({ idOverride }) => {
     return [...sizes];
   }, [product]);
 
+  const currentCategoryMain = useMemo(() => {
+    const crumbWithMain = breadcrumbs.find((crumb) => crumb.categoryMainId);
+    const mainId = crumbWithMain?.categoryMainId || product?.category?.categoryMainId;
+    if (!mainId) return null;
+    return categoryMains.find((m) => m.id === mainId);
+  }, [product, categoryMains, breadcrumbs]);
+
+  const breadcrumbItems = useMemo(() => {
+    const items = [];
+    if (currentCategoryMain) {
+      let path = `/products/${currentCategoryMain.slug}`;
+      items.push({ label: currentCategoryMain.name, to: path });
+
+      // Append sequential path categories
+      breadcrumbs.forEach((crumb) => {
+        path += `/${crumb.slug}`;
+        items.push({ label: crumb.name, to: path });
+      });
+
+      // Append product name at the end
+      items.push({ label: product?.name || '', to: `/products/${product?.id}` });
+    } else {
+      if (product) {
+        items.push({ label: product.name, to: `/products/${product.id}` });
+      }
+    }
+    return items;
+  }, [currentCategoryMain, breadcrumbs, product]);
+
   const isColorDisabled = useCallback((color) => {
     return !product?.variants?.some(
       (v) => matchesToken(v.color, color) && (!selectedSize || matchesToken(v.size, selectedSize)) && v.isActive
@@ -435,19 +486,18 @@ const ProductDetail = ({ idOverride }) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb */}
-      <div className="mb-6">
-        <Breadcrumb
-          items={[
-            { label: 'Sản phẩm', to: '/products' },
-            { label: product.name, to: `/products/${product.id}` },
-          ]}
-        />
+    <div className="min-h-screen bg-gray-50/30 flex flex-col">
+      {/* ── BREADCRUMBS BAR (Edge-to-edge container) ── */}
+      <div className="w-full py-4 mb-2">
+        <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
       </div>
 
-      {/* ── Main grid ── */}
-      <div className="grid lg:grid-cols-2 gap-12 mb-16">
+      {/* ── MAIN CONTENT AREA ── */}
+      <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 pb-16 flex-grow">
+        {/* ── Main grid ── */}
+        <div className="grid lg:grid-cols-2 gap-12 mb-16">
         {/* Gallery */}
         <motion.div initial={{ opacity: 0, x: -25 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           {allImages.length > 0 ? (
@@ -522,9 +572,7 @@ const ProductDetail = ({ idOverride }) => {
             )}
           </div>
 
-          <p className="text-gray-600 leading-relaxed text-sm">
-            {product.description || product.shortDescription}
-          </p>
+          {/* Removed duplicate description */}
 
           {/* ── Variant Selector ── */}
           {(() => {
@@ -799,6 +847,7 @@ const ProductDetail = ({ idOverride }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
