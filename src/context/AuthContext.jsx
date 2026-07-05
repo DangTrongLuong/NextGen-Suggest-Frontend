@@ -113,7 +113,12 @@ export const AuthProvider = ({ children }) => {
     if (userBase64) {
       // Decode user info từ Base64 JSON — không cần gọi thêm API
       try {
-        const json = atob(userBase64.replace(/-/g, '+').replace(/_/g, '/'));
+        const binaryString = atob(userBase64.replace(/-/g, '+').replace(/_/g, '/'));
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const json = new TextDecoder('utf-8').decode(bytes);
         userData = JSON.parse(json);
       } catch {
         // fallback: gọi API nếu decode thất bại
