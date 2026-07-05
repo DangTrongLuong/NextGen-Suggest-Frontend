@@ -106,7 +106,7 @@ const ImportExcelModal = ({ isOpen, onClose, entityType, onPreviewSuccess, previ
         } catch (e) {}
       }
 
-      const baseURL = api.defaults.baseURL || 'http://localhost:8080/api/v1';
+      const baseURL = api.defaults.baseURL || '/api/v1';
       const sseUrl = `${baseURL}/admin/import/jobs/${previewData.jobId}/progress?token=Bearer ${token}`;
       
       const eventSource = new EventSource(sseUrl);

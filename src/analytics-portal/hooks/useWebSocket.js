@@ -30,8 +30,8 @@ export const useWebSocket = (onMessageCallback) => {
 
     const connectWebSocket = () => {
       // Build WebSocket URL from API URL base (http -> ws, https -> wss)
-      const wsProto = BASE_URL.startsWith('https') ? 'wss' : 'ws';
-      const wsUrl = `${wsProto}://${BASE_URL.replace(/https?:\/\//, '')}/analytics/search/realtime`;
+      const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const wsUrl = `${wsProto}://${window.location.host}/analytics/search/realtime`;
 
       console.log(`Connecting to WebSocket: ${wsUrl}`);
       const socket = new WebSocket(wsUrl);
