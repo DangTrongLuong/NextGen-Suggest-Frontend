@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }) => {
   // ── Google Login ───────────────────────────────────────
   const loginWithGoogle = () => {
     // Redirect to Spring Security OAuth2 endpoint
-    window.location.href = `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}/oauth2/authorization/google`;
+    window.location.href = '/oauth2/authorization/google';
   };
 
   // ── Handle OAuth2 Callback (called from OAuth2Callback page) ──
