@@ -10,6 +10,8 @@ import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import { categoryMainService } from '../../services/categoryMainService';
 import { normalizeProducts } from '../../utils/productNormalizer';
+import { useAuth } from '../../context/AuthContext';
+import { recommendationService } from '../../services/recommendationService';
 
 /**
  * Products Browse Page.
@@ -36,12 +38,14 @@ const Products = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCategoryMains, setLoadingCategoryMains] = useState(true);
 
+  const { user } = useAuth();
+  const [userRecs, setUserRecs] = useState([]);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('recommendation');
   
   const [breadcrumbs, setBreadcrumbs] = useState([]);
 
@@ -86,6 +90,23 @@ const Products = () => {
       .catch(() => setCategoryMains([]))
       .finally(() => setLoadingCategoryMains(false));
   }, []);
+
+  // Fetch personalized recommendations once on mount or user state change
+  useEffect(() => {
+    recommendationService.getHomepageRecommendations()
+      .then((data) => {
+        if (data) {
+          const combined = [
+            ...(data.personal || []),
+            ...(data.youMayNeed || [])
+          ];
+          setUserRecs(combined);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load user recommendations in Products.jsx", err);
+      });
+  }, [user]);
 
   // Sync search inputs
   useEffect(() => {
@@ -237,7 +258,29 @@ const Products = () => {
           data = await productService.getAll(params);
         }
 
-        const newProducts = normalizeProducts(data?.content) || [];
+        let newProducts = normalizeProducts(data?.content) || [];
+        
+        if (sortBy === 'recommendation' && userRecs.length > 0 && !isSearch) {
+          const recMap = new Map();
+          userRecs.forEach((p, idx) => {
+            if (p.id) recMap.set(p.id, idx);
+            if (p.uuid) recMap.set(p.uuid, idx);
+          });
+          
+          newProducts = [...newProducts].sort((a, b) => {
+            const hasA = recMap.has(a.id) || (a.uuid && recMap.has(a.uuid));
+            const hasB = recMap.has(b.id) || (b.uuid && recMap.has(b.uuid));
+            
+            if (hasA && hasB) {
+              const idxA = recMap.get(a.id) ?? recMap.get(a.uuid);
+              const idxB = recMap.get(b.id) ?? recMap.get(b.uuid);
+              return idxA - idxB;
+            }
+            if (hasA) return -1;
+            if (hasB) return 1;
+            return 0;
+          });
+        }
         
         if (isAppend) {
           setProducts(prev => [...prev, ...newProducts]);
@@ -403,6 +446,7 @@ const Products = () => {
               }}
               className="bg-transparent text-xs font-bold text-gray-700 outline-none w-full cursor-pointer"
             >
+              <option value="recommendation">Gợi ý cho bạn (AI)</option>
               <option value="newest">Mới nhất</option>
               <option value="price-asc">Giá thấp → cao</option>
               <option value="price-desc">Giá cao → thấp</option>
@@ -694,7 +738,7 @@ const Products = () => {
 
               {showSkeleton ? (
                 /* Skeleton Grid matching the responsive column specs */
-                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <div
                       key={i}
@@ -712,8 +756,8 @@ const Products = () => {
                 </div>
               ) : (
                 <>
-                  {/* Responsive Grid: 5-6 columns desktop, down to 1 column small mobile */}
-                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
+                  {/* Responsive Grid: 5-6 columns desktop, down to 2 columns on mobile */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
                     {products.map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}

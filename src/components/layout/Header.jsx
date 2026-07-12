@@ -9,7 +9,6 @@ import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { productService } from '../../services/productService';
 import LoginModal from '../common/LoginModal';
 import logoNivora from '../../assets/logo-nivora.jpg';
 import toast from 'react-hot-toast';

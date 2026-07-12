@@ -231,24 +231,24 @@ const ChatAssistant = () => {
       </AnimatePresence>
 
       {/* Glowing background ring */}
-      <span className="absolute -inset-1 rounded-full bg-primary/20 blur-sm animate-pulse pointer-events-none"></span>
+      {!isOpen && (
+        <span className="absolute -inset-1 rounded-full bg-primary/20 blur-sm animate-pulse pointer-events-none"></span>
+      )}
 
       {/* Chat Bubble Toggle Button */}
-      <motion.button
-        onClick={toggleChat}
-        className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-primary hover:bg-primary-hover border border-primary/30 shadow-lg hover:shadow-primary/20 active:scale-95 transition-all duration-200 focus:outline-none cursor-pointer"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isOpen ? (
-          <X className="w-6 h-6" strokeWidth={2.5} />
-        ) : (
+      {!isOpen && (
+        <motion.button
+          onClick={toggleChat}
+          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-primary hover:bg-primary-hover border border-primary/30 shadow-lg hover:shadow-primary/20 active:scale-95 transition-all duration-200 focus:outline-none cursor-pointer"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           <div className="relative">
             <MessageSquare className="w-6 h-6" strokeWidth={2} />
             <Sparkles className="w-3.5 h-3.5 text-yellow-300 absolute -top-1.5 -right-1.5 animate-bounce" />
           </div>
-        )}
-      </motion.button>
+        </motion.button>
+      )}
 
       {/* Chat Panel */}
       <AnimatePresence>
@@ -258,7 +258,7 @@ const ChatAssistant = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full h-full sm:w-[380px] sm:h-[580px] rounded-none sm:rounded-2xl flex flex-col overflow-hidden bg-slate-950 border-none sm:border sm:border-slate-800 shadow-2xl z-50 text-white"
+            className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-full sm:w-[480px] sm:h-[600px] rounded-none sm:rounded-2xl flex flex-col overflow-hidden bg-slate-950 border-none sm:border sm:border-slate-800 shadow-2xl z-50 text-white"
           >
             {/* Header */}
             <div className="px-4 py-3.5 bg-primary border-b border-primary-hover/20 flex items-center justify-between shadow-md">
@@ -314,62 +314,136 @@ const ChatAssistant = () => {
                             ? 'bg-primary border-none text-white rounded-tr-none shadow-md'
                             : 'bg-slate-900 border border-slate-800/80 text-gray-150 rounded-tl-none shadow-sm'
                         }`}
-                        dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }}
-                      />
-                      
-                      {/* Suggested Products List */}
-                      {msg.suggestedProducts && msg.suggestedProducts.length > 0 && (
-                        <div className="mt-3 py-1">
-                          <div className="grid grid-cols-2 gap-2.5">
-                            {msg.suggestedProducts.map((prod) => (
-                              <div
-                                key={prod.id || prod.product_id}
-                                className="w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex flex-col group transition-colors shadow-sm"
-                              >
-                                <div className="h-24 overflow-hidden bg-slate-950">
-                                  <img
-                                    src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
-                                    alt={prod.name || prod.title}
-                                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                                  />
-                                </div>
-                                <div className="p-2.5 flex-1 flex flex-col justify-between">
-                                  <div>
-                                    <h4 className="text-[11px] font-normal text-gray-250 line-clamp-2 min-h-[30px] leading-snug">
-                                      {prod.name || prod.title}
-                                    </h4>
-                                    {(prod.recommendationReason || prod.reason) && (
-                                      <div className="mt-1 flex items-center gap-1 text-[9px] text-accent font-semibold leading-tight">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-                                        <span className="line-clamp-1">{prod.recommendationReason || prod.reason}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="mt-2.5">
-                                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                      <p className="text-[11px] font-bold text-white">
-                                        {formatPrice(prod.price || prod.basePrice || 0)}
-                                      </p>
-                                      {(prod.recommendationScore || prod.score) > 0 && (
-                                        <span className="text-[8px] bg-accent/10 text-accent border border-accent/30 px-1.5 py-0.5 rounded font-mono font-bold w-max">
-                                          {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
-                                        </span>
-                                      )}
+                      >
+                        {msg.role === 'user' ? (
+                          <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }} />
+                        ) : (
+                          (() => {
+                            const blocks = msg.content.split(/\n\s*\n/);
+                            const placedProductIds = new Set();
+                            const renderedBlocks = [];
+
+                            blocks.forEach((block, bIdx) => {
+                              if (!block.trim()) return;
+
+                              // Find matching products for this block
+                              const matchedProducts = [];
+                              if (msg.suggestedProducts && msg.suggestedProducts.length > 0) {
+                                msg.suggestedProducts.forEach((prod) => {
+                                  const prodId = prod.id || prod.product_id;
+                                  if (placedProductIds.has(prodId)) return;
+
+                                  // Clean title and block for matching
+                                  const titlePart = (prod.name || prod.title || '').split(' (')[0].split(' - ')[0].split(' | ')[0].trim().toLowerCase();
+                                  const cleanTitle = titlePart.replace(/[^a-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '').trim();
+                                  const cleanBlock = block.toLowerCase().replace(/[^a-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '');
+
+                                  if (cleanTitle.length > 2 && cleanBlock.includes(cleanTitle)) {
+                                    matchedProducts.push(prod);
+                                    placedProductIds.add(prodId);
+                                  }
+                                });
+                              }
+
+                              renderedBlocks.push(
+                                <div key={bIdx} className="mb-3 last:mb-0">
+                                  <div dangerouslySetInnerHTML={{ __html: formatMarkdown(block) }} />
+                                  
+                                  {/* Render matched products inline under the matching block */}
+                                  {matchedProducts.length > 0 && (
+                                    <div className="mt-2.5 mb-3 flex flex-col gap-2">
+                                      {matchedProducts.map((prod) => (
+                                        <Link
+                                          key={prod.id || prod.product_id}
+                                          to={`/products/${prod.id || prod.product_id}`}
+                                          onClick={() => toggleChat()}
+                                          className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-950 border border-slate-850 hover:border-slate-700/80 transition-all text-left group"
+                                        >
+                                          <div className="w-12 h-12 rounded overflow-hidden bg-slate-900 flex-shrink-0 border border-slate-800">
+                                            <img
+                                              src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
+                                              alt={prod.name || prod.title}
+                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <h4 className="text-xs font-medium text-white truncate transition-colors">
+                                              {prod.name || prod.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                              <p className="text-xs font-bold text-accent">
+                                                {formatPrice(prod.price || prod.basePrice || 0)}
+                                              </p>
+                                              {(prod.recommendationScore || prod.score) > 0 && (
+                                                <span className="text-[8px] bg-accent/15 text-accent px-1.5 py-0.5 rounded font-mono font-bold">
+                                                  {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </Link>
+                                      ))}
                                     </div>
-                                    <Link
-                                      to={`/products/${prod.id || prod.product_id}`}
-                                      onClick={() => toggleChat()}
-                                      className="block text-center mt-2 py-1 text-[10px] font-semibold text-gray-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all"
-                                    >
-                                      Xem chi tiết
-                                    </Link>
-                                  </div>
+                                  )}
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                              );
+                            });
+
+                            // Remaining products that were not matched inline
+                            const remainingProducts = (msg.suggestedProducts || []).filter(
+                              (prod) => !placedProductIds.has(prod.id || prod.product_id)
+                            );
+
+                            return (
+                              <>
+                                {renderedBlocks}
+                                
+                                {remainingProducts.length > 0 && (
+                                  <div className="mt-3 pt-3 border-t border-slate-800/60">
+                                    <p className="text-[10px] text-gray-400 font-semibold mb-2 flex items-center gap-1">
+                                      <Sparkles className="w-3 h-3 text-accent animate-pulse" />
+                                      Sản phẩm gợi ý thêm:
+                                    </p>
+                                    <div className="flex flex-col gap-2">
+                                      {remainingProducts.map((prod) => (
+                                        <Link
+                                          key={prod.id || prod.product_id}
+                                          to={`/products/${prod.id || prod.product_id}`}
+                                          onClick={() => toggleChat()}
+                                          className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-950 border border-slate-850 hover:border-slate-700/80 transition-all text-left group"
+                                        >
+                                          <div className="w-12 h-12 rounded overflow-hidden bg-slate-900 flex-shrink-0 border border-slate-800">
+                                            <img
+                                              src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
+                                              alt={prod.name || prod.title}
+                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <h4 className="text-xs font-medium text-white truncate transition-colors">
+                                              {prod.name || prod.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                              <p className="text-xs font-bold text-accent">
+                                                {formatPrice(prod.price || prod.basePrice || 0)}
+                                              </p>
+                                              {(prod.recommendationScore || prod.score) > 0 && (
+                                                <span className="text-[8px] bg-accent/15 text-accent px-1.5 py-0.5 rounded font-mono font-bold">
+                                                  {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
