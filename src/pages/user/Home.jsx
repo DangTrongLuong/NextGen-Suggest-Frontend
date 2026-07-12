@@ -8,6 +8,7 @@ import RecommendationSection from '../../components/product/RecommendationSectio
 import ProductCard from '../../components/product/ProductCard';
 import { productService } from '../../services/productService';
 import heroBannerImg from '../../assets/hero-banner.png';
+import HeroAISuggestions from '../../components/product/HeroAISuggestions';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -177,7 +178,7 @@ const Home = () => {
       {/* 1. Hero Banner */}
       {!searchQuery && (
         <section 
-          className="relative border-b border-gray-100 text-white overflow-hidden flex items-center h-[420px] lg:h-[520px] bg-cover bg-center"
+          className="relative border-b border-gray-100 text-white overflow-hidden flex items-center py-20 md:py-28 lg:py-32 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBannerImg})` }}
         >
           {/* Dark overlay for readability */}
@@ -208,6 +209,9 @@ const Home = () => {
                 </Link>
               </div>
             </div>
+            
+            {/* AI Query Suggestions Section */}
+            <HeroAISuggestions />
           </div>
         </section>
       )}
@@ -259,6 +263,37 @@ const Home = () => {
           </section>
         ) : (
           <>
+            {/* 6. Gợi ý cho bạn */}
+            <RecommendationSection
+              badge="Gợi ý"
+              badgeColor="emerald"
+              title="Gợi ý dành cho bạn"
+              desc="Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn"
+              products={activeRecTab === 0 
+                ? (normPersonal.length > 0 ? normPersonal : normFeatured)
+                : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
+              }
+              loading={loading}
+              containerClassName="bg-white border-b border-gray-100 pb-12"
+              headerExtra={
+                <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                  {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
+                    <button
+                      key={tabLabel}
+                      onClick={() => setActiveRecTab(idx)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
+                        activeRecTab === idx 
+                          ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                          : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      {tabLabel}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
+
             {/* 3. Bán chạy nhất */}
             <RecommendationSection
               badge="Bán chạy"
@@ -356,37 +391,6 @@ const Home = () => {
               viewAll
               viewAllHref="/products"
               containerClassName="border-b border-gray-100 pb-12"
-            />
-
-            {/* 6. Gợi ý cho bạn */}
-            <RecommendationSection
-              badge="Gợi ý"
-              badgeColor="emerald"
-              title="Gợi ý dành cho bạn"
-              desc="Các mẫu sản phẩm phù hợp được sắp xếp dựa trên sự quan tâm của bạn"
-              products={activeRecTab === 0 
-                ? (normPersonal.length > 0 ? normPersonal : normFeatured)
-                : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
-              }
-              loading={loading}
-              containerClassName="bg-white border-b border-gray-100 pb-12"
-              headerExtra={
-                <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-                  {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
-                    <button
-                      key={tabLabel}
-                      onClick={() => setActiveRecTab(idx)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
-                        activeRecTab === idx 
-                          ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                          : 'text-gray-500 hover:text-gray-800'
-                      }`}
-                    >
-                      {tabLabel}
-                    </button>
-                  ))}
-                </div>
-              }
             />
 
             {/* 7. Xu hướng mua sắm */}
