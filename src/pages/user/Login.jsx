@@ -32,6 +32,8 @@ const Login = () => {
     const result = await login(form.email, form.password);
     if (result.success) {
       navigate(result.user.role === 'admin' ? '/admin' : from, { replace: true });
+    } else if (result.error === 'NOT_VERIFIED') {
+      navigate(`/verify?email=${encodeURIComponent(form.email)}`, { replace: true });
     }
   };
 

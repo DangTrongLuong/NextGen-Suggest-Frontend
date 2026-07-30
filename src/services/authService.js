@@ -6,6 +6,16 @@ export const authService = {
     return res.data.data;
   },
 
+  verify: async (email, code) => {
+    const res = await api.post('/auth/verify', { email, code });
+    return res.data.data;
+  },
+
+  resendCode: async (email) => {
+    const res = await api.post(`/auth/resend-code?email=${encodeURIComponent(email)}`);
+    return res.data.data;
+  },
+
   login: async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     return res.data.data;

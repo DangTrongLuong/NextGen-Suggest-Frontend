@@ -35,7 +35,13 @@ const Register = () => {
     e.preventDefault();
     if (!validate()) return;
     const result = await register(form.name, form.email, form.password);
-    if (result.success) navigate('/');
+    if (result.success) {
+      if (result.user && !result.user.isActive) {
+        navigate(`/verify?email=${encodeURIComponent(form.email)}`);
+      } else {
+        navigate('/');
+      }
+    }
   };
 
   return (

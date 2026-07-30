@@ -114,6 +114,9 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login' }) => {
       const u = result.user;
       const isAdminUser = u.role === 'admin' || u.roles?.includes?.('admin');
       if (isAdminUser) navigate('/admin');
+    } else if (result.error === 'NOT_VERIFIED') {
+      onClose();
+      navigate(`/verify?email=${encodeURIComponent(form.email)}`);
     }
   };
 
@@ -121,7 +124,12 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login' }) => {
     e.preventDefault();
     if (!validateRegister()) return;
     const result = await register(form.name, form.email, form.password);
-    if (result.success) onClose();
+    if (result.success) {
+      onClose();
+      if (result.user && !result.user.isActive) {
+        navigate(`/verify?email=${encodeURIComponent(form.email)}`);
+      }
+    }
   };
 
   const handleGoogleLogin = () => {
