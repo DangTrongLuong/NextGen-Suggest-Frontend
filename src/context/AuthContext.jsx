@@ -5,6 +5,30 @@ import { authService } from '../services/authService';
 const AuthContext = createContext(null);
 
 // ── Helpers ──────────────────────────────────────────────
+const hashPassword = async (password) => {
+  if (!password) return '';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+};
+
+const parseJwt = (token) => {
+  try {
+    if (!token) return null;
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+};
+
 const saveTokens = (accessToken, refreshToken) => {
   localStorage.setItem('auth_tokens', JSON.stringify({ accessToken, refreshToken }));
 };
@@ -63,7 +87,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const data = await authService.login(email, password);
+      const hashedPassword = await hashPassword(password);
+      const data = await authService.login(email, hashedPassword);
       saveTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -72,6 +97,10 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: data.user };
     } catch (err) {
       const msg = err.response?.data?.message || 'Email hoặc mật khẩu không đúng';
+      if (msg === 'Account not verified') {
+        toast.error('Tài khoản chưa được xác thực. Vui lòng kích hoạt.');
+        return { success: false, error: 'NOT_VERIFIED', email };
+      }
       toast.error(msg);
       return { success: false, error: msg };
     } finally {
@@ -83,7 +112,12 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     setLoading(true);
     try {
-      const data = await authService.register(name, email, password);
+      const hashedPassword = await hashPassword(password);
+      const data = await authService.register(name, email, hashedPassword);
+      if (data.user && !data.user.isActive) {
+        toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.');
+        return { success: true, user: data.user };
+      }
       saveTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -151,6 +185,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Verify ─────────────────────────────────────────────
+  const verify = async (email, code) => {
+    setLoading(true);
+    try {
+      const data = await authService.verify(email, code);
+      saveTokens(data.accessToken, data.refreshToken);
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      toast.success(`Chào mừng, ${data.user.name}!`);
+      window.dispatchEvent(new Event('auth-change'));
+      return { success: true, user: data.user };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Xác thực thất bại';
+      toast.error(msg);
+      return { success: false, error: msg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Resend Code ────────────────────────────────────────
+  const resendCode = async (email) => {
+    try {
+      await authService.resendCode(email);
+      toast.success('Mã xác thực mới đã được gửi!');
+      return { success: true };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Gửi lại mã thất bại';
+      toast.error(msg);
+      return { success: false, error: msg };
+    }
+  };
+
   // ── Update Profile ─────────────────────────────────────
   const updateProfile = async (profileData) => {
     setLoading(true);
@@ -169,12 +236,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAdmin = user?.role === 'admin' || user?.roles?.includes('admin');
+  const getIsAdminFromToken = () => {
+    try {
+      const tokensStr = localStorage.getItem('auth_tokens');
+      if (!tokensStr) return false;
+      const { accessToken } = JSON.parse(tokensStr);
+      if (!accessToken) return false;
+      const claims = parseJwt(accessToken);
+      if (!claims) return false;
+      
+      if (claims.exp && claims.exp * 1000 < Date.now()) {
+        return false;
+      }
+
+      const roles = claims.roles || [];
+      return roles.includes('admin') || roles.includes('ADMIN');
+    } catch {
+      return false;
+    }
+  };
+
+  const isAdmin = !!user && getIsAdminFromToken();
   const isAuthenticated = !!user;
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, loginWithGoogle, handleOAuth2Login, isAdmin, isAuthenticated, updateProfile }}
+      value={{ user, loading, login, register, logout, loginWithGoogle, handleOAuth2Login, isAdmin, isAuthenticated, updateProfile, verify, resendCode }}
     >
       {children}
     </AuthContext.Provider>

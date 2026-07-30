@@ -15,6 +15,7 @@ import Profile from '../pages/user/Profile';
 import OrderTracking from '../pages/user/OrderTracking';
 import Login from '../pages/user/Login';
 import Register from '../pages/user/Register';
+import Verify from '../pages/user/Verify';
 import OAuth2Callback from '../pages/user/OAuth2Callback';
 
 // Admin Pages
@@ -74,6 +75,7 @@ const AppRoutes = () => {
       {/* Auth Routes (no layout) */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify" element={<Verify />} />
       <Route path="/oauth2/callback" element={<OAuth2Callback />} />
 
       {/* Admin Routes */}

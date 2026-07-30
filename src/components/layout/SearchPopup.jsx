@@ -8,6 +8,15 @@ import { searchPopupService } from '../../services/searchPopupService';
 import { formatPrice } from '../../utils/formatPrice';
 import { useDebounce } from '../../hooks/useDebounce';
 
+const isMaliciousQuery = (q) => {
+  if (!q) return true;
+  const str = String(q).trim().toLowerCase();
+  if (/\b(or|and)\s+['"]?\d+['"]?\s*=\s*['"]?\d+/i.test(str)) return true;
+  if (/--|union\s+select|<script|drop\s+table|sleep\s*\(/i.test(str)) return true;
+  if (/^[^a-z0-9\u00C0-\u1EF9]+$/i.test(str)) return true;
+  return false;
+};
+
 const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
   const [popupData, setPopupData] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -26,6 +35,11 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
         setLoading(true);
         try {
           const data = await searchPopupService.getSearchPopup();
+          if (data) {
+            data.searchHistory = (data.searchHistory || []).filter(h => !isMaliciousQuery(h));
+            data.trendingSearches = (data.trendingSearches || []).filter(t => !isMaliciousQuery(t));
+            data.relatedSearches = (data.relatedSearches || []).filter(r => !isMaliciousQuery(r));
+          }
           setPopupData(data);
         } catch (error) {
           console.error('Failed to load search popup data:', error);
@@ -50,7 +64,8 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
       setSuggestionsLoading(true);
       try {
         const data = await searchPopupService.getSuggestions(debouncedQuery);
-        setSuggestions(data.suggestions || []);
+        const filtered = (data.suggestions || []).filter(s => !isMaliciousQuery(s.keyword));
+        setSuggestions(filtered);
       } catch (error) {
         console.error('Failed to load autocomplete suggestions:', error);
       } finally {
