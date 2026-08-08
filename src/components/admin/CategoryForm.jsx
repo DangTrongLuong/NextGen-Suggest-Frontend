@@ -8,6 +8,7 @@ import Button from '../common/Button';
 import { categoryService } from '../../services/categoryService';
 import { uploadService } from '../../services/uploadService';
 import { categoryMainService } from '../../services/categoryMainService';
+import { useCategory } from '../../context/CategoryContext';
 
 const generateSlug = (name) =>
   name
@@ -21,6 +22,7 @@ const generateSlug = (name) =>
 
 const CategoryForm = ({ initialData = null }) => {
   const navigate = useNavigate();
+  const { refreshCategories } = useCategory();
   const isEdit = !!initialData;
 
   const [form, setForm] = useState({
@@ -144,6 +146,7 @@ const CategoryForm = ({ initialData = null }) => {
         await categoryService.create(payload);
         toast.success('Đã thêm danh mục mới');
       }
+      refreshCategories();
       navigate('/admin/categories');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Lưu danh mục thất bại');

@@ -20,7 +20,8 @@ const Verify = () => {
   useEffect(() => {
     if (!email) {
       toast.error('Không tìm thấy thông tin email xác thực.');
-      navigate('/login');
+      navigate('/');
+      window.dispatchEvent(new Event('open-login-modal'));
     }
   }, [email, navigate]);
 

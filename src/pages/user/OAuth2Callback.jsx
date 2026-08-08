@@ -24,7 +24,7 @@ const OAuth2Callback = () => {
 
     if (error || !token) {
       toast.error('Đăng nhập Google thất bại');
-      window.location.replace('/login');
+      window.location.replace('/');
       return;
     }
 
@@ -53,7 +53,7 @@ const OAuth2Callback = () => {
     } catch (err) {
       console.error('OAuth2 callback error:', err);
       toast.error('Đăng nhập thất bại, vui lòng thử lại');
-      window.location.replace('/login');
+      window.location.replace('/');
     }
   }, []);
 

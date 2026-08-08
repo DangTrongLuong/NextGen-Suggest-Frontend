@@ -154,9 +154,16 @@ const Register = () => {
 
             <p className="text-center text-sm text-gray-500 mt-6">
               Already have an account?{' '}
-              <Link to="/login" className="text-emerald-600 font-semibold hover:text-emerald-700">
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/');
+                  window.dispatchEvent(new Event('open-login-modal'));
+                }}
+                className="text-emerald-600 font-semibold hover:text-emerald-700"
+              >
                 Sign in
-              </Link>
+              </button>
             </p>
           </div>
         </motion.div>
