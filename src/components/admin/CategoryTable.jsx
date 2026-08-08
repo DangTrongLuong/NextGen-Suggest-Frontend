@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
 
-const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, viewMode = 'table' }) => {
+const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, viewMode = 'table', pageOffset = 0 }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [expandedIds, setExpandedIds] = useState([]);
 
@@ -57,7 +57,7 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
     const expanded = expandedIds.includes(cat.id);
     return (
       <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50 transition-colors">
-        <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+        <td className="px-4 py-3 text-sm text-gray-500">{pageOffset + idx + 1}</td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2" style={{ paddingLeft: depth * 20 }}>
             {children.length > 0 ? (
@@ -109,8 +109,8 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
   };
 
   const FlatRow = ({ cat, idx }) => (
-    <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.04 }} className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+    <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: (idx % 10) * 0.03 }} className="hover:bg-gray-50 transition-colors">
+      <td className="px-4 py-3 text-sm text-gray-500">{pageOffset + idx + 1}</td>
       <td className="px-4 py-3"><ImgCell src={cat.imageUrl} alt={cat.name} /></td>
       <td className="px-4 py-3">
         <p className="text-sm font-semibold text-gray-900">{cat.name}</p>
@@ -185,14 +185,14 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
                 ? visibleTreeItems.map(({ cat, depth }, idx) => (
                     <TreeRow key={cat.id} cat={cat} depth={depth} idx={idx} />
                   ))
-                : categories.filter((c) => !c.parentId).map((cat, idx) => (
+                : categories.map((cat, idx) => (
                     <FlatRow key={cat.id} cat={cat} idx={idx} />
                   ))
               }
             </tbody>
           </table>
         </div>
-        {(viewMode === 'tree' ? rootCats.length === 0 : categories.filter((c) => !c.parentId).length === 0) && (
+        {categories.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="font-medium">Chưa có danh mục nào</p>
           </div>

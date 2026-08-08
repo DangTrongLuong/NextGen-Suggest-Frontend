@@ -68,7 +68,7 @@ const RecommendationSection = ({
   }
 
   return (
-    <section className={`py-8 ${containerClassName}`}>
+    <section className={`py-2 sm:py-3 ${containerClassName}`}>
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-gray-100 pb-4">
         <div>
           {badge && (

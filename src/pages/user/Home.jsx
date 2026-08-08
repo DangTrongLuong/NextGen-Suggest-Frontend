@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Zap, Flame } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { recommendationService } from '../../services/recommendationService';
 import { useBehaviorTracker } from '../../hooks/useBehaviorTracker';
@@ -8,6 +9,7 @@ import RecommendationSection from '../../components/product/RecommendationSectio
 import ProductCard from '../../components/product/ProductCard';
 import { productService } from '../../services/productService';
 import heroBannerImg from '../../assets/hero-banner.png';
+import flashBannerImg from '../../assets/flash-sale-banner.png';
 import HeroAISuggestions from '../../components/product/HeroAISuggestions';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -44,6 +46,16 @@ const Home = () => {
   // Countdown timer for Flash Sale
   const [countdown, setCountdown] = useState({ hours: 4, minutes: 23, seconds: 45 });
 
+  // Hero Carousel Slider state (currentSlide, direction)
+  const [[currentHeroSlide, slideDirection], setHeroSlide] = useState([0, 1]);
+
+  const paginateHero = (newDirection) => {
+    setHeroSlide(([prev]) => {
+      const nextSlide = prev === 0 ? 1 : 0;
+      return [nextSlide, newDirection];
+    });
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(prev => {
@@ -55,6 +67,33 @@ const Home = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      paginateHero(1);
+    }, 6000);
+    return () => clearInterval(slideTimer);
+  }, []);
+
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? '100%' : '-100%',
+      opacity: 1,
+    }),
+    center: {
+      x: '0%',
+      opacity: 1,
+    },
+    exit: (direction) => ({
+      x: direction < 0 ? '-100%' : '100%',
+      opacity: 1,
+    }),
+  };
+
+  const slideTransition = {
+    x: { type: 'tween', ease: [0.25, 1, 0.5, 1], duration: 0.7 },
+    opacity: { duration: 0.35 },
+  };
 
   const loadAllData = () => {
     setLoading(true);
@@ -175,49 +214,216 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       
-      {/* 1. Hero Banner */}
+      {/* 1. Hero Banner Slider (Horizontal Right-to-Left Slide) */}
       {!searchQuery && (
-        <section 
-          className="relative border-b border-gray-100 text-white overflow-hidden flex items-center py-20 md:py-28 lg:py-32 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroBannerImg})` }}
-        >
-          {/* Dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
-            <div className="max-w-2xl text-left">
-              <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
-              <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
-                Không gian sống <span className="font-semibold text-emerald-400 block sm:inline">hiện đại</span>
-              </h1>
-              <p className="text-gray-200 text-xs sm:text-sm max-w-lg mb-8 font-light leading-relaxed">
-                Khám phá hàng nghìn sản phẩm nội thất và thời trang được tuyển chọn.
-              </p>
-   
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  to="/products"
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 border border-emerald-600 hover:border-emerald-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md uppercase tracking-wider text-center min-w-[130px]"
-                >
-                  Mua ngay
-                </Link>
-                <Link
-                  to="/products"
-                  className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md backdrop-blur-sm uppercase tracking-wider text-center min-w-[130px]"
-                >
-                  Khám phá bộ sưu tập
-                </Link>
-              </div>
-            </div>
-            
-            {/* AI Query Suggestions Section */}
-            <HeroAISuggestions />
+        <section className="relative border-b border-gray-100 text-white overflow-hidden min-h-[520px] md:min-h-[580px] flex items-center bg-gray-900">
+          <AnimatePresence custom={slideDirection} initial={false}>
+            {currentHeroSlide === 0 ? (
+              /* Slide 0: Branding Banner */
+              <motion.div
+                key="slide-0"
+                custom={slideDirection}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={slideTransition}
+                className="absolute inset-0 bg-cover bg-center flex items-center py-20 md:py-28 lg:py-32"
+                style={{ backgroundImage: `url(${heroBannerImg})` }}
+              >
+                <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
+                  <div className="max-w-2xl text-left">
+                    <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
+                    <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
+                      Không gian sống <span className="font-semibold text-emerald-400 block sm:inline">hiện đại</span>
+                    </h1>
+                    <p className="text-gray-200 text-xs sm:text-sm max-w-lg mb-8 font-light leading-relaxed">
+                      Khám phá hàng nghìn sản phẩm nội thất và thời trang được tuyển chọn.
+                    </p>
+
+                    <div className="flex flex-wrap gap-4">
+                      <Link
+                        to="/products"
+                        className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 border border-emerald-600 hover:border-emerald-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md uppercase tracking-wider text-center min-w-[130px]"
+                      >
+                        Mua ngay
+                      </Link>
+                      <Link
+                        to="/products"
+                        className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md backdrop-blur-sm uppercase tracking-wider text-center min-w-[130px]"
+                      >
+                        Khám phá bộ sưu tập
+                      </Link>
+                    </div>
+                  </div>
+                  
+                  {/* AI Query Suggestions Section */}
+                  <HeroAISuggestions />
+                </div>
+              </motion.div>
+            ) : (
+              /* Slide 1: Flash Sale Promo Banner */
+              <motion.div
+                key="slide-1"
+                custom={slideDirection}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={slideTransition}
+                className="absolute inset-0 bg-cover bg-center flex items-center py-16 md:py-24 lg:py-28"
+                style={{ backgroundImage: `url(${flashBannerImg})` }}
+              >
+                <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                    {/* Left content */}
+                    <div className="max-w-2xl lg:max-w-3xl space-y-4">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600/90 border border-red-400 text-white text-xs font-bold uppercase tracking-widest shadow-md">
+                        <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                        ⚡ Khuyến mãi đặc biệt - Flash Sale
+                      </div>
+
+                      <h2 className="text-2xl sm:text-4xl lg:text-[44px] xl:text-5xl font-extrabold tracking-tight text-white uppercase leading-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] whitespace-nowrap">
+                        SIÊU FLASH SALE MÙA HÈ
+                      </h2>
+
+                      <p className="text-gray-100 text-xs sm:text-sm font-medium leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] max-w-xl">
+                        Cơ hội sở hữu các sản phẩm thiết kế sang trọng với mức chiết khấu cực sốc. Ưu đãi diễn ra trong thời gian ngắn, số lượng sản phẩm có hạn!
+                      </p>
+
+                      {/* Countdown timer */}
+                      <div className="flex items-center gap-3 pt-2">
+                        <span className="text-xs font-semibold text-white uppercase tracking-wider drop-shadow-md">Kết thúc sau:</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-center">
+                            <span className="w-10 h-10 rounded-xl bg-black/60 border border-white/20 text-white font-black flex items-center justify-center text-sm shadow-md backdrop-blur-md">
+                              {String(countdown.hours).padStart(2, '0')}
+                            </span>
+                            <span className="text-[9px] text-gray-200 uppercase mt-1 font-semibold drop-shadow-sm">Giờ</span>
+                          </div>
+                          <span className="text-red-500 font-bold text-lg -mt-3.5 drop-shadow-md">:</span>
+                          <div className="flex flex-col items-center">
+                            <span className="w-10 h-10 rounded-xl bg-black/60 border border-white/20 text-white font-black flex items-center justify-center text-sm shadow-md backdrop-blur-md">
+                              {String(countdown.minutes).padStart(2, '0')}
+                            </span>
+                            <span className="text-[9px] text-gray-200 uppercase mt-1 font-semibold drop-shadow-sm">Phút</span>
+                          </div>
+                          <span className="text-red-500 font-bold text-lg -mt-3.5 drop-shadow-md">:</span>
+                          <div className="flex flex-col items-center">
+                            <span className="w-10 h-10 rounded-xl bg-red-600 text-white font-black flex items-center justify-center text-sm shadow-lg shadow-red-600/40">
+                              {String(countdown.seconds).padStart(2, '0')}
+                            </span>
+                            <span className="text-[9px] text-gray-200 uppercase mt-1 font-semibold drop-shadow-sm">Giây</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right side: Animated 20% Transparent Coupon Div Card */}
+                    <div className="w-full lg:w-auto flex flex-col items-center lg:items-end">
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -4, scale: 1.02 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full sm:w-80 bg-black/20 backdrop-blur-md rounded-2xl p-6 text-center flex flex-col items-center gap-4 shadow-xl text-white relative overflow-hidden"
+                      >
+                        {/* Animated Shimmer Line */}
+                        <motion.div
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ repeat: Infinity, duration: 3.5, ease: 'linear' }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                        />
+
+                        {/* Pulsing Lightning Badge */}
+                        <motion.div
+                          animate={{ scale: [1, 1.06, 1] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider shadow-sm"
+                        >
+                          <Zap size={14} className="fill-emerald-400 animate-pulse" />
+                          <span>MÃ GIẢM GIÁ ĐẶC BIỆT</span>
+                        </motion.div>
+
+                        <p className="text-xs text-gray-200 font-medium leading-relaxed">
+                          Nhập mã để nhận ngay <span className="font-extrabold text-emerald-400 text-sm">ƯU ĐÃI GIẢM 20%</span> cho đơn hàng của bạn!
+                        </p>
+
+                        {/* Coupon Code Dashed Box */}
+                        <div className="w-full relative">
+                          <motion.div
+                            whileHover={{ borderColor: 'rgba(52, 211, 153, 1)' }}
+                            className="w-full bg-black/20 border-2 border-dashed border-emerald-400/80 rounded-xl py-2.5 px-3.5 text-center font-mono font-black text-emerald-400 text-base sm:text-lg tracking-widest flex items-center justify-between transition-colors shadow-inner"
+                          >
+                            <span className="drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">NIVORA_20</span>
+                            <motion.button
+                              type="button"
+                              whileHover={{ scale: 1.08 }}
+                              whileTap={{ scale: 0.92 }}
+                              onClick={() => {
+                                navigator.clipboard.writeText('NIVORA_20');
+                                toast.success('Đã chép mã giảm giá NIVORA_20!');
+                              }}
+                              className="text-xs bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-md flex items-center gap-1"
+                            >
+                              <Zap size={11} className="fill-white" /> CHÉP MÃ
+                            </motion.button>
+                          </motion.div>
+                        </div>
+
+                        {/* CTA Button */}
+                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} className="w-full mt-1">
+                          <Link
+                            to="/products"
+                            className="w-full block py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md text-center"
+                          >
+                            Sử dụng ngay ➔
+                          </Link>
+                        </motion.div>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Left / Right Arrow Controls */}
+          <button
+            onClick={() => paginateHero(-1)}
+            className="absolute left-4 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
+            title="Slide trước"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={() => paginateHero(1)}
+            className="absolute right-4 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
+            title="Slide sau"
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          {/* Dot Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {[0, 1].map((idx) => (
+              <button
+                key={idx}
+                onClick={() => setHeroSlide([idx, idx > currentHeroSlide ? 1 : -1])}
+                className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  currentHeroSlide === idx ? 'w-8 bg-emerald-400' : 'w-2.5 bg-white/50 hover:bg-white/80'
+                }`}
+                title={`Slide ${idx + 1}`}
+              />
+            ))}
           </div>
         </section>
       )}
 
       {/* Main sections container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6 sm:space-y-8 lg:space-y-10">
         
         {searchQuery ? (
           <section className="py-4 min-h-[400px]">
@@ -274,7 +480,7 @@ const Home = () => {
                 : (normYouMayNeed.length > 0 ? normYouMayNeed : normTrending)
               }
               loading={loading}
-              containerClassName="bg-white border-b border-gray-100 pb-12"
+              containerClassName="bg-white border-b border-gray-100 pb-2 sm:pb-3"
               headerExtra={
                 <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
                   {['Sản phẩm phù hợp', 'Có thể bạn thích'].map((tabLabel, idx) => (
@@ -302,7 +508,7 @@ const Home = () => {
               desc="Những sản phẩm có lượt mua cao và đánh giá hài lòng tốt nhất"
               products={filteredBestSellers}
               loading={loading}
-              containerClassName="border-b border-gray-100 pb-12"
+              containerClassName="border-b border-gray-100 pb-2 sm:pb-3"
               headerExtra={
                 bestSellerCats.length > 0 && (
                   <div className="flex flex-wrap gap-2">
@@ -334,51 +540,7 @@ const Home = () => {
               }
             />
 
-            {/* 4. Khuyến mãi (Promotions / Banners) */}
-            <section className="border-t border-b border-gray-200/65 py-16 bg-gray-50/50 rounded-xl px-4 sm:px-8 my-8">
-              <div className="grid md:grid-cols-2 gap-6 items-center">
-                <div className="bg-red-50/35 p-8 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
-                  <div>
-                    <span className="text-[10px] font-bold text-red-650 uppercase tracking-widest block mb-2">⚡ Khuyến mãi có hạn</span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">SIÊU FLASH SALE MÙA HÈ</h3>
-                    <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
-                      Cơ hội sở hữu các sản phẩm thiết kế sang trọng với mức chiết khấu lên đến 50%. Ưu đãi diễn ra trong thời gian ngắn, số lượng giới hạn.
-                    </p>
-                  </div>
-                  
-                  {/* Countdown */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kết thúc sau:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.hours).padStart(2, '0')}</span>
-                      <span className="text-rose-600 font-bold">:</span>
-                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.minutes).padStart(2, '0')}</span>
-                      <span className="text-rose-600 font-bold">:</span>
-                      <span className="w-8 h-8 rounded bg-rose-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">{String(countdown.seconds).padStart(2, '0')}</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="bg-emerald-50/35 p-8 rounded-lg border border-emerald-100 shadow-sm flex flex-col justify-between h-full min-h-[260px]">
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest block mb-2">🌿 Thành viên độc quyền</span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 uppercase">Đặc quyền thành viên Nivora</h3>
-                    <p className="text-gray-600 text-xs sm:text-sm font-light mb-6 leading-relaxed">
-                      Đăng ký tài khoản thành viên Nivora ngay hôm nay để nhận mã giảm giá 10% cho đơn hàng đầu tiên, chính sách tích điểm đổi quà và giao hàng ưu tiên.
-                    </p>
-                  </div>
-                  {!user ? (
-                    <Link to="/register" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-750 text-white text-xs font-semibold rounded transition-colors text-center shadow-sm">
-                      Đăng ký tài khoản miễn phí
-                    </Link>
-                  ) : (
-                    <div className="text-emerald-700 font-semibold text-xs flex items-center gap-1">
-                      ✓ Bạn đã kích hoạt tài khoản thành viên Nivora
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
 
             {/* 5. Sản phẩm nổi bật (New Arrivals) */}
             <RecommendationSection
@@ -390,7 +552,7 @@ const Home = () => {
               loading={loading}
               viewAll
               viewAllHref="/products"
-              containerClassName="border-b border-gray-100 pb-12"
+              containerClassName="border-b border-gray-100 pb-2 sm:pb-3"
             />
 
             {/* 7. Xu hướng mua sắm */}
@@ -403,7 +565,7 @@ const Home = () => {
               loading={loading}
               viewAll
               viewAllHref="/products"
-              containerClassName="border-b border-gray-100 pb-12"
+              containerClassName="border-b border-gray-100 pb-2 sm:pb-3"
             />
 
             {/* 8. Thịnh hành theo khu vực */}
@@ -416,7 +578,7 @@ const Home = () => {
               loading={loading}
               viewAll
               viewAllHref="/products"
-              containerClassName="border-b border-gray-100 pb-12"
+              containerClassName="border-b border-gray-100 pb-2 sm:pb-3"
             />
 
             {/* 9. Đánh giá cao nhất */}
@@ -429,7 +591,7 @@ const Home = () => {
               loading={loading}
               viewAll
               viewAllHref="/products"
-              containerClassName="border-b border-gray-100 pb-12"
+              containerClassName="border-b border-gray-100 pb-2 sm:pb-3"
             />
 
             {/* 10. Sản phẩm đã xem gần đây */}
@@ -441,7 +603,7 @@ const Home = () => {
                 desc="Xem lại danh sách sản phẩm bạn vừa tham khảo và tìm kiếm gần đây"
                 products={normRecent}
                 loading={loading}
-                containerClassName="pb-12"
+                containerClassName="pb-2 sm:pb-3"
               />
             )}
           </>

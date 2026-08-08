@@ -10,6 +10,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
   useEffect(() => {
     if (!loading && !user) {
       toast.error('Vui lòng đăng nhập để tiếp tục');
+      window.dispatchEvent(new Event('open-login-modal'));
     }
     if (!loading && user && requireAdmin && !isAdmin) {
       toast.error('Bạn không có quyền truy cập trang này');
@@ -17,7 +18,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
   }, [loading, user, isAdmin, requireAdmin]);
 
   if (loading) return null;
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user) return <Navigate to="/" replace />;
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
   return children;
 };

@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { ProductProvider } from './context/ProductContext';
+import { CategoryProvider } from './context/CategoryContext';
 import AppRoutes from './routes/AppRoutes';
 import ScrollToTop from './components/common/ScrollToTop';
 
@@ -12,10 +13,11 @@ const App = () => {
     <BrowserRouter>
       <ScrollToTop />
       <AuthProvider>
-        <ProductProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <AppRoutes />
+        <CategoryProvider>
+          <ProductProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <AppRoutes />
               <Toaster
                 position="top-right"
                 toastOptions={{
@@ -38,7 +40,8 @@ const App = () => {
             </WishlistProvider>
           </CartProvider>
         </ProductProvider>
-      </AuthProvider>
+      </CategoryProvider>
+    </AuthProvider>
     </BrowserRouter>
   );
 };

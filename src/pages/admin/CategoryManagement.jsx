@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Search, LayoutList, GitBranch, Upload } from 'lucide-react';
+import { Plus, Search, LayoutList, GitBranch, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import CategoryTable from '../../components/admin/CategoryTable';
@@ -14,7 +14,6 @@ const statusFilters = [
   { key: 'active', label: 'Đang hoạt động' },
   { key: 'inactive', label: 'Tạm ẩn' },
   { key: 'root', label: 'Danh mục gốc' },
-  { key: 'child', label: 'Danh mục con' },
 ];
 
 const CategoryManagement = () => {
@@ -24,6 +23,8 @@ const CategoryManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('table');
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -41,6 +42,11 @@ const CategoryManagement = () => {
     fetchCategories();
   }, [fetchCategories]);
 
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
   const filtered = categories.filter((c) => {
     const matchSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,10 +55,20 @@ const CategoryManagement = () => {
       statusFilter === 'all' ||
       (statusFilter === 'active' && c.isActive) ||
       (statusFilter === 'inactive' && !c.isActive) ||
-      (statusFilter === 'root' && !c.parentId) ||
-      (statusFilter === 'child' && !!c.parentId);
+      (statusFilter === 'root' && !c.parentId);
     return matchSearch && matchStatus;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCategories = filtered.slice(startIndex, startIndex + itemsPerPage);
 
   const handleDelete = async (id) => {
     try {
@@ -183,13 +199,87 @@ const CategoryManagement = () => {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : (
-        <CategoryTable
-          categories={filtered}
-          allCategories={categories}
-          onDelete={handleDelete}
-          onToggleActive={handleToggleActive}
-          viewMode={viewMode}
-        />
+        <>
+          <CategoryTable
+            categories={paginatedCategories}
+            allCategories={categories}
+            onDelete={handleDelete}
+            onToggleActive={handleToggleActive}
+            viewMode={viewMode}
+            pageOffset={startIndex}
+          />
+
+          {/* Pagination Controls (10 items per page with Ellipsis) */}
+          {filtered.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+              <p className="text-xs text-gray-500 font-medium whitespace-nowrap shrink-0">
+                Hiển thị <span className="font-bold text-gray-900">{startIndex + 1} - {Math.min(startIndex + itemsPerPage, filtered.length)}</span> trong tổng số <span className="font-bold text-gray-900">{filtered.length}</span> danh mục
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap justify-center">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {(() => {
+                  const getPageNumbers = (current, total) => {
+                    if (total <= 7) {
+                      return Array.from({ length: total }, (_, i) => i + 1);
+                    }
+                    if (current <= 4) {
+                      return [1, 2, 3, 4, 5, '...', total];
+                    }
+                    if (current >= total - 3) {
+                      return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+                    }
+                    return [1, '...', current - 1, current, current + 1, '...', total];
+                  };
+
+                  return getPageNumbers(currentPage, totalPages).map((item, idx) => {
+                    if (item === '...') {
+                      return (
+                        <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 font-bold select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setCurrentPage(item)}
+                        className={clsx(
+                          'w-9 h-9 text-xs font-bold rounded-xl transition-all cursor-pointer',
+                          currentPage === item
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-400 hover:bg-gray-50'
+                        )}
+                      >
+                        {item}
+                      </button>
+                    );
+                  });
+                })()}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Trang sau"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
       <ImportExcelModal
         isOpen={isImportOpen}
