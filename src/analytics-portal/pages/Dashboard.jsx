@@ -25,16 +25,25 @@ const Dashboard = () => {
     try {
       // 1. Fetch overview (KPIs + Timeline)
       const overviewRes = await analyticsService.getOverview(timeRange);
-      if (overviewRes.success) {
-        setKpis(overviewRes.data.kpis);
-        setTimeline(overviewRes.data.timeline || []);
-        setAlerts(overviewRes.data.alerts || []);
+      if (overviewRes && (overviewRes.success !== false)) {
+        const data = overviewRes.data || overviewRes;
+        const kpisObj = data.kpis?.kpis || data.kpis || {};
+        const timelineArr = data.timeline || data.kpis?.timeline || [];
+        setKpis(kpisObj);
+        setTimeline(timelineArr);
+        setAlerts(data.alerts || []);
       }
 
       // 2. Fetch top keywords
       const keywordsRes = await analyticsService.getTopKeywords(timeRange, 5);
       if (keywordsRes.success) {
         setTopKeywords(keywordsRes.data || []);
+      }
+
+      // 3. Fetch latest search logs to populate initial realtime feed
+      const historyRes = await analyticsService.getHistory({ page: 0, size: 5 });
+      if (historyRes.success && historyRes.data?.content) {
+        setRealtimeFeed(historyRes.data.content);
       }
     } catch (err) {
       console.error('Failed to load dashboard statistics:', err);
@@ -108,22 +117,24 @@ const Dashboard = () => {
     const xMax = width - padding * 2;
     const yMax = height - padding * 2;
 
-    const maxVal = Math.max(...timeline.map(d => d.search_count), 5);
+    const maxVal = Math.max(...timeline.map(d => Number(d.search_count) || 0), 5);
 
-    // Compute coordinates
     const points = timeline.map((d, index) => {
-      const x = padding + (index / (timeline.length - 1 || 1)) * xMax;
-      const y = height - padding - (d.search_count / maxVal) * yMax;
-      return { x, y, value: d.search_count, label: d.time_bucket.split(' ').pop() };
+      const cnt = Number(d.search_count) || 0;
+      const x = timeline.length === 1 
+        ? width / 2 
+        : padding + (index / (timeline.length - 1)) * xMax;
+      const y = height - padding - (cnt / maxVal) * yMax;
+      return { x, y: isNaN(y) ? height - padding : y, value: cnt, label: (d.time_bucket || '').split(' ').pop() };
     });
 
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-    const areaPath = timeline.length > 0 
+    const areaPath = points.length > 0 
       ? `${linePath} L ${points[points.length-1].x} ${height-padding} L ${points[0].x} ${height-padding} Z` 
       : '';
 
     return (
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="overflow-visible">
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
         <defs>
           <linearGradient id="emerald-line-grad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#10b981" />
@@ -153,21 +164,20 @@ const Dashboard = () => {
         {areaPath && <path d={areaPath} fill="url(#emerald-area-grad)" />}
         {linePath && <path d={linePath} fill="none" stroke="url(#emerald-line-grad)" strokeWidth="2.5" strokeLinecap="round" />}
 
-        {/* Circle Dots on Hover/Static */}
+        {/* Circle Dots */}
         {points.map((p, i) => (
           <g key={i} className="group/dot cursor-pointer">
             <circle 
               cx={p.x} 
               cy={p.y} 
-              r="3.5" 
-              className="fill-[#070b13] stroke-emerald-400 stroke-[2] hover:r-5 hover:fill-emerald-400 transition-all"
+              r="4" 
+              className="fill-[#070b13] stroke-emerald-400 stroke-[2] hover:r-6 hover:fill-emerald-400 transition-all"
             />
-            {/* Tooltip text */}
             <text 
               x={p.x} 
-              y={p.y - 10} 
+              y={Math.max(12, p.y - 10)} 
               textAnchor="middle" 
-              className="hidden group-hover/dot:block fill-slate-200 text-[10px] font-bold bg-slate-900 px-1 rounded"
+              className="fill-emerald-300 text-[9px] font-bold"
             >
               {p.value}
             </text>
@@ -175,7 +185,7 @@ const Dashboard = () => {
         ))}
 
         {/* X Axis Labels */}
-        {points.filter((_, idx) => idx % Math.max(1, Math.floor(timeline.length / 5)) === 0).map((p, i) => (
+        {points.map((p, i) => (
           <text 
             key={i} 
             x={p.x} 
@@ -207,11 +217,11 @@ const Dashboard = () => {
     const xMax = width - padding * 2;
     const yMax = height - padding * 2;
 
-    const maxVal = Math.max(...timeline.map(d => d.avg_latency), 50);
-    const barWidth = Math.max(4, (xMax / timeline.length) * 0.6);
+    const maxVal = Math.max(...timeline.map(d => Number(d.avg_latency ?? d.avg_latency_ms) || 0), 50);
+    const barWidth = Math.min(24, Math.max(8, (xMax / Math.max(1, timeline.length)) * 0.25));
 
     return (
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="overflow-visible">
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
         <defs>
           <linearGradient id="blue-bar-grad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#3b82f6" />
@@ -235,8 +245,12 @@ const Dashboard = () => {
 
         {/* Bars */}
         {timeline.map((d, index) => {
-          const x = padding + (index / (timeline.length - 1 || 1)) * xMax - barWidth / 2;
-          const barHeight = (d.avg_latency / maxVal) * yMax;
+          const latVal = Number(d.avg_latency ?? d.avg_latency_ms) || 0;
+          const x = timeline.length === 1 
+            ? (width / 2) - (barWidth / 2)
+            : padding + (index / (timeline.length - 1)) * xMax - barWidth / 2;
+          
+          const barHeight = Math.min(yMax, Math.max(4, (latVal / maxVal) * yMax));
           const y = height - padding - barHeight;
 
           return (
@@ -245,31 +259,32 @@ const Dashboard = () => {
                 x={x} 
                 y={y} 
                 width={barWidth} 
-                height={Math.max(2, barHeight)} 
-                rx={Math.min(2, barWidth / 2)}
+                height={barHeight} 
+                rx={Math.min(3, barWidth / 2)}
                 fill="url(#blue-bar-grad)"
                 className="hover:fill-blue-400 transition-colors"
               />
               <text 
                 x={x + barWidth / 2} 
-                y={y - 8} 
+                y={Math.max(12, y - 6)} 
                 textAnchor="middle" 
-                className="hidden group-hover/bar:block fill-slate-200 text-[10px] font-bold"
+                className="fill-blue-300 text-[9px] font-bold"
               >
-                {Math.round(d.avg_latency)}ms
+                {Math.round(latVal)}ms
               </text>
             </g>
           );
         })}
 
         {/* X Axis Labels */}
-        {timeline.filter((_, idx) => idx % Math.max(1, Math.floor(timeline.length / 5)) === 0).map((d, i) => {
-          const index = timeline.indexOf(d);
-          const x = padding + (index / (timeline.length - 1 || 1)) * xMax;
-          const label = d.time_bucket.split(' ').pop();
+        {timeline.map((d, index) => {
+          const x = timeline.length === 1
+            ? width / 2
+            : padding + (index / (timeline.length - 1)) * xMax;
+          const label = (d.time_bucket || '').split(' ').pop();
           return (
             <text 
-              key={i} 
+              key={index} 
               x={x} 
               y={height - 2} 
               textAnchor="middle" 

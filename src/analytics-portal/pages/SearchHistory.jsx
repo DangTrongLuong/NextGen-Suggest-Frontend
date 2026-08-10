@@ -3,10 +3,23 @@ import {
   Search, Calendar, Filter, Download, ArrowUpDown, 
   ArrowUp, ArrowDown, X, Info, ChevronLeft, ChevronRight, Zap, RefreshCw
 } from 'lucide-react';
-import { useAnalyticsStore } from '../store/store';
 import { analyticsService } from '../services/analyticsService';
 import { BASE_URL } from '../services/api';
+import { useAnalyticsStore } from '../store/store';
 import toast from 'react-hot-toast';
+
+const formatSearchedAt = (dateStr) => {
+  if (!dateStr) return 'Vừa xong';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || d.getFullYear() <= 1970) return 'Vừa xong';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
 
 const SearchHistory = () => {
   // Query state
@@ -30,37 +43,89 @@ const SearchHistory = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
+  const fetchHistory = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const params = {
         q: q.trim() || undefined,
-        start: startDate ? new Date(startDate).toISOString() : undefined,
-        end: endDate ? new Date(endDate).toISOString() : undefined,
+        start: startDate ? (startDate.includes('T') ? startDate : `${startDate}T00:00:00`) : undefined,
+        end: endDate ? (endDate.includes('T') ? endDate : `${endDate}T23:59:59`) : undefined,
         zero_results: zeroResults,
         page,
-        size: 15,
+        size: 10,
         sort_by: sortBy,
         sort_desc: sortDesc
       };
 
       const res = await analyticsService.getHistory(params);
-      if (res.success) {
-        setHistoryList(res.data.content || []);
-        setTotalElements(res.data.total_elements || 0);
-        setTotalPages(res.data.total_pages || 0);
+      if (res && (res.success !== false)) {
+        const payloadData = res.data || res;
+        const rawContent = payloadData.content || (Array.isArray(payloadData) ? payloadData : []);
+        const cleanContent = rawContent.filter((item) => {
+          if (!item.keyword || !item.keyword.trim() || item.keyword.trim() === '-') return false;
+          if (item.searched_at) {
+            const d = new Date(item.searched_at);
+            if (!isNaN(d.getTime()) && d.getFullYear() <= 1970) return false;
+          }
+          return true;
+        });
+
+        setHistoryList(cleanContent);
+        setTotalElements(payloadData.total_elements ?? cleanContent.length ?? 0);
+        setTotalPages(payloadData.total_pages ?? (cleanContent.length > 0 ? 1 : 0));
       }
     } catch (err) {
       console.error('Failed to load history:', err);
-      toast.error('Lỗi khi tải lịch sử tìm kiếm.');
+      if (!silent) toast.error('Lỗi khi tải lịch sử tìm kiếm.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [q, startDate, endDate, zeroResults, page, sortBy, sortDesc]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  // Real-time WebSocket Updates handler via window event
+  useEffect(() => {
+    const handleNewSearch = (e) => {
+      const newLog = e.detail;
+      if (!newLog || !newLog.keyword || !newLog.keyword.trim() || newLog.keyword.trim() === '-') return;
+      if (q.trim() && !newLog.keyword.toLowerCase().includes(q.trim().toLowerCase())) return;
+
+      setHistoryList((prev) => {
+        if (prev.some((item) => item.request_id === newLog.request_id || (item.id && item.id === newLog.request_id))) {
+          return prev;
+        }
+        const newItem = {
+          id: newLog.request_id || 'realtime_' + Date.now(),
+          request_id: newLog.request_id,
+          keyword: newLog.keyword,
+          response_time_ms: Math.round(newLog.response_time_ms || 0),
+          total_results: newLog.total_results || 0,
+          session_id: newLog.session_id || 'anonymous',
+          searched_at: newLog.searched_at || new Date().toISOString(),
+          products: newLog.products || [],
+          clicks: [],
+          isLive: true
+        };
+        return [newItem, ...prev.slice(0, 14)];
+      });
+      setTotalElements((prev) => prev + 1);
+    };
+
+    window.addEventListener('ws-search-log', handleNewSearch);
+    return () => window.removeEventListener('ws-search-log', handleNewSearch);
+  }, [q]);
+
+  // Auto-polling fallback every 6 seconds on page 0
+  useEffect(() => {
+    if (page !== 0 || drawerOpen) return;
+    const timer = setInterval(() => {
+      fetchHistory(true);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [page, drawerOpen, fetchHistory]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -148,24 +213,40 @@ const SearchHistory = () => {
           </div>
 
           {/* Start Date */}
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+          <div 
+            className="relative flex items-center cursor-pointer"
+            onClick={(e) => {
+              const input = e.currentTarget.querySelector('input');
+              if (input && input.showPicker) input.showPicker();
+            }}
+          >
+            <span className="absolute left-3 text-[11px] font-bold text-slate-400 select-none pointer-events-none flex items-center gap-1">
+              <Calendar size={14} className="text-emerald-500 shrink-0" /> Từ:
+            </span>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/80"
+              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-14 pr-3 py-2.5 text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/80 cursor-pointer font-medium"
             />
           </div>
 
           {/* End Date */}
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+          <div 
+            className="relative flex items-center cursor-pointer"
+            onClick={(e) => {
+              const input = e.currentTarget.querySelector('input');
+              if (input && input.showPicker) input.showPicker();
+            }}
+          >
+            <span className="absolute left-3 text-[11px] font-bold text-slate-400 select-none pointer-events-none flex items-center gap-1">
+              <Calendar size={14} className="text-emerald-500 shrink-0" /> Đến:
+            </span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/80"
+              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-14 pr-3 py-2.5 text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/80 cursor-pointer font-medium"
             />
           </div>
 
@@ -268,7 +349,7 @@ const SearchHistory = () => {
                     className="hover:bg-slate-800/10 cursor-pointer transition-colors"
                     onClick={() => handleRowClick(log.id)}
                   >
-                    <td className="p-4 text-slate-400 font-semibold">{new Date(log.searched_at).toLocaleString()}</td>
+                    <td className="p-4 text-slate-400 font-semibold">{formatSearchedAt(log.searched_at)}</td>
                     <td className="p-4 font-bold text-slate-200">"{log.keyword}"</td>
                     <td className={`p-4 text-center font-bold ${log.response_time_ms > 2000 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {log.response_time_ms}ms
@@ -302,32 +383,54 @@ const SearchHistory = () => {
         </div>
 
         {/* Pagination Toolbar */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-slate-800/80 bg-slate-900/10">
+        <div className="flex items-center justify-between p-4 border-t border-slate-800/80 bg-slate-900/10 flex-wrap gap-4">
+          <div className="flex items-center gap-3">
             <span className="text-xs text-slate-500 font-semibold">
               Tổng số: <b className="text-slate-300 font-bold">{totalElements}</b> kết quả
             </span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setPage(prev => Math.max(0, prev - 1))}
-                disabled={page === 0 || loading}
-                className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-xs text-slate-300 font-bold">
-                Trang {page + 1} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(prev => Math.min(totalPages - 1, prev + 1))}
-                disabled={page >= totalPages - 1 || loading}
-                className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            <span className="px-2 py-0.5 bg-slate-800/60 border border-slate-700/50 text-slate-400 text-[11px] font-medium rounded-md">
+              10 bản ghi / trang
+            </span>
           </div>
-        )}
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(prev => Math.max(0, prev - 1))}
+              disabled={page === 0 || loading}
+              className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer transition-colors"
+              title="Trang trước"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* Page buttons */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.max(1, totalPages) }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i)}
+                  disabled={loading}
+                  className={`h-8 min-w-[32px] px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    page === i
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                      : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setPage(prev => Math.min(Math.max(0, totalPages - 1), prev + 1))}
+              disabled={page >= totalPages - 1 || loading}
+              className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer transition-colors"
+              title="Trang sau"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── Detail Drawer Slider ── */}
