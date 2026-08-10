@@ -1,47 +1,49 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, ShieldCheck, RefreshCw, AlertOctagon, Terminal } from 'lucide-react';
+import { ShieldCheck, RefreshCw, AlertOctagon, Terminal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 import toast from 'react-hot-toast';
 
 const SystemHealth = () => {
   const [statuses, setStatuses] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [auditPage, setAuditPage] = useState(0);
+  const [auditTotalElements, setAuditTotalElements] = useState(0);
+  const [auditTotalPages, setAuditTotalPages] = useState(0);
+
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const fetchAuditLogs = useCallback(async (pageIndex = 0) => {
+    setLogsLoading(true);
+    try {
+      const res = await analyticsService.getAuditLogs(pageIndex, 20);
+      if (res.success) {
+        setAuditLogs(res.data.content || []);
+        setAuditTotalElements(res.data.total_elements || 0);
+        setAuditTotalPages(res.data.total_pages || 0);
+        setAuditPage(res.data.page || 0);
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải nhật ký hoạt động:', err);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
 
   const fetchStatus = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
     else setLoading(true);
 
     try {
-      // 1. Fetch system components health
+      // 1. Fetch system components health (FastAPI, Spring Boot, MySQL, Redis, Qdrant, RabbitMQ)
       const statusRes = await analyticsService.getSystemStatus();
       if (statusRes.success) {
         setStatuses(statusRes.data);
       }
 
-      // 2. Fetch recent security audit logs
-      // Note: We can add an endpoint or fetch it inside system status.
-      // Let's check: our /analytics/system-status returns health data.
-      // To keep it simple, we can fetch audit logs by adding it to the /analytics/system-status payload
-      // or fetching from a dedicated endpoint. Since we added insert_audit_log / get_audit_logs to repository,
-      // let's verify if the backend exposes audit logs in the system-status endpoint!
-      // In search_analytics.py:
-      // @router.get("/system-status") -> status_data = await analytics_service.get_system_health()
-      // Wait, did we return audit logs there?
-      // In analytics_service.py: get_system_health() returns fastapi, spring_boot, redis, mysql, qdrant.
-      // But wait! We can easily fetch recent audit logs by adding them directly to the /system-status endpoint,
-      // or we can modify the backend to include audit logs in `get_system_health()`!
-      // Let's modify the backend `get_system_health` in `analytics_service.py` to also return `audit_logs`!
-      // Wait, is it better? Yes! Or we can define a separate endpoint or just append it.
-      // Let's check if the backend get_system_health can return audit logs.
-      // In search_analytics.py, we have:
-      // status_data = await analytics_service.get_system_health()
-      // We can modify analytics_service.py to query analytics_repository.get_audit_logs() and append it to the return object!
-      // This is extremely simple and avoids adding new API routes.
-      if (statusRes.data.audit_logs) {
-        setAuditLogs(statusRes.data.audit_logs || []);
-      }
+      // 2. Fetch paginated security audit logs (20 items per page)
+      await fetchAuditLogs(0);
     } catch (err) {
       console.error('Failed to query health check status:', err);
       toast.error('Lỗi khi kiểm tra sức khỏe hệ thống.');
@@ -49,11 +51,17 @@ const SystemHealth = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchAuditLogs]);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < auditTotalPages) {
+      fetchAuditLogs(newPage);
+    }
+  };
 
   const getStatusColorClass = (statusStr) => {
     if (statusStr === 'healthy') return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
@@ -82,6 +90,7 @@ const SystemHealth = () => {
     { key: 'mysql', name: 'MySQL Database', desc: 'Transactional / Audit Storage' },
     { key: 'redis', name: 'Redis Cache', desc: 'Session Data / Rate Limit Queue' },
     { key: 'qdrant', name: 'Qdrant Vector Database', desc: 'Product ANN Indices' },
+    { key: 'rabbitmq', name: 'RabbitMQ Message Broker', desc: 'Product Sync & Async Event Queue' },
   ];
 
   return (
@@ -152,9 +161,16 @@ const SystemHealth = () => {
 
       {/* ── Security Audit Logs Table ── */}
       <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Terminal className="text-emerald-500" size={16} />
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Nhật ký hoạt động bảo mật (Audit Logs)</h4>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Terminal className="text-emerald-500" size={16} />
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Nhật ký hoạt động bảo mật (Audit Logs)</h4>
+          </div>
+          {logsLoading && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+              <RefreshCw size={12} className="animate-spin" /> Đang tải trang...
+            </div>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
@@ -200,6 +216,34 @@ const SystemHealth = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Audit Logs Pagination Toolbar */}
+        {auditTotalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-800/80">
+            <span className="text-xs text-slate-500 font-semibold">
+              Tổng số: <b className="text-slate-300 font-bold">{auditTotalElements}</b> bản ghi (20 bản ghi/trang)
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handlePageChange(auditPage - 1)}
+                disabled={auditPage === 0 || logsLoading}
+                className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-xs text-slate-300 font-bold">
+                Trang {auditPage + 1} / {auditTotalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(auditPage + 1)}
+                disabled={auditPage >= auditTotalPages - 1 || logsLoading}
+                className="p-2 bg-slate-950/60 border border-slate-800 hover:bg-slate-800/40 disabled:opacity-30 rounded-lg text-slate-400 hover:text-slate-100 cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

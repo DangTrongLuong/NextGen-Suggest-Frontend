@@ -20,14 +20,14 @@ const AnalyticsLayout = () => {
   // Connect WebSocket and listen for realtime events
   useWebSocket((message) => {
     if (message.type === 'NEW_SEARCH') {
-      // We can trigger state changes here or log to console
       console.log('Realtime search log received:', message.data);
+      window.dispatchEvent(new CustomEvent('ws-search-log', { detail: message.data }));
     }
   });
 
   const handleLogout = async () => {
     await logoutUser();
-    navigate('/analytics-portal/login');
+    navigate('/admin-analytics/login');
   };
 
   // 1. Loading State
@@ -45,14 +45,14 @@ const AnalyticsLayout = () => {
 
   // 2. Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/analytics-portal/login" state={{ from: location }} replace />;
+    return <Navigate to="/admin-analytics/login" state={{ from: location }} replace />;
   }
 
   const navLinks = [
-    { label: 'Bảng điều khiển', to: '/analytics-portal', icon: BarChart3, end: true },
-    { label: 'Lịch sử tìm kiếm', to: '/analytics-portal/history', icon: Clock },
-    { label: 'Top sản phẩm', to: '/analytics-portal/top-products', icon: Database },
-    { label: 'Trạng thái hệ thống', to: '/analytics-portal/health', icon: Activity },
+    { label: 'Bảng điều khiển', to: '/admin-analytics', icon: BarChart3, end: true },
+    { label: 'Lịch sử tìm kiếm', to: '/admin-analytics/history', icon: Clock },
+    { label: 'Top sản phẩm', to: '/admin-analytics/top-products', icon: Database },
+    { label: 'Trạng thái hệ thống', to: '/admin-analytics/health', icon: Activity },
   ];
 
   return (
@@ -142,10 +142,10 @@ const AnalyticsLayout = () => {
         {/* Global header bar */}
         <header className="h-16 border-b border-slate-800/80 flex items-center justify-between px-8 z-10 bg-slate-950/20 backdrop-blur-sm flex-shrink-0">
           <h1 className="text-lg font-bold text-slate-200">
-            {location.pathname === '/analytics-portal' && 'Bảng giám sát tìm kiếm'}
-            {location.pathname === '/analytics-portal/history' && 'Lịch sử yêu cầu tìm kiếm'}
-            {location.pathname === '/analytics-portal/top-products' && 'Phân tích Top sản phẩm'}
-            {location.pathname === '/analytics-portal/health' && 'Trạng thái hoạt động hệ thống'}
+            {location.pathname === '/admin-analytics' && 'Bảng giám sát tìm kiếm'}
+            {location.pathname === '/admin-analytics/history' && 'Lịch sử yêu cầu tìm kiếm'}
+            {location.pathname === '/admin-analytics/top-products' && 'Phân tích Top sản phẩm'}
+            {location.pathname === '/admin-analytics/health' && 'Trạng thái hoạt động hệ thống'}
           </h1>
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-400">
             <span>Phiên hoạt động: 8h</span>

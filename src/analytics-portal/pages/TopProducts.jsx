@@ -50,84 +50,71 @@ const TopProducts = () => {
     }
   };
 
-  // ── Render Custom SVG chart for product appearance counts ──
+  // ── Render Top 8 Product Appearance Chart ──
   const renderProductChart = () => {
     const chartData = productList.slice(0, 8); // Top 8 items
     if (chartData.length === 0) {
       return (
-        <div className="h-48 flex items-center justify-center text-xs text-slate-600">
-          Chưa có dữ liệu biểu đồ sản phẩm
+        <div className="h-64 flex items-center justify-center text-xs text-slate-600 font-medium">
+          Chưa có dữ liệu hiển thị sản phẩm
         </div>
       );
     }
 
-    const width = 500;
-    const height = 180;
-    const paddingLeft = 120; // larger padding for long product titles
-    const paddingRight = 40;
-    const paddingTop = 20;
-    const paddingBottom = 20;
-
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-
-    const maxVal = Math.max(...chartData.map(d => d.appearance_count), 5);
-    const rowHeight = chartHeight / chartData.length;
+    const maxVal = Math.max(...chartData.map((d) => d.appearance_count), 1);
 
     return (
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-        <defs>
-          <linearGradient id="emerald-bar-horizontal" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#047857" />
-            <stop offset="100%" stopColor="#10b981" />
-          </linearGradient>
-        </defs>
-
-        {chartData.map((d, i) => {
-          const y = paddingTop + i * rowHeight + rowHeight * 0.15;
-          const barWidth = (d.appearance_count / maxVal) * chartWidth;
-          const barHeight = rowHeight * 0.7;
-          
-          // Truncate product name for label
-          const label = d.product_name.length > 18 ? d.product_name.substring(0, 15) + '...' : d.product_name;
+      <div className="flex-1 flex flex-col justify-between gap-4 py-2">
+        {chartData.map((item, index) => {
+          const percentage = Math.min(100, Math.max(10, (item.appearance_count / maxVal) * 100));
+          const isTop3 = index < 3;
 
           return (
-            <g key={i} className="group cursor-pointer">
-              {/* Product Label */}
-              <text 
-                x={paddingLeft - 10} 
-                y={y + barHeight / 2} 
-                textAnchor="end" 
-                alignmentBaseline="middle"
-                className="fill-slate-400 text-[9px] font-bold"
-              >
-                {label}
-              </text>
-              
-              {/* Horizontal Bar */}
-              <rect 
-                x={paddingLeft} 
-                y={y} 
-                width={barWidth} 
-                height={barHeight} 
-                rx={1.5}
-                fill="url(#emerald-bar-horizontal)"
-                className="hover:fill-emerald-400 transition-colors"
-              />
+            <div key={index} className="group space-y-1.5">
+              {/* Product Label & Count */}
+              <div className="flex items-center justify-between text-xs gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-black shrink-0 ${
+                      index === 0
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                        : index === 1
+                        ? 'bg-slate-300/20 text-slate-200 border border-slate-300/30'
+                        : index === 2
+                        ? 'bg-amber-700/20 text-amber-500 border border-amber-700/30'
+                        : 'bg-slate-850 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    #{index + 1}
+                  </span>
+                  <span
+                    className="font-bold text-slate-200 truncate text-xs group-hover:text-emerald-400 transition-colors"
+                    title={item.product_name}
+                  >
+                    {item.product_name}
+                  </span>
+                </div>
 
-              {/* Value Count Label */}
-              <text 
-                x={paddingLeft + barWidth + 8} 
-                y={y + barHeight / 2} 
-                alignmentBaseline="middle"
-                className="fill-emerald-400 text-[9px] font-black"
-              >
-                {d.appearance_count}
-              </text>
-            </g>
+                <span className="font-black text-xs text-emerald-400 shrink-0">
+                  {item.appearance_count} <span className="text-[10px] font-semibold text-slate-500">lần</span>
+                </span>
+              </div>
+
+              {/* Gradient Progress Bar */}
+              <div className="h-2.5 w-full bg-slate-950/80 border border-slate-800/80 rounded-full overflow-hidden p-0.5">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isTop3
+                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 shadow-sm shadow-emerald-500/30'
+                      : 'bg-gradient-to-r from-emerald-700 to-emerald-500'
+                  }`}
+                  style={{ width: `${percentage}%` }}
+                ></div>
+              </div>
+            </div>
           );
         })}
-      </svg>
+      </div>
     );
   };
 
@@ -174,10 +161,10 @@ const TopProducts = () => {
       </div>
 
       {/* ── Visual and Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         
-        {/* SVG Horizontal Chart (take 1 column) */}
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between">
+        {/* Horizontal Progress Chart (take 1 column) */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between h-full">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <BarChart2 className="text-emerald-500" size={16} />
@@ -187,9 +174,9 @@ const TopProducts = () => {
               Số lần sản phẩm xuất hiện trong kết quả tìm kiếm của khách hàng.
             </p>
           </div>
-          <div className="h-48 w-full relative">
+          <div className="flex-1 flex flex-col justify-between">
             {loading ? (
-              <div className="h-full flex items-center justify-center">
+              <div className="h-64 flex items-center justify-center">
                 <RefreshCw className="animate-spin text-emerald-500" size={20} />
               </div>
             ) : (

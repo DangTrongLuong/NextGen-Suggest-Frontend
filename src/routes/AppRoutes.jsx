@@ -96,8 +96,8 @@ const AppRoutes = () => {
       </Route>
 
       {/* Analytics Portal Routes */}
-      <Route path="/analytics-portal/login" element={<AnalyticsLogin />} />
-      <Route path="/analytics-portal" element={<AnalyticsLayout />}>
+      <Route path="/admin-analytics/login" element={<AnalyticsLogin />} />
+      <Route path="/admin-analytics" element={<AnalyticsLayout />}>
         <Route index element={<AnalyticsDashboard />} />
         <Route path="history" element={<SearchHistory />} />
         <Route path="top-products" element={<TopProducts />} />

@@ -31,6 +31,12 @@ export const analyticsService = {
     return api.get('/analytics/system-status');
   },
 
+  getAuditLogs: async (page = 0, size = 20) => {
+    return api.get('/analytics/audit-logs', {
+      params: { page, size }
+    });
+  },
+
   trackClick: async (requestId, productId, productName) => {
     return api.post('/analytics/search/click', {
       request_id: requestId,

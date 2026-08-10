@@ -16,7 +16,7 @@ const Login = () => {
   const location = useLocation();
 
   // Redirect path after logging in
-  const from = location.state?.from?.pathname || '/analytics-portal';
+  const from = location.state?.from?.pathname || '/admin-analytics';
 
   // Check session on mount
   useEffect(() => {

@@ -19,9 +19,14 @@ const getStoredCache = () => {
     const catsStr = sessionStorage.getItem(SESSION_CACHE_KEY_CATS);
     const mainsStr = sessionStorage.getItem(SESSION_CACHE_KEY_MAINS);
     if (catsStr && mainsStr) {
+      const categories = JSON.parse(catsStr);
+      const categoryMains = JSON.parse(mainsStr);
+      if (!Array.isArray(categoryMains) || categoryMains.length === 0 || !Array.isArray(categories) || categories.length === 0) {
+        return null;
+      }
       return {
-        categories: JSON.parse(catsStr),
-        categoryMains: JSON.parse(mainsStr),
+        categories,
+        categoryMains,
       };
     }
   } catch {
@@ -39,7 +44,7 @@ export const CategoryProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const fetchCategories = useCallback(async (forceRefresh = false) => {
-    if (!forceRefresh && cached) {
+    if (!forceRefresh && cached && cached.categoryMains?.length > 0) {
       setCategories(cached.categories);
       setCategoryMains(cached.categoryMains);
       setLoading(false);
@@ -60,13 +65,15 @@ export const CategoryProvider = ({ children }) => {
       setCategoryMains(validMains);
       setError(null);
 
-      // Save to sessionStorage
-      try {
-        sessionStorage.setItem(SESSION_CACHE_KEY_CATS, JSON.stringify(validCats));
-        sessionStorage.setItem(SESSION_CACHE_KEY_MAINS, JSON.stringify(validMains));
-        sessionStorage.setItem(SESSION_CACHE_TIME_KEY, String(Date.now()));
-      } catch (e) {
-        console.warn('Could not save category cache to sessionStorage:', e);
+      // Save to sessionStorage if valid non-empty data
+      if (validMains.length > 0 && validCats.length > 0) {
+        try {
+          sessionStorage.setItem(SESSION_CACHE_KEY_CATS, JSON.stringify(validCats));
+          sessionStorage.setItem(SESSION_CACHE_KEY_MAINS, JSON.stringify(validMains));
+          sessionStorage.setItem(SESSION_CACHE_TIME_KEY, String(Date.now()));
+        } catch (e) {
+          console.warn('Could not save category cache to sessionStorage:', e);
+        }
       }
     } catch (err) {
       console.error('Error fetching categories in CategoryContext:', err);
@@ -77,10 +84,10 @@ export const CategoryProvider = ({ children }) => {
   }, [cached]);
 
   useEffect(() => {
-    if (!cached || categories.length === 0) {
+    if (!cached || categories.length === 0 || categoryMains.length === 0) {
       fetchCategories();
     }
-  }, [fetchCategories, cached, categories.length]);
+  }, [fetchCategories, cached, categories.length, categoryMains.length]);
 
   const refreshCategories = useCallback(() => {
     sessionStorage.removeItem(SESSION_CACHE_KEY_CATS);

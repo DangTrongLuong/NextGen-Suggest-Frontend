@@ -20,6 +20,7 @@ api.interceptors.request.use(
       localStorage.setItem('nivora_session_id', sessionId);
     }
     config.headers['X-Session-Id'] = sessionId;
+    config.headers['X-Client-Start-Time'] = Date.now().toString();
 
     const stored = localStorage.getItem('auth_tokens');
     if (stored) {
