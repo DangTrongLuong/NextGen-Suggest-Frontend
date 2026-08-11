@@ -14,33 +14,21 @@ const trustFeatures = [
     icon: Truck,
     title: 'Giao hàng hỏa tốc',
     desc: 'Miễn phí giao hàng cho đơn từ 500k',
-    color: 'from-emerald-500/20 to-teal-500/20',
-    borderColor: 'border-emerald-500/30',
-    iconColor: 'text-emerald-400',
   },
   {
     icon: ShieldCheck,
     title: '100% Chính hãng',
     desc: 'Cam kết chất lượng & chuẩn nguồn gốc',
-    color: 'from-blue-500/20 to-cyan-500/20',
-    borderColor: 'border-blue-500/30',
-    iconColor: 'text-cyan-400',
   },
   {
     icon: RefreshCw,
     title: '30 Ngày đổi trả',
     desc: 'Đổi trả tận nơi nhanh chóng, miễn phí',
-    color: 'from-amber-500/20 to-orange-500/20',
-    borderColor: 'border-amber-500/30',
-    iconColor: 'text-amber-400',
   },
   {
     icon: Headset,
     title: 'Hỗ trợ 24/7',
     desc: 'Đội ngũ tư vấn tận tâm & chuyên nghiệp',
-    color: 'from-violet-500/20 to-purple-500/20',
-    borderColor: 'border-purple-500/30',
-    iconColor: 'text-purple-400',
   },
 ];
 
@@ -129,8 +117,8 @@ const Footer = () => {
 
       {/* ── 1. Trust Features Banner (4 Pillars) ── */}
       <div className="relative border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md">
-        <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-7">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {trustFeatures.map((item, index) => {
               const IconComp = item.icon;
               return (
@@ -141,15 +129,15 @@ const Footer = () => {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  whileHover={{ y: -3 }}
-                  className={`p-4 rounded-2xl bg-gradient-to-br ${item.color} border ${item.borderColor} backdrop-blur-sm flex items-center gap-4 transition-all duration-300 shadow-sm`}
+                  whileHover={{ y: -2 }}
+                  className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-emerald-500/40 hover:bg-slate-900/90 transition-all duration-300 flex items-center gap-3.5 shadow-sm group"
                 >
-                  <div className={`p-3 rounded-xl bg-slate-950/60 border border-white/10 ${item.iconColor} shrink-0`}>
-                    <IconComp size={22} />
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
+                    <IconComp size={20} />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-slate-100 mb-0.5">{item.title}</h5>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                    <h5 className="text-xs font-bold text-slate-200 mb-0.5 group-hover:text-emerald-300 transition-colors">{item.title}</h5>
+                    <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{item.desc}</p>
                   </div>
                 </motion.div>
               );
@@ -160,7 +148,7 @@ const Footer = () => {
 
       {/* ── 2. VIP Newsletter Banner Card ── */}
       <div className="relative border-b border-slate-800/60">
-        <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -171,14 +159,11 @@ const Footer = () => {
             {/* Shimmer decoration */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="space-y-2 text-center lg:text-left z-10 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold uppercase tracking-wider">
-                <Sparkles size={13} /> ĐẶC QUYỀN THÀNH VIÊN VIP
-              </div>
+            <div className="space-y-1.5 text-center lg:text-left z-10 max-w-xl">
               <h3 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
                 Nhận Voucher <span className="text-emerald-400">100.000đ</span> Cho Đơn Hàng Đầu Tiên
               </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
                 Đăng ký bản tin NIVORA để cập nhật xu hướng thời trang & nội thất mới nhất cùng các chương trình ưu đãi độc quyền.
               </p>
             </div>
