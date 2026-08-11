@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Heart, Star, Check, Minus, Plus, Share2, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductReview from '../../components/product/ProductReview';
@@ -485,11 +485,24 @@ const ProductDetail = ({ idOverride }) => {
     trackWishlist(product.id);
   };
 
+  const location = useLocation();
+  const searchUrl = location.state?.searchUrl || sessionStorage.getItem('nivora_search_back_url');
+
   return (
     <div className="min-h-screen bg-gray-50/30 flex flex-col">
       {/* ── BREADCRUMBS BAR (Edge-to-edge container) ── */}
       <div className="w-full py-4 mb-2">
-        <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
+        <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6 flex flex-wrap items-center justify-start gap-4">
+          {searchUrl && searchUrl.includes('search=') && (
+            <Link
+              to={searchUrl}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-all border border-emerald-200/80 shadow-sm cursor-pointer shrink-0"
+            >
+              <ChevronLeft size={15} />
+              <span>Quay lại kết quả tìm kiếm</span>
+            </Link>
+          )}
+
           <Breadcrumbs items={breadcrumbItems} />
         </div>
       </div>

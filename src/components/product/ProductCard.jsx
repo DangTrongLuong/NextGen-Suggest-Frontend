@@ -37,6 +37,31 @@ const ProductCard = ({ product }) => {
     product.images?.[0]?.url ??
     'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=80';
 
+  const handleProductClick = () => {
+    try {
+      const sessionId = localStorage.getItem('nivora_session_id');
+      const payload = {
+        product_id: String(product.id || product.uuid || ''),
+        product_name: product.name || product.title || '',
+        request_id: product.requestId || null,
+        session_id: sessionId || null,
+      };
+      fetch('/analytics/search/click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+
+      if (window.location.search.includes('search=')) {
+        sessionStorage.setItem('nivora_search_back_url', window.location.pathname + window.location.search);
+        const searchParams = new URLSearchParams(window.location.search);
+        sessionStorage.setItem('nivora_search_back_query', searchParams.get('search') || '');
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -47,7 +72,7 @@ const ProductCard = ({ product }) => {
     >
       {/* Product Image Section */}
       <div className="relative overflow-hidden bg-gray-50 aspect-square flex-shrink-0">
-        <Link to={`/products/${product.id}`} className="block w-full h-full">
+        <Link to={`/products/${product.id}`} state={{ searchUrl: window.location.pathname + window.location.search }} onClick={handleProductClick} className="block w-full h-full">
           <img
             src={primaryImage}
             alt={product.name}
@@ -108,7 +133,7 @@ const ProductCard = ({ product }) => {
           )}
           
           {/* Title */}
-          <Link to={`/products/${product.id}`}>
+          <Link to={`/products/${product.id}`} state={{ searchUrl: window.location.pathname + window.location.search }} onClick={handleProductClick}>
             <h3 className="text-xs sm:text-sm font-normal text-gray-900 hover:text-black line-clamp-2 leading-snug mb-2 transition-colors">
               {product.name}
             </h3>

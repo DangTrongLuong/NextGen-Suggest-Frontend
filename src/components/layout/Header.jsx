@@ -122,13 +122,18 @@ const Header = () => {
   }, []);
 
   const handleSearch = (q) => {
+    if (q.length > 100) {
+      toast.error('Từ khóa tìm kiếm không được vượt quá 100 ký tự');
+      setSearchQuery(q.slice(0, 100));
+      return;
+    }
     setSearchQuery(q);
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim().slice(0, 100))}`);
       setSearchFocused(false);
     }
   };
@@ -212,9 +217,10 @@ const Header = () => {
                   <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
                   <input
                     value={searchQuery}
+                    maxLength={100}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
-                    placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
+                    placeholder={placeholder || 'Tìm kiếm sản phẩm (tối đa 100 ký tự)...'}
                     className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
                   />
                   {searchQuery && (
@@ -420,8 +426,9 @@ const Header = () => {
                     <input
                       autoFocus
                       value={searchQuery}
+                      maxLength={100}
                       onChange={(e) => handleSearch(e.target.value)}
-                      placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
+                      placeholder={placeholder || 'Tìm kiếm sản phẩm (tối đa 100 ký tự)...'}
                       className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                     />
                   </div>

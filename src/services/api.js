@@ -114,6 +114,15 @@ api.interceptors.response.use(
       toast.error('Bạn không có quyền thực hiện thao tác này');
     }
 
+    if (error.response?.status === 429) {
+      const msg = error.response?.data?.detail || error.response?.data?.message || 'Bạn đang thao tác tìm kiếm quá nhanh. Vui lòng đợi trong giây lát và thử lại!';
+      toast.error(msg);
+    }
+
+    if (error.response?.status === 400 && error.response?.data?.detail) {
+      toast.error(error.response.data.detail);
+    }
+
     return Promise.reject(error);
   }
 );
