@@ -104,7 +104,7 @@ const Footer = () => {
   const handleNewsletter = (e) => {
     e.preventDefault();
     if (!email.trim()) return;
-    toast.success('🎉 Đăng ký thành công! Voucher 100k đã gửi đến email của bạn.');
+    toast.success('🎉 Đăng ký nhận bản tin thành công!');
     setEmail('');
   };
 
@@ -146,7 +146,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* ── 2. VIP Newsletter Banner Card ── */}
+      {/* ── 2. Newsletter Banner Card ── */}
       <div className="relative border-b border-slate-800/60">
         <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <motion.div
@@ -161,10 +161,10 @@ const Footer = () => {
 
             <div className="space-y-1.5 text-center lg:text-left z-10 max-w-xl">
               <h3 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-                Nhận Voucher <span className="text-emerald-400">100.000đ</span> Cho Đơn Hàng Đầu Tiên
+                Đăng Ký Nhận Bản Tin Ưu Đãi
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Đăng ký bản tin NIVORA để cập nhật xu hướng thời trang & nội thất mới nhất cùng các chương trình ưu đãi độc quyền.
+                Cập nhật xu hướng thời trang & nội thất mới nhất cùng các chương trình khuyến mãi đặc biệt từ NIVORA.
               </p>
             </div>
 
