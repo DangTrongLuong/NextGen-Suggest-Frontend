@@ -1,15 +1,24 @@
 import { create } from 'zustand';
 import { authService } from '../services/authService';
 
+const savedToken = localStorage.getItem('analytics_access_token') || null;
+
 export const useAnalyticsStore = create((set, get) => ({
-  accessToken: null,
+  accessToken: savedToken,
   user: null,
   loading: true,
   isConnected: false,
   alerts: [],
   systemStatus: null,
 
-  setAccessToken: (token) => set({ accessToken: token }),
+  setAccessToken: (token) => {
+    if (token) {
+      localStorage.setItem('analytics_access_token', token);
+    } else {
+      localStorage.removeItem('analytics_access_token');
+    }
+    set({ accessToken: token });
+  },
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -17,7 +26,7 @@ export const useAnalyticsStore = create((set, get) => ({
   setSystemStatus: (systemStatus) => set({ systemStatus }),
 
   addAlert: (alert) => set((state) => ({ 
-    alerts: [alert, ...state.alerts].slice(0, 100) // Keep last 100 alerts
+    alerts: [alert, ...state.alerts].slice(0, 100)
   })),
 
   loginUser: async (usernameOrEmail, password) => {
@@ -26,14 +35,14 @@ export const useAnalyticsStore = create((set, get) => ({
       const res = await authService.login(usernameOrEmail, password);
       const token = res.data.access_token;
       
-      // Temporarily set access token to allow fetching profile info
-      set({ accessToken: token });
+      get().setAccessToken(token);
       
       const meRes = await authService.getMe();
       set({ user: meRes.data, loading: false });
       return { success: true };
     } catch (err) {
-      set({ accessToken: null, user: null, loading: false });
+      get().setAccessToken(null);
+      set({ user: null, loading: false });
       return { success: false, error: err.message || 'Đăng nhập thất bại.' };
     }
   },
@@ -43,19 +52,20 @@ export const useAnalyticsStore = create((set, get) => ({
     try {
       await authService.logout().catch(() => {});
     } finally {
-      set({ accessToken: null, user: null, isConnected: false, loading: false });
+      get().setAccessToken(null);
+      set({ user: null, isConnected: false, loading: false });
     }
   },
 
   initializeAuth: async () => {
     set({ loading: true });
     try {
-      // Triggers silent refresh automatically if access token is empty
-      // but refresh cookie exists because api.js intercepts 401
       const res = await authService.getMe();
       set({ user: res.data, loading: false });
     } catch (err) {
-      set({ accessToken: null, user: null, loading: false });
+      // If 401/expired, clear memory and local storage token
+      get().setAccessToken(null);
+      set({ user: null, loading: false });
     }
   }
 }));

@@ -121,6 +121,7 @@ const Products = () => {
     setMaxPrice('');
     setMinRating('');
     setProductPage(0);
+    setSearchPage(0);
   }, [activeCategoryMainSlug, activeCategorySlug, searchQueryParam]);
 
   // Fetch breadcrumb hierarchy from API for active category
@@ -238,7 +239,7 @@ const Products = () => {
 
         const params = {
           page: currentPageIndex,
-          size: 12,
+          size: 10,
           sortBy: sortField,
           sortDir,
           ...(activeCategorySlug && { categorySlug: activeCategorySlug }),
@@ -418,9 +419,16 @@ const Products = () => {
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <input
               type="text"
-              placeholder="Tìm kiếm..."
+              placeholder="Tìm kiếm (tối đa 100 ký tự)..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              maxLength={100}
+              onChange={(e) => {
+                if (e.target.value.length > 100) {
+                  toast.error('Từ khóa tìm kiếm không được vượt quá 100 ký tự');
+                  return;
+                }
+                setSearchInput(e.target.value);
+              }}
               className="pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-xs outline-none w-full transition-all font-semibold placeholder-gray-400 text-gray-750"
             />
             <button

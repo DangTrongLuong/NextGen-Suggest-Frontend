@@ -24,7 +24,7 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const debouncedQuery = useDebounce(searchQuery, 150);
+  const debouncedQuery = useDebounce(searchQuery, 350);
 
   // 1. Fetch default popup data when open and query is empty
   useEffect(() => {
@@ -36,7 +36,7 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
         try {
           const data = await searchPopupService.getSearchPopup();
           if (data) {
-            data.searchHistory = (data.searchHistory || []).filter(h => !isMaliciousQuery(h));
+            data.searchHistory = (data.searchHistory || []).filter(h => !isMaliciousQuery(h)).slice(0, 5);
             data.trendingSearches = (data.trendingSearches || []).filter(t => !isMaliciousQuery(t));
             data.relatedSearches = (data.relatedSearches || []).filter(r => !isMaliciousQuery(r));
           }
@@ -258,7 +258,7 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2.5">
-                      {popupData.searchHistory.map((h, idx) => (
+                      {popupData.searchHistory.slice(0, 5).map((h, idx) => (
                         <span
                           key={idx}
                           onClick={() => onSelectKeyword(h)}
@@ -289,7 +289,21 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
                         <Link
                           key={p.id}
                           to={`/products/${p.id}`}
-                          onClick={onClose}
+                          onClick={() => {
+                            try {
+                              const sessionId = localStorage.getItem('nivora_session_id');
+                              fetch('/analytics/search/click', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  product_id: String(p.id || ''),
+                                  product_name: p.name || '',
+                                  session_id: sessionId || null
+                                })
+                              }).catch(() => {});
+                            } catch {}
+                            if (onClose) onClose();
+                          }}
                           className="flex-shrink-0 w-36 border border-gray-100 hover:border-emerald-300/80 rounded-2xl p-2.5 bg-gray-50/20 hover:bg-white transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(16,185,129,0.08)] hover:-translate-y-0.5 group snap-start"
                         >
                           <div className="overflow-hidden rounded-xl bg-gray-50 mb-2 relative aspect-[4/3]">

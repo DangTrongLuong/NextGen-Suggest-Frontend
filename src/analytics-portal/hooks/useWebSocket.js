@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useAnalyticsStore } from '../store/store';
-import { BASE_URL } from '../services/api';
 
 export const useWebSocket = (onMessageCallback) => {
   const socketRef = useRef(null);
@@ -12,6 +11,7 @@ export const useWebSocket = (onMessageCallback) => {
   const pingIntervalRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
+  const isClosingRef = useRef(false);
 
   // Use a ref for the callback to prevent WebSocket reconnections when the callback changes
   const callbackRef = useRef(onMessageCallback);
@@ -24,48 +24,63 @@ export const useWebSocket = (onMessageCallback) => {
     if (!user || !accessToken) {
       if (socketRef.current) {
         socketRef.current.close();
+        socketRef.current = null;
       }
+      setConnected(false);
       return;
     }
 
+    isClosingRef.current = false;
+
     const connectWebSocket = () => {
-      // Build WebSocket URL from API URL base (http -> ws, https -> wss)
+      // Avoid duplicate socket connections if already OPEN or CONNECTING
+      if (
+        socketRef.current &&
+        (socketRef.current.readyState === WebSocket.OPEN ||
+         socketRef.current.readyState === WebSocket.CONNECTING)
+      ) {
+        return;
+      }
+
       const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
       const tokenParam = accessToken ? `?token=${encodeURIComponent(accessToken)}` : '';
-      const wsUrl = `${wsProto}://${window.location.host}/analytics/search/realtime${tokenParam}`;
+      const isDev = import.meta.env.DEV || window.location.port === '5173';
+      const wsHost = isDev ? '127.0.0.1:8000' : window.location.host;
+      const wsUrl = `${wsProto}://${wsHost}/analytics/search/realtime${tokenParam}`;
 
-      console.log(`Connecting to WebSocket: ${wsUrl}`);
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
+        if (isClosingRef.current) {
+          socket.close(1000);
+          return;
+        }
         console.log('Search Analytics WebSocket connected successfully.');
         setConnected(true);
         reconnectAttemptsRef.current = 0;
 
-        // Heartbeat ping every 30s to keep connection alive
+        // Heartbeat ping every 25s
+        clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) {
             socket.send('ping');
           }
-        }, 30000);
+        }, 25000);
       };
 
       socket.onmessage = (event) => {
         if (event.data === 'pong') {
-          // Heartbeat pong received successfully
           return;
         }
 
         try {
           const message = JSON.parse(event.data);
           
-          // Forward message payload to callback
           if (callbackRef.current) {
             callbackRef.current(message);
           }
 
-          // Handle system alerts
           if (message.type === 'ALERT') {
             addAlert(message.data);
           }
@@ -75,14 +90,15 @@ export const useWebSocket = (onMessageCallback) => {
       };
 
       socket.onclose = (event) => {
-        console.log(`WebSocket disconnected: Code=${event.code}, Reason=${event.reason}`);
+        if (isClosingRef.current) return;
+        
+        console.log(`WebSocket disconnected: Code=${event.code}`);
         setConnected(false);
         clearInterval(pingIntervalRef.current);
 
-        // Auto reconnect with exponential backoff
+        // Auto reconnect with backoff
         if (user && accessToken && event.code !== 1000) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          console.log(`Attempting WebSocket reconnect in ${delay}ms...`);
+          const delay = Math.min(1000 * Math.pow(1.5, reconnectAttemptsRef.current), 10000);
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current += 1;
             connectWebSocket();
@@ -90,22 +106,34 @@ export const useWebSocket = (onMessageCallback) => {
         }
       };
 
-      socket.onerror = (error) => {
-        console.error('WebSocket connection error:', error);
+      socket.onerror = () => {
+        // Silently ignore abort errors during initial connecting phase
       };
     };
 
     connectWebSocket();
 
     return () => {
+      isClosingRef.current = true;
       clearInterval(pingIntervalRef.current);
       clearTimeout(reconnectTimeoutRef.current);
+
       if (socketRef.current) {
-        // Clean close code (1000) so it doesn't trigger reconnect loop
-        socketRef.current.close(1000);
+        const sock = socketRef.current;
+        socketRef.current = null;
+        sock.onopen = null;
+        sock.onmessage = null;
+        sock.onerror = null;
+        sock.onclose = null;
+
+        if (sock.readyState === WebSocket.OPEN) {
+          sock.close(1000);
+        } else if (sock.readyState === WebSocket.CONNECTING) {
+          sock.onopen = () => sock.close(1000);
+        }
       }
     };
-  }, [user, accessToken, setConnected, addAlert]);
+  }, [user?.username, accessToken, setConnected, addAlert]);
 
   return socketRef.current;
 };

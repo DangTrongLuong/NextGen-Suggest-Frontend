@@ -56,12 +56,12 @@ const AnalyticsLayout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070b13] text-slate-100 font-sans flex overflow-hidden">
+    <div className="h-screen w-screen bg-[#070b13] text-slate-100 font-sans flex overflow-hidden fixed inset-0">
       
-      {/* ── Sidebar ── */}
-      <aside className="w-64 bg-slate-900/60 backdrop-blur-md border-r border-slate-800/80 flex flex-col flex-shrink-0 z-10">
+      {/* ── Fixed Sidebar ── */}
+      <aside className="w-64 h-full bg-slate-900/60 backdrop-blur-md border-r border-slate-800/80 flex flex-col flex-shrink-0 z-20 select-none">
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800/80">
+        <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800/80 flex-shrink-0">
           <Terminal className="text-emerald-500" size={22} />
           <span className="font-extrabold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
             NIVORA MONITOR
@@ -69,7 +69,7 @@ const AnalyticsLayout = () => {
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto scrollbar-none">
           {navLinks.map((link) => {
             const Icon = link.icon;
             return (
@@ -92,7 +92,7 @@ const AnalyticsLayout = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800/80 space-y-4">
+        <div className="p-4 border-t border-slate-800/80 space-y-4 flex-shrink-0">
           {/* Connection status card */}
           <div className="flex items-center justify-between px-4 py-3 bg-slate-950/50 rounded-xl border border-slate-800/60">
             <span className="text-xs text-slate-400 font-semibold">Realtime Feed</span>
@@ -134,13 +134,13 @@ const AnalyticsLayout = () => {
       </aside>
 
       {/* ── Main Panel ── */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 h-full flex flex-col overflow-hidden relative min-w-0">
         {/* Background glow orbs */}
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-950/10 blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-[-15%] left-[-5%] w-[450px] h-[450px] rounded-full bg-teal-950/10 blur-[100px] pointer-events-none"></div>
 
         {/* Global header bar */}
-        <header className="h-16 border-b border-slate-800/80 flex items-center justify-between px-8 z-10 bg-slate-950/20 backdrop-blur-sm flex-shrink-0">
+        <header className="h-16 border-b border-slate-800/80 flex items-center justify-between px-8 z-10 bg-slate-950/20 backdrop-blur-sm flex-shrink-0 sticky top-0">
           <h1 className="text-lg font-bold text-slate-200">
             {location.pathname === '/admin-analytics' && 'Bảng giám sát tìm kiếm'}
             {location.pathname === '/admin-analytics/history' && 'Lịch sử yêu cầu tìm kiếm'}
