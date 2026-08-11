@@ -25,7 +25,7 @@ const UserLayout = () => {
         </motion.div>
       </main>
       <ChatAssistant />
-      {location.pathname !== '/products' && location.pathname !== '/cart' && <Footer />}
+      <Footer />
     </div>
   );
 };
