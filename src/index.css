@@ -298,4 +298,130 @@
   .animate-pulse-glow {
     animation: pulse-glow 4s ease-in-out infinite;
   }
+
+  /* ── J.A.R.V.I.S. HUD Tech Styling Utilities ── */
+  .jarvis-bg {
+    background-color: #020612;
+    background-image: 
+      radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.06) 0%, transparent 70%),
+      linear-gradient(to right, rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+  }
+
+  .jarvis-card {
+    background: rgba(6, 18, 36, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.08), inset 0 0 15px rgba(0, 240, 255, 0.03);
+    position: relative;
+  }
+
+  .jarvis-card-interactive {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .jarvis-card-interactive:hover {
+    border-color: rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2), inset 0 0 20px rgba(0, 240, 255, 0.06);
+    transform: translateY(-2px);
+  }
+
+  .jarvis-glow-text {
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+
+  .jarvis-glow-text-subtle {
+    color: #70e6ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  .jarvis-border-glow {
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  }
+
+  .jarvis-btn {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(0, 162, 255, 0.1) 100%);
+    border: 1px solid #00f0ff;
+    color: #00f0ff;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    transition: all 0.2s ease;
+  }
+
+  .jarvis-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.35) 0%, rgba(0, 162, 255, 0.25) 100%);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0, 240, 255, 0.2);
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  }
+
+  .jarvis-input {
+    background: rgba(3, 11, 24, 0.85);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: #e0f7fc;
+    transition: all 0.2s ease;
+  }
+
+  .jarvis-input:focus {
+    border-color: #00f0ff;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), inset 0 0 8px rgba(0, 240, 255, 0.1);
+    outline: none;
+  }
+
+  @keyframes jarvis-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes jarvis-spin-reverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  @keyframes jarvis-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 1; }
+  }
+
+  .animate-jarvis-spin {
+    animation: jarvis-spin 20s linear infinite;
+  }
+
+  .animate-jarvis-spin-fast {
+    animation: jarvis-spin 8s linear infinite;
+  }
+
+  .animate-jarvis-spin-reverse {
+    animation: jarvis-spin-reverse 15s linear infinite;
+  }
+
+  .animate-jarvis-pulse {
+    animation: jarvis-pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes scanline-vertical {
+    0% {
+      top: 0%;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.85;
+    }
+    90% {
+      opacity: 0.85;
+    }
+    100% {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  .animate-scanline-vertical {
+    animation: scanline-vertical 5s linear infinite;
+  }
 }
+
+

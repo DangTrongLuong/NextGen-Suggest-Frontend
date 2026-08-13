@@ -34,13 +34,7 @@ import Settings from '../pages/admin/Settings';
 import ImportHistory from '../pages/admin/ImportHistory';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 
-// Analytics Portal Layouts & Pages
-import AnalyticsLayout from '../analytics-portal/layouts/AnalyticsLayout';
-import AnalyticsLogin from '../analytics-portal/pages/Login';
-import AnalyticsDashboard from '../analytics-portal/pages/Dashboard';
-import SearchHistory from '../analytics-portal/pages/SearchHistory';
-import TopProducts from '../analytics-portal/pages/TopProducts';
-import SystemHealth from '../analytics-portal/pages/SystemHealth';
+// Admin Pages
 
 const ProductsRouteHandler = () => {
   const { categoryMainSlug } = useParams();
@@ -95,14 +89,8 @@ const AppRoutes = () => {
         <Route path="settings" element={<Settings />} />
       </Route>
 
-      {/* Analytics Portal Routes */}
-      <Route path="/admin-analytics/login" element={<AnalyticsLogin />} />
-      <Route path="/admin-analytics" element={<AnalyticsLayout />}>
-        <Route index element={<AnalyticsDashboard />} />
-        <Route path="history" element={<SearchHistory />} />
-        <Route path="top-products" element={<TopProducts />} />
-        <Route path="health" element={<SystemHealth />} />
-      </Route>
+
+
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
