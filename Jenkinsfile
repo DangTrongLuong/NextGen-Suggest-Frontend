@@ -67,8 +67,17 @@ pipeline {
                         }
                     } else {
                         installCmd = 'npm install'
-                        runCmd = 'npm'
-                        echo "Không phát hiện file lock. Sử dụng lệnh mặc định: npm install"
+                    }
+                }
+            }
+        }
+
+        stage('Prepare Environment') {
+            steps {
+                script {
+                    if (!fileExists('.env') && fileExists('.env.example')) {
+                        echo 'Tự động sao chép .env.example -> .env cho môi trường CI...'
+                        sh 'cp .env.example .env'
                     }
                 }
             }
