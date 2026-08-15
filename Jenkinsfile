@@ -76,9 +76,9 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-                    REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/NextGen-Suggest-Frontend/.env"
+                    REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/.env"
                     if [ ! -f "$REAL_ENV" ]; then
-                        REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/.env"
+                        REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/NextGen-Suggest-Frontend/.env"
                     fi
 
                     if [ -f "$REAL_ENV" ]; then
