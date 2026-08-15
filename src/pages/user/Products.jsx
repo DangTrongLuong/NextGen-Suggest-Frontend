@@ -746,8 +746,8 @@ const Products = () => {
 
               {showSkeleton ? (
                 /* Skeleton Grid matching the responsive column specs */
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
-                  {Array.from({ length: 12 }).map((_, i) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
+                  {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
                       className="aspect-[3/4] bg-white border border-gray-100 rounded-3xl animate-pulse p-4 flex flex-col justify-end gap-3"
@@ -764,8 +764,8 @@ const Products = () => {
                 </div>
               ) : (
                 <>
-                  {/* Responsive Grid: 5-6 columns desktop, down to 2 columns on mobile */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
+                  {/* Responsive Grid: 5 columns desktop, down to 2 columns on mobile */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
                     {products.map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}
