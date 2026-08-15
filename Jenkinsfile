@@ -74,12 +74,26 @@ pipeline {
 
         stage('Prepare Environment') {
             steps {
-                script {
-                    if (!fileExists('.env') && fileExists('.env.example')) {
-                        echo 'Tự động sao chép .env.example -> .env cho môi trường CI...'
-                        sh 'cp .env.example .env'
-                    }
-                }
+                sh '''
+                    set -eux
+                    REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/NextGen-Suggest-Frontend/.env"
+                    if [ ! -f "$REAL_ENV" ]; then
+                        REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/.env"
+                    fi
+
+                    if [ -f "$REAL_ENV" ]; then
+                        echo "Phát hiện file .env thật tại $REAL_ENV, đang nạp vào workspace..."
+                        cp "$REAL_ENV" .env
+                    else
+                        echo "Thử nạp file .env từ host qua Docker Daemon..."
+                        docker run --rm -v "$REAL_ENV":/host_env alpine cat /host_env > .env || true
+                    fi
+
+                    if [ ! -s .env ] && [ -f .env.example ]; then
+                        echo "Không nạp được .env thật, dùng .env.example..."
+                        cp .env.example .env
+                    fi
+                '''
             }
         }
 
@@ -133,6 +147,31 @@ pipeline {
             }
         }
 
+        stage('Deploy Website (CD)') {
+            steps {
+                sh '''
+                    set -eux
+                    TARGET_SITE="/www/wwwroot/datn-nextgen-suggest.site"
+                    
+                    if [ -d dist ]; then
+                        echo "=== Đang thay thế thư mục dist mới vào $TARGET_SITE/dist ==="
+                        mkdir -p "$TARGET_SITE"
+                        rm -rf "$TARGET_SITE/dist"
+                        cp -r dist "$TARGET_SITE/dist"
+                        
+                        # Phân quyền cho webserver Nginx (user www)
+                        chown -R www:www "$TARGET_SITE/dist" || true
+                        chmod -R 755 "$TARGET_SITE/dist" || true
+                        
+                        echo "Triển khai Frontend đè dist thành công!"
+                    else
+                        echo "LỖI: Không tìm thấy thư mục dist sau khi build!"
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
         stage('Archive Build') {
             steps {
                 script {
@@ -156,7 +195,7 @@ pipeline {
 
     post {
         success {
-            echo 'KẾT QUẢ: Pipeline chạy thành công tốt đẹp!'
+            echo 'KẾT QUẢ: Frontend React CI/CD pipeline thành công.'
         }
         unstable {
             echo 'KẾT QUẢ: Pipeline chạy hoàn thành nhưng trạng thái không ổn định (unstable)!'
