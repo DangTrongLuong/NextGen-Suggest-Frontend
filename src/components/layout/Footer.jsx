@@ -228,7 +228,7 @@ const Footer = () => {
               {[
                 { icon: Mail, text: 'support@nivora.vn', label: 'Email chăm sóc khách hàng' },
                 { icon: Phone, text: '1900 6868 (8:00 - 21:00)', label: 'Hotline tư vấn miễn phí' },
-                { icon: MapPin, text: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh', label: 'Showroom chính' },
+                { icon: MapPin, text: '84C Đường Nguyễn Thanh Bình, Phường Mộ Lao, Quận Hà Đông, Hà Nội', label: 'Showroom chính' },
               ].map(({ icon: Icon, text, label }) => (
                 <div key={text} className="flex items-center gap-3 text-xs text-slate-400 group">
                   <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
