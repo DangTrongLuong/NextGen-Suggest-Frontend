@@ -76,22 +76,31 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-                    REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/.env"
-                    if [ ! -f "$REAL_ENV" ]; then
-                        REAL_ENV="/www/wwwroot/datn-nextgen-suggest.site/NextGen-Suggest-Frontend/.env"
-                    fi
-
-                    if [ -f "$REAL_ENV" ]; then
-                        echo "Phát hiện file .env thật tại $REAL_ENV, đang nạp vào workspace..."
-                        cp "$REAL_ENV" .env
+                    SITE_ROOT="/www/wwwroot/datn-nextgen-suggest.site"
+                    
+                    # 1. Thử copy trực tiếp nếu có quyền đọc
+                    if [ -f "$SITE_ROOT/.env" ]; then
+                        echo "Copy trực tiếp từ $SITE_ROOT/.env"
+                        cp "$SITE_ROOT/.env" .env
+                    elif [ -f "$SITE_ROOT/NextGen-Suggest-Frontend/.env" ]; then
+                        echo "Copy trực tiếp từ $SITE_ROOT/NextGen-Suggest-Frontend/.env"
+                        cp "$SITE_ROOT/NextGen-Suggest-Frontend/.env" .env
                     else
-                        echo "Thử nạp file .env từ host qua Docker Daemon..."
-                        docker run --rm -v "$REAL_ENV":/host_env alpine cat /host_env > .env || true
+                        echo "Thử nạp file .env từ Host qua Docker Daemon..."
+                        docker run --rm -v "$SITE_ROOT":/host_dir alpine sh -c "
+                            if [ -f /host_dir/.env ]; then
+                                cat /host_dir/.env
+                            elif [ -f /host_dir/NextGen-Suggest-Frontend/.env ]; then
+                                cat /host_dir/NextGen-Suggest-Frontend/.env
+                            fi
+                        " > .env || true
                     fi
 
                     if [ ! -s .env ] && [ -f .env.example ]; then
-                        echo "Không nạp được .env thật, dùng .env.example..."
+                        echo "CẢNH BÁO: Không nạp được .env thật, sử dụng tạm .env.example..."
                         cp .env.example .env
+                    else
+                        echo "=== Nạp file .env thật thành công! ==="
                     fi
                 '''
             }
