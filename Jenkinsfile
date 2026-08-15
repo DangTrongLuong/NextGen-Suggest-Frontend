@@ -154,14 +154,12 @@ pipeline {
                     TARGET_SITE="/www/wwwroot/datn-nextgen-suggest.site"
                     
                     if [ -d dist ]; then
-                        echo "=== Đang thay thế thư mục dist mới vào $TARGET_SITE/dist ==="
-                        mkdir -p "$TARGET_SITE"
-                        rm -rf "$TARGET_SITE/dist"
-                        cp -r dist "$TARGET_SITE/dist"
+                        echo "=== Đang thay thế thư mục dist mới vào $TARGET_SITE/dist qua Docker Daemon ==="
                         
-                        # Phân quyền cho webserver Nginx (user www)
-                        chown -R www:www "$TARGET_SITE/dist" || true
-                        chmod -R 755 "$TARGET_SITE/dist" || true
+                        docker run --rm \
+                            -v "$TARGET_SITE":/target_site \
+                            -v "$(pwd)/dist":/source_dist \
+                            alpine sh -c "mkdir -p /target_site && rm -rf /target_site/dist && cp -r /source_dist /target_site/dist"
                         
                         echo "Triển khai Frontend đè dist thành công!"
                     else
