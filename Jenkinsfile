@@ -163,12 +163,23 @@ pipeline {
                     TARGET_SITE="/www/wwwroot/datn-nextgen-suggest.site"
                     
                     if [ -d dist ]; then
-                        echo "=== Đang thay thế thư mục dist mới vào $TARGET_SITE/dist qua Docker Daemon ==="
+                        echo "=== Đang sao chép thư mục dist mới vào $TARGET_SITE/dist qua docker cp ==="
                         
-                        docker run --rm \
-                            -v "$TARGET_SITE":/target_site \
-                            -v "$(pwd)/dist":/source_dist \
-                            alpine sh -c "mkdir -p /target_site && rm -rf /target_site/dist && cp -r /source_dist /target_site/dist"
+                        # 1. Tạo container tạm mount thư mục target host
+                        docker rm -f deploy_helper || true
+                        docker create --name deploy_helper -v "$TARGET_SITE":/target_site alpine
+                        
+                        # 2. Xóa và tạo mới thư mục dist trên host
+                        docker run --rm -v "$TARGET_SITE":/target_site alpine sh -c "rm -rf /target_site/dist && mkdir -p /target_site/dist"
+                        
+                        # 3. Dùng docker cp đẩy file trực tiếp từ workspace Jenkins vào host
+                        docker cp dist/. deploy_helper:/target_site/dist/
+                        
+                        # 4. Sửa phân quyền cho webserver
+                        docker run --rm -v "$TARGET_SITE":/target_site alpine chmod -R 755 /target_site/dist
+                        
+                        # 5. Xóa container tạm
+                        docker rm -f deploy_helper || true
                         
                         echo "Triển khai Frontend đè dist thành công!"
                     else
