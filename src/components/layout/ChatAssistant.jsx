@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { chatbotService } from '../../services/chatbotService';
 import { eventService } from '../../services/eventService';
+import { cartService } from '../../services/cartService';
 import { formatPrice } from '../../utils/formatPrice';
-import { MessageSquare, Sparkles, Send, X, Bot, Trash2 } from 'lucide-react';
+import { MessageSquare, Sparkles, Send, X, Bot, Trash2, ShoppingBag, ExternalLink, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const INITIAL_GREETING = {
   role: 'assistant',
-  content: 'Xin chào! Tôi là trợ lý mua sắm của Nivora. Tôi có thể giúp gì cho bạn hôm nay? Bạn có thể yêu cầu tôi tìm kiếm sản phẩm, tư vấn kích thước hoặc so sánh các sản phẩm nhé!',
+  content: 'Xin chào! Tôi là trợ lý AI mua sắm của Nivora. Tôi có thể giúp bạn tìm kiếm sản phẩm, tư vấn kiểu dáng, so sánh giá cả hoặc chính sách bảo hành. Bạn cần tư vấn thông tin gì hôm nay ạ?',
   suggestedProducts: [],
   isGreeting: true
 };
@@ -18,12 +20,14 @@ const ChatAssistant = () => {
   const [messages, setMessages] = useState([INITIAL_GREETING]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [addingProductId, setAddingProductId] = useState(null);
   const messagesEndRef = useRef(null);
 
   const quickPrompts = [
-    { text: 'So sánh ghế xoay và ghế gỗ', tracking: 'quick_prompt_compare' },
-    { text: 'Bàn học dưới 2 triệu', tracking: 'quick_prompt_budget' },
-    { text: 'Tìm tủ quần áo phòng ngủ', tracking: 'quick_prompt_wardrobe' },
+    { text: 'Tìm áo thun nam cao cấp', tracking: 'quick_prompt_shirt' },
+    { text: 'Bàn làm việc gỗ dưới 2 triệu', tracking: 'quick_prompt_desk' },
+    { text: 'So sánh ghế xoay và ghế chân quỳ', tracking: 'quick_prompt_chair' },
+    { text: 'Chính sách đổi trả & giao hàng', tracking: 'quick_prompt_policy' },
   ];
 
   // Auto scroll to bottom
@@ -38,6 +42,23 @@ const ChatAssistant = () => {
     setIsOpen(nextState);
     if (nextState) {
       eventService.track('view_chat').catch(() => {});
+    }
+  };
+
+  const handleAddToCart = async (product, e) => {
+    e.stopPropagation();
+    const prodId = product.id || product.product_id;
+    if (!prodId) return;
+
+    setAddingProductId(prodId);
+    try {
+      await cartService.addToCart(prodId, 1);
+      toast.success(`Đã thêm "${product.name || product.title}" vào giỏ hàng!`);
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch (err) {
+      toast.error('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!');
+    } finally {
+      setAddingProductId(null);
     }
   };
 
@@ -57,13 +78,10 @@ const ChatAssistant = () => {
     eventService.track('chat_message_sent', null, text).catch(() => {});
 
     try {
-      // Build conversation history:
-      // - Exclude the initial greeting (isGreeting flag) — it wastes a context slot
-      // - Keep up to the last 12 real messages (6 full user↔AI turns = 6 conversations)
       const allMsgs = [...messages, newUserMessage];
       const chatHistory = allMsgs
-        .filter(m => !m.isGreeting)
-        .map(m => ({ role: m.role, content: m.content }))
+        .filter((m) => !m.isGreeting)
+        .map((m) => ({ role: m.role, content: m.content }))
         .slice(-12);
 
       const response = await chatbotService.sendChatMessage(chatHistory);
@@ -81,7 +99,7 @@ const ChatAssistant = () => {
         ...prev,
         {
           role: 'assistant',
-          content: 'Xin lỗi, tôi gặp sự cố kết nối với máy chủ hỗ trợ. Bạn vui lòng thử lại nhé!',
+          content: 'Xin lỗi, tôi gặp sự cố kết nối tạm thời. Bạn vui lòng thử lại nhé!',
           suggestedProducts: []
         }
       ]);
@@ -96,17 +114,19 @@ const ChatAssistant = () => {
     }
   };
 
-  // Helper function to format basic Markdown to HTML
+  // Markdown parser to rich clean HTML
   const formatMarkdown = (text) => {
     if (!text) return '';
 
-    // Escape HTML to prevent XSS
     let html = text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // 1. Tables parsing
+    // Markdown headings ### Heading -> <h3>
+    html = html.replace(/^### (.*$)/gim, '<h4 class="font-bold text-emerald-800 text-sm mt-2 mb-1">$1</h4>');
+
+    // Markdown tables parsing
     const lines = html.split('\n');
     let inTable = false;
     let tableRows = [];
@@ -136,10 +156,10 @@ const ChatAssistant = () => {
 
     html = processedLines.join('\n');
 
-    // 2. Bold text **text** -> <strong>text</strong>
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+    // Bold text **text** -> <strong>text</strong>
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-950">$1</strong>');
 
-    // 3. Bullet points: lines starting with "- " or "* " -> list items
+    // Bullet points
     const processedLinesList = [];
     let inList = false;
     const listLines = html.split('\n');
@@ -149,7 +169,7 @@ const ChatAssistant = () => {
       if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
         if (!inList) {
           inList = true;
-          processedLinesList.push('<ul class="list-disc pl-5 my-2 space-y-1 text-gray-300">');
+          processedLinesList.push('<ul class="list-disc pl-4 my-1.5 space-y-1 text-gray-700">');
         }
         const itemContent = trimmed.substring(2);
         processedLinesList.push(`<li>${itemContent}</li>`);
@@ -166,12 +186,10 @@ const ChatAssistant = () => {
     }
 
     html = processedLinesList.join('\n');
-
-    // 4. Double line breaks into paragraphs
-    html = html.replace(/\n\n/g, '</p><p class="mb-3">');
+    html = html.replace(/\n\n/g, '</p><p class="mb-1.5">');
     html = html.replace(/\n/g, '<br />');
 
-    return `<p class="mb-2">${html}</p>`;
+    return `<p class="mb-1">${html}</p>`;
   };
 
   const renderHtmlTable = (rows) => {
@@ -180,7 +198,7 @@ const ChatAssistant = () => {
     const headers = rows[0]
       .split('|')
       .slice(1, -1)
-      .map(h => h.trim());
+      .map((h) => h.trim());
 
     const isSeparator = rows[1].replace(/[:|\-\s]/g, '').length === 0;
 
@@ -189,28 +207,87 @@ const ChatAssistant = () => {
       startIdx = 2;
     }
 
-    const bodyRows = rows.slice(startIdx).map(row => {
-      return row.split('|')
+    const bodyRows = rows.slice(startIdx).map((row) => {
+      return row
+        .split('|')
         .slice(1, -1)
-        .map(c => c.trim());
+        .map((c) => c.trim());
     });
 
-    let tableHtml = '<div class="overflow-x-auto custom-scrollbar my-3 rounded-lg border border-gray-700/60"><table class="min-w-full text-xs text-left text-gray-300">';
-    tableHtml += '<thead class="bg-gray-800/80 text-white font-bold uppercase border-b border-gray-700/60"><tr>';
-    headers.forEach(h => {
-      tableHtml += `<th class="px-3 py-2">${h}</th>`;
+    let tableHtml = '<div class="overflow-x-auto custom-scrollbar my-2.5 rounded-xl border border-emerald-100 shadow-xs"><table class="min-w-full text-xs text-left text-gray-800">';
+    tableHtml += '<thead class="bg-emerald-50 text-emerald-900 font-bold uppercase border-b border-emerald-100"><tr>';
+    headers.forEach((h) => {
+      tableHtml += `<th class="px-3 py-2 font-bold">${h}</th>`;
     });
-    tableHtml += '</tr></thead><tbody>';
+    tableHtml += '</tr></thead><tbody className="divide-y divide-gray-100">';
 
     bodyRows.forEach((row, idx) => {
-      tableHtml += `<tr class="${idx % 2 === 0 ? 'bg-gray-900/40' : 'bg-gray-900/10'} border-b border-gray-850/60">`;
-      row.forEach(cell => {
+      tableHtml += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}">`;
+      row.forEach((cell) => {
         tableHtml += `<td class="px-3 py-2 font-medium">${cell}</td>`;
       });
       tableHtml += '</tr>';
     });
     tableHtml += '</tbody></table></div>';
     return tableHtml;
+  };
+
+  // Helper component to render single product card inline
+  const renderSingleProductCard = (prod, pIdx) => {
+    const pId = prod.id || prod.product_id;
+    const pName = typeof prod.name === 'string' ? prod.name : (typeof prod.title === 'string' ? prod.title : 'Sản phẩm Nivora');
+    const pPrice = typeof prod.price === 'number' ? prod.price : (typeof prod.basePrice === 'number' ? prod.basePrice : 0);
+    const pImg = typeof prod.imageUrl === 'string' ? prod.imageUrl : (typeof prod.image_url === 'string' ? prod.image_url : 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80');
+    const catName = typeof prod.category === 'object' && prod.category !== null 
+      ? (prod.category.name || prod.category.title || '') 
+      : (typeof prod.category === 'string' ? prod.category : '');
+
+    return (
+      <div
+        key={pIdx || pId}
+        className="my-2.5 bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-3 flex gap-3 items-center shadow-xs hover:shadow-md transition-all group"
+      >
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-white border border-emerald-100 shrink-0">
+          <img
+            src={pImg}
+            alt={pName}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {catName && (
+            <span className="absolute top-0.5 left-0.5 bg-black/60 text-white text-[8px] font-bold px-1 py-0.2 rounded">
+              {catName}
+            </span>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-1">
+          <h4 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-emerald-700 transition-colors">
+            {pName}
+          </h4>
+          <p className="text-xs font-extrabold text-emerald-700 font-mono">
+            {formatPrice(pPrice)}
+          </p>
+
+          <div className="flex items-center gap-2 pt-1">
+            <Link
+              to={`/products/${pId}`}
+              onClick={() => toggleChat()}
+              className="px-3 py-1 bg-white hover:bg-emerald-100/60 border border-emerald-200 text-emerald-800 text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors"
+            >
+              Xem chi tiết <ExternalLink size={11} />
+            </Link>
+
+            <button
+              onClick={(e) => handleAddToCart(prod, e)}
+              disabled={addingProductId === pId}
+              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              <ShoppingBag size={11} /> Thêm giỏ
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -222,72 +299,73 @@ const ChatAssistant = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="absolute right-16 top-1/2 -translate-y-1/2 mr-2 bg-slate-900 border border-slate-800 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap hidden sm:flex items-center gap-1.5"
+            className="absolute right-16 top-1/2 -translate-y-1/2 mr-2 bg-emerald-900 border border-emerald-700/50 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap hidden sm:flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
-            Trợ Lý AI tư vấn
+            <Sparkles className="w-4 h-4 text-emerald-300 animate-pulse" />
+            Trợ lý AI tư vấn Nivora
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Glowing background ring */}
+      {/* Floating AI Pulse */}
       {!isOpen && (
-        <span className="absolute -inset-1 rounded-full bg-primary/20 blur-sm animate-pulse pointer-events-none"></span>
+        <span className="absolute -inset-1 rounded-full bg-emerald-500/25 blur-md animate-pulse pointer-events-none"></span>
       )}
 
       {/* Chat Bubble Toggle Button */}
       {!isOpen && (
         <motion.button
           onClick={toggleChat}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white bg-primary hover:bg-primary-hover border border-primary/30 shadow-lg hover:shadow-primary/20 active:scale-95 transition-all duration-200 focus:outline-none cursor-pointer"
+          className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-xl shadow-emerald-600/30 border border-white/20 active:scale-95 transition-all duration-200 cursor-pointer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           <div className="relative">
-            <MessageSquare className="w-6 h-6" strokeWidth={2} />
+            <MessageSquare className="w-6 h-6" strokeWidth={2.2} />
             <Sparkles className="w-3.5 h-3.5 text-yellow-300 absolute -top-1.5 -right-1.5 animate-bounce" />
           </div>
         </motion.button>
       )}
 
-      {/* Chat Panel */}
+      {/* Chat Panel Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            exit={{ opacity: 0, y: 30, scale: 0.96 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-full sm:w-[480px] sm:h-[600px] rounded-none sm:rounded-2xl flex flex-col overflow-hidden bg-slate-950 border-none sm:border sm:border-slate-800 shadow-2xl z-50 text-white"
+            className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-full sm:w-[500px] sm:h-[640px] rounded-none sm:rounded-[26px] flex flex-col overflow-hidden bg-white/95 backdrop-blur-xl border border-gray-200/80 shadow-2xl z-50 text-gray-800"
           >
             {/* Header */}
-            <div className="px-4 py-3.5 bg-primary border-b border-primary-hover/20 flex items-center justify-between shadow-md">
+            <div className="px-5 py-4 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 border-b border-emerald-500/30 flex items-center justify-between shadow-sm shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center relative">
+                <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center relative shadow-inner">
                   <Bot className="w-5 h-5 text-white" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-primary"></span>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-emerald-700"></span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white flex items-center gap-1.5">
-                    Trợ Lý Mua Sắm AI
+                  <h3 className="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
+                    NIVORA AI SHOPPING ASSISTANT
                     <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />
                   </h3>
-                  <p className="text-[10px] text-blue-100 font-medium opacity-90">Tự động trả lời 24/7</p>
+                  <p className="text-[10px] text-emerald-100 font-medium">Tư vấn thông minh & Tìm kiếm sản phẩm 24/7</p>
                 </div>
               </div>
+
               <div className="flex items-center gap-1">
                 {messages.length > 1 && (
                   <button
                     onClick={() => setMessages([INITIAL_GREETING])}
-                    title="Xoá lịch sử trò chuyện"
-                    className="text-white/60 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                    title="Xóa lịch sử cuộc trò chuyện"
+                    className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-xl transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   onClick={toggleChat}
-                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-xl transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -295,148 +373,100 @@ const ChatAssistant = () => {
             </div>
 
             {/* Message Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar bg-slate-50/60">
               {messages.map((msg, index) => (
                 <div
                   key={index}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`flex gap-2.5 max-w-[94%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     {msg.role !== 'user' && (
-                      <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-4 h-4 text-primary" />
+                      <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                        <Bot className="w-4 h-4" />
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
+
+                    <div className="min-w-0 flex-1 space-y-2">
+                      {/* Message Bubble Container */}
                       <div
-                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm leading-relaxed border max-w-full overflow-x-auto ${
+                        className={`px-4 py-3 rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-xs ${
                           msg.role === 'user'
-                            ? 'bg-primary border-none text-white rounded-tr-none shadow-md'
-                            : 'bg-slate-900 border border-slate-800/80 text-gray-150 rounded-tl-none shadow-sm'
+                            ? 'bg-emerald-600 border-emerald-500 text-white rounded-tr-none shadow-emerald-600/10 font-medium'
+                            : 'bg-white border-gray-200 text-gray-800 rounded-tl-none'
                         }`}
                       >
                         {msg.role === 'user' ? (
-                          <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }} />
+                          <div>{msg.content}</div>
                         ) : (
                           (() => {
-                            const blocks = msg.content.split(/\n\s*\n/);
+                            // Split AI content into product sections by Markdown headers / numbered headings
+                            const content = msg.content || '';
+                            const sections = content.split(/(?=\n### |\n\d+\.\s|\n\*\*\d+\.\*\*)/g);
+                            
                             const placedProductIds = new Set();
-                            const renderedBlocks = [];
+                            const renderedElements = [];
 
-                            blocks.forEach((block, bIdx) => {
-                              if (!block.trim()) return;
+                            sections.forEach((section, sIdx) => {
+                              if (!section.trim()) return;
 
-                              // Find matching products for this block
-                              const matchedProducts = [];
+                              // Find which suggested product corresponds to this text section
+                              let matchedProduct = null;
                               if (msg.suggestedProducts && msg.suggestedProducts.length > 0) {
-                                msg.suggestedProducts.forEach((prod) => {
-                                  const prodId = prod.id || prod.product_id;
-                                  if (placedProductIds.has(prodId)) return;
+                                // Check 1: Title substring match
+                                for (const prod of msg.suggestedProducts) {
+                                  const pId = prod.id || prod.product_id;
+                                  if (placedProductIds.has(pId)) continue;
 
-                                  // Clean title and block for matching
-                                  const titlePart = (prod.name || prod.title || '').split(' (')[0].split(' - ')[0].split(' | ')[0].trim().toLowerCase();
-                                  const cleanTitle = titlePart.replace(/[^a-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '').trim();
-                                  const cleanBlock = block.toLowerCase().replace(/[^a-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '');
+                                  const pName = (prod.name || prod.title || '').toLowerCase();
+                                  const shortName = pName.split(' - ')[0].split(' (')[0].split(' | ')[0].trim();
+                                  const cleanShort = shortName.replace(/[^a-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '').trim();
+                                  const cleanSection = section.toLowerCase().replace(/[^a-z0-9àáảãạăằắẳẵẵặâầấẩẫậèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\s]/g, '');
 
-                                  if (cleanTitle.length > 2 && cleanBlock.includes(cleanTitle)) {
-                                    matchedProducts.push(prod);
-                                    placedProductIds.add(prodId);
+                                  if (cleanShort.length > 3 && cleanSection.includes(cleanShort)) {
+                                    matchedProduct = prod;
+                                    placedProductIds.add(pId);
+                                    break;
                                   }
-                                });
+                                }
+
+                                // Check 2: Numbered section index match (e.g. "### 1." -> index 0)
+                                if (!matchedProduct) {
+                                  const numMatch = section.match(/(?:###|\*\*|\n|^)\s*(\d+)\.\s/);
+                                  if (numMatch) {
+                                    const targetIndex = parseInt(numMatch[1], 10) - 1;
+                                    if (targetIndex >= 0 && targetIndex < msg.suggestedProducts.length) {
+                                      const candidate = msg.suggestedProducts[targetIndex];
+                                      const candId = candidate.id || candidate.product_id;
+                                      if (!placedProductIds.has(candId)) {
+                                        matchedProduct = candidate;
+                                        placedProductIds.add(candId);
+                                      }
+                                    }
+                                  }
+                                }
                               }
 
-                              renderedBlocks.push(
-                                <div key={bIdx} className="mb-3 last:mb-0">
-                                  <div dangerouslySetInnerHTML={{ __html: formatMarkdown(block) }} />
-                                  
-                                  {/* Render matched products inline under the matching block */}
-                                  {matchedProducts.length > 0 && (
-                                    <div className="mt-2.5 mb-3 flex flex-col gap-2">
-                                      {matchedProducts.map((prod) => (
-                                        <Link
-                                          key={prod.id || prod.product_id}
-                                          to={`/products/${prod.id || prod.product_id}`}
-                                          onClick={() => toggleChat()}
-                                          className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-950 border border-slate-850 hover:border-slate-700/80 transition-all text-left group"
-                                        >
-                                          <div className="w-12 h-12 rounded overflow-hidden bg-slate-900 flex-shrink-0 border border-slate-800">
-                                            <img
-                                              src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
-                                              alt={prod.name || prod.title}
-                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <h4 className="text-xs font-medium text-white truncate transition-colors">
-                                              {prod.name || prod.title}
-                                            </h4>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                              <p className="text-xs font-bold text-accent">
-                                                {formatPrice(prod.price || prod.basePrice || 0)}
-                                              </p>
-                                              {(prod.recommendationScore || prod.score) > 0 && (
-                                                <span className="text-[8px] bg-accent/15 text-accent px-1.5 py-0.5 rounded font-mono font-bold">
-                                                  {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </Link>
-                                      ))}
-                                    </div>
-                                  )}
+                              renderedElements.push(
+                                <div key={sIdx} className="mb-2.5 last:mb-0">
+                                  <div dangerouslySetInnerHTML={{ __html: formatMarkdown(section) }} />
+
+                                  {/* Render matching product card IMMEDIATELY beneath its section description */}
+                                  {matchedProduct && renderSingleProductCard(matchedProduct, sIdx)}
                                 </div>
                               );
                             });
 
-                            // Remaining products that were not matched inline
-                            const remainingProducts = (msg.suggestedProducts || []).filter(
-                              (prod) => !placedProductIds.has(prod.id || prod.product_id)
+                            // Render leftover products if any were not matched inline
+                            const leftoverProducts = (msg.suggestedProducts || []).filter(
+                              (p) => !placedProductIds.has(p.id || p.product_id)
                             );
 
                             return (
                               <>
-                                {renderedBlocks}
-                                
-                                {remainingProducts.length > 0 && (
-                                  <div className="mt-3 pt-3 border-t border-slate-800/60">
-                                    <p className="text-[10px] text-gray-400 font-semibold mb-2 flex items-center gap-1">
-                                      <Sparkles className="w-3 h-3 text-accent animate-pulse" />
-                                      Sản phẩm gợi ý thêm:
-                                    </p>
-                                    <div className="flex flex-col gap-2">
-                                      {remainingProducts.map((prod) => (
-                                        <Link
-                                          key={prod.id || prod.product_id}
-                                          to={`/products/${prod.id || prod.product_id}`}
-                                          onClick={() => toggleChat()}
-                                          className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-950/60 hover:bg-slate-950 border border-slate-850 hover:border-slate-700/80 transition-all text-left group"
-                                        >
-                                          <div className="w-12 h-12 rounded overflow-hidden bg-slate-900 flex-shrink-0 border border-slate-800">
-                                            <img
-                                              src={prod.imageUrl || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80'}
-                                              alt={prod.name || prod.title}
-                                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <h4 className="text-xs font-medium text-white truncate transition-colors">
-                                              {prod.name || prod.title}
-                                            </h4>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                              <p className="text-xs font-bold text-accent">
-                                                {formatPrice(prod.price || prod.basePrice || 0)}
-                                              </p>
-                                              {(prod.recommendationScore || prod.score) > 0 && (
-                                                <span className="text-[8px] bg-accent/15 text-accent px-1.5 py-0.5 rounded font-mono font-bold">
-                                                  {Math.round((prod.recommendationScore || prod.score) * 100)}% Match
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </Link>
-                                      ))}
-                                    </div>
+                                {renderedElements}
+                                {leftoverProducts.length > 0 && (
+                                  <div className="mt-3 pt-2 border-t border-emerald-100">
+                                    {leftoverProducts.map((p, idx) => renderSingleProductCard(p, `leftover-${idx}`))}
                                   </div>
                                 )}
                               </>
@@ -448,58 +478,60 @@ const ChatAssistant = () => {
                   </div>
                 </div>
               ))}
- 
+
               {/* Typing Indicator */}
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex gap-2.5 max-w-[85%]">
-                    <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-4 h-4 text-primary" />
+                    <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                      <Bot className="w-4 h-4" />
                     </div>
-                    <div className="px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl rounded-tl-none flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <div className="px-4 py-3 bg-white border border-gray-200 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-xs">
+                      <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      <span className="text-xs text-gray-500 font-medium ml-1">AI đang phân tích & tổng hợp thông tin...</span>
                     </div>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
- 
-            {/* Quick Prompts Area */}
+
+            {/* Quick Prompts Suggestions Area */}
             {messages.length === 1 && !isLoading && (
-              <div className="px-4 pb-2">
-                <p className="text-[10px] text-gray-400 mb-1.5 font-medium">Gợi ý câu hỏi:</p>
-                <div className="flex flex-col gap-1.5">
+              <div className="px-4 py-2.5 bg-white border-t border-gray-100 shrink-0">
+                <p className="text-[11px] text-gray-500 font-bold mb-1.5 uppercase tracking-wide">💡 GỢI Ý CÂU HỎI NHANH:</p>
+                <div className="grid grid-cols-2 gap-1.5">
                   {quickPrompts.map((p, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSendMessage(p.text)}
-                      className="text-left px-3 py-1.5 text-xs rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-gray-300 hover:text-white transition-all focus:outline-none cursor-pointer"
+                      className="text-left px-2.5 py-1.5 text-xs rounded-xl bg-slate-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-gray-700 hover:text-emerald-800 font-medium transition-all cursor-pointer flex items-center justify-between group"
                     >
-                      {p.text}
+                      <span className="truncate">{p.text}</span>
+                      <ArrowRight size={12} className="text-gray-400 group-hover:text-emerald-600 shrink-0 ml-1" />
                     </button>
                   ))}
                 </div>
               </div>
             )}
- 
+
             {/* Chat Input Footer */}
-            <div className="p-3 bg-slate-950 border-t border-slate-900 flex gap-2 items-center">
+            <div className="p-3.5 bg-white border-t border-gray-200 flex gap-2 items-center shrink-0">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Hỏi về sản phẩm, giá bán, so sánh..."
+                placeholder="Nhập câu hỏi tư vấn hoặc tìm kiếm sản phẩm..."
                 disabled={isLoading}
-                className="flex-1 bg-slate-900 text-xs sm:text-sm rounded-xl px-3 py-2 border border-slate-800 text-gray-200 focus:outline-none focus:border-primary disabled:opacity-50 transition-colors"
+                className="flex-1 bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-xl px-3.5 py-2.5 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 transition-all font-sans"
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
-                className="w-9 h-9 rounded-xl bg-primary hover:bg-primary-hover text-white flex items-center justify-center disabled:opacity-40 transition-colors shadow-md focus:outline-none active:scale-95 cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center disabled:opacity-40 transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
               >
                 <Send className="w-4 h-4" />
               </button>
