@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { chatbotService } from '../../services/chatbotService';
 import { eventService } from '../../services/eventService';
 import { cartService } from '../../services/cartService';
+import { useAuth } from '../../context/AuthContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { MessageSquare, Sparkles, Send, X, Bot, Trash2, ShoppingBag, ExternalLink, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ const INITIAL_GREETING = {
 };
 
 const ChatAssistant = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_GREETING]);
   const [inputMessage, setInputMessage] = useState('');
@@ -47,6 +49,13 @@ const ChatAssistant = () => {
 
   const handleAddToCart = async (product, e) => {
     e.stopPropagation();
+
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
+      window.dispatchEvent(new Event('open-login-modal'));
+      return;
+    }
+
     const prodId = product.id || product.product_id;
     if (!prodId) return;
 
