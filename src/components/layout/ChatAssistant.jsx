@@ -118,13 +118,16 @@ const ChatAssistant = () => {
   const formatMarkdown = (text) => {
     if (!text) return '';
 
-    let html = text
+    let html = text.trim()
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Markdown headings ### Heading -> <h3>
-    html = html.replace(/^### (.*$)/gim, '<h4 class="font-bold text-emerald-800 text-sm mt-2 mb-1">$1</h4>');
+    // Markdown headings ### Heading -> <h4>
+    html = html.replace(/^### (.*$)/gim, '<h4 class="font-bold text-emerald-850 text-sm mt-1 mb-0.5">$1</h4>');
+
+    // Bold numbered titles e.g. "1. Khứ Linh Thám" or "**1. Khứ Linh Thám**"
+    html = html.replace(/^(?:\*\*)?(\d+\.\s+[^\n]+)(?:\*\*)?$/gim, '<h4 class="font-bold text-emerald-850 text-sm mt-1 mb-0.5">$1</h4>');
 
     // Markdown tables parsing
     const lines = html.split('\n');
@@ -169,7 +172,7 @@ const ChatAssistant = () => {
       if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
         if (!inList) {
           inList = true;
-          processedLinesList.push('<ul class="list-disc pl-4 my-1.5 space-y-1 text-gray-700">');
+          processedLinesList.push('<ul class="list-disc pl-4 my-1 space-y-0.5 text-gray-700">');
         }
         const itemContent = trimmed.substring(2);
         processedLinesList.push(`<li>${itemContent}</li>`);
@@ -178,7 +181,9 @@ const ChatAssistant = () => {
           processedLinesList.push('</ul>');
           inList = false;
         }
-        processedLinesList.push(line);
+        if (trimmed) {
+          processedLinesList.push(line);
+        }
       }
     }
     if (inList) {
@@ -186,10 +191,12 @@ const ChatAssistant = () => {
     }
 
     html = processedLinesList.join('\n');
-    html = html.replace(/\n\n/g, '</p><p class="mb-1.5">');
+
+    // Collapse multiple empty line breaks into single breaks
+    html = html.replace(/\n\s*\n+/g, '\n');
     html = html.replace(/\n/g, '<br />');
 
-    return `<p class="mb-1">${html}</p>`;
+    return `<div>${html}</div>`;
   };
 
   const renderHtmlTable = (rows) => {
@@ -214,17 +221,17 @@ const ChatAssistant = () => {
         .map((c) => c.trim());
     });
 
-    let tableHtml = '<div class="overflow-x-auto custom-scrollbar my-2.5 rounded-xl border border-emerald-100 shadow-xs"><table class="min-w-full text-xs text-left text-gray-800">';
+    let tableHtml = '<div class="overflow-x-auto custom-scrollbar my-1.5 rounded-xl border border-emerald-100 shadow-xs"><table class="min-w-full text-xs text-left text-gray-800">';
     tableHtml += '<thead class="bg-emerald-50 text-emerald-900 font-bold uppercase border-b border-emerald-100"><tr>';
     headers.forEach((h) => {
-      tableHtml += `<th class="px-3 py-2 font-bold">${h}</th>`;
+      tableHtml += `<th class="px-3 py-1.5 font-bold">${h}</th>`;
     });
     tableHtml += '</tr></thead><tbody className="divide-y divide-gray-100">';
 
     bodyRows.forEach((row, idx) => {
       tableHtml += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}">`;
       row.forEach((cell) => {
-        tableHtml += `<td class="px-3 py-2 font-medium">${cell}</td>`;
+        tableHtml += `<td class="px-3 py-1.5 font-medium">${cell}</td>`;
       });
       tableHtml += '</tr>';
     });
@@ -245,7 +252,7 @@ const ChatAssistant = () => {
     return (
       <div
         key={pIdx || pId}
-        className="my-2.5 bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-3 flex gap-3 items-center shadow-xs hover:shadow-md transition-all group"
+        className="mt-1.5 mb-2 bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-2.5 flex gap-2.5 items-center shadow-xs hover:shadow-md transition-all group"
       >
         <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-white border border-emerald-100 shrink-0">
           <img
@@ -268,11 +275,11 @@ const ChatAssistant = () => {
             {formatPrice(pPrice)}
           </p>
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-0.5">
             <Link
               to={`/products/${pId}`}
               onClick={() => toggleChat()}
-              className="px-3 py-1 bg-white hover:bg-emerald-100/60 border border-emerald-200 text-emerald-800 text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 bg-white hover:bg-emerald-100/60 border border-emerald-200 text-emerald-800 text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors"
             >
               Xem chi tiết <ExternalLink size={11} />
             </Link>
@@ -280,7 +287,7 @@ const ChatAssistant = () => {
             <button
               onClick={(e) => handleAddToCart(prod, e)}
               disabled={addingProductId === pId}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
             >
               <ShoppingBag size={11} /> Thêm giỏ
             </button>
@@ -447,7 +454,7 @@ const ChatAssistant = () => {
                               }
 
                               renderedElements.push(
-                                <div key={sIdx} className="mb-2.5 last:mb-0">
+                                <div key={sIdx} className="mb-2 last:mb-0">
                                   <div dangerouslySetInnerHTML={{ __html: formatMarkdown(section) }} />
 
                                   {/* Render matching product card IMMEDIATELY beneath its section description */}
