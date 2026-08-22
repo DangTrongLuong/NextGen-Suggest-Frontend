@@ -163,41 +163,46 @@ const Home = () => {
       
       {/* 1. Hero Banner Section */}
       {!searchQuery && (
-        <section className="relative border-b border-gray-100 text-white overflow-hidden min-h-[520px] md:min-h-[580px] flex items-center bg-gray-900">
+        <section className="relative border-b border-gray-100 text-white overflow-hidden bg-gray-900">
+          {/* Background Image Layer */}
           <div
-            className="absolute inset-0 bg-cover bg-center flex items-center py-20 md:py-28 lg:py-32"
+            className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${heroBannerImg})` }}
           >
-            <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 relative">
-              <div className="max-w-2xl text-left">
-                <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase mb-3.5 block">NIVORA COLLECTION 2026</span>
-                <h1 className="text-3xl sm:text-5xl font-light leading-tight tracking-tight text-white mb-4 uppercase">
-                  Không gian sống <span className="font-semibold text-emerald-400 block sm:inline">hiện đại</span>
-                </h1>
-                <p className="text-gray-200 text-xs sm:text-sm max-w-lg mb-8 font-light leading-relaxed">
-                  Khám phá hàng nghìn sản phẩm nội thất và thời trang được tuyển chọn.
-                </p>
+            <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+          </div>
 
-                <div className="flex flex-wrap gap-4">
-                  <Link
-                    to="/products"
-                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 border border-emerald-600 hover:border-emerald-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md uppercase tracking-wider text-center min-w-[130px]"
-                  >
-                    Mua ngay
-                  </Link>
-                  <Link
-                    to="/products"
-                    className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md backdrop-blur-sm uppercase tracking-wider text-center min-w-[130px]"
-                  >
-                    Khám phá bộ sưu tập
-                  </Link>
-                </div>
+          {/* Foreground Content Container (Normal Flow) */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 lg:py-24 w-full z-10 relative">
+            <div className="max-w-2xl text-left">
+              <span className="text-[10px] sm:text-xs font-bold tracking-widest text-emerald-400 uppercase mb-2.5 block">
+                NIVORA COLLECTION 2026
+              </span>
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-light leading-tight tracking-tight text-white mb-3 sm:mb-4 uppercase">
+                Không gian sống <span className="font-semibold text-emerald-400 block sm:inline">hiện đại</span>
+              </h1>
+              <p className="text-gray-200 text-xs sm:text-sm max-w-lg mb-6 sm:mb-8 font-light leading-relaxed">
+                Khám phá hàng nghìn sản phẩm nội thất và thời trang được tuyển chọn.
+              </p>
+
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                <Link
+                  to="/products"
+                  className="px-5 py-2.5 sm:px-6 sm:py-3 bg-emerald-600 hover:bg-emerald-500 border border-emerald-600 hover:border-emerald-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md uppercase tracking-wider text-center min-w-[120px]"
+                >
+                  Mua ngay
+                </Link>
+                <Link
+                  to="/products"
+                  className="px-5 py-2.5 sm:px-6 sm:py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md backdrop-blur-sm uppercase tracking-wider text-center min-w-[120px]"
+                >
+                  Khám phá bộ sưu tập
+                </Link>
               </div>
-              
-              {/* AI Query Suggestions Section */}
-              <HeroAISuggestions />
             </div>
+            
+            {/* AI Query Suggestions Section */}
+            <HeroAISuggestions />
           </div>
         </section>
       )}
