@@ -410,32 +410,61 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile search bar */}
+        {/* Mobile Search Modal Overlay */}
         <AnimatePresence>
           {searchFocused && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden border-t border-gray-100 bg-white overflow-hidden"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden fixed inset-0 z-50 bg-white flex flex-col"
             >
-              <div className="px-4 py-3 relative">
-                <form onSubmit={handleSearchSubmit}>
-                  <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-200 transition-all">
-                    <Search size={15} className="text-gray-400 flex-shrink-0" />
+              {/* Header inside Mobile Search Modal */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white shrink-0">
+                <form onSubmit={handleSearchSubmit} className="flex-1">
+                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-gray-100 rounded-2xl border border-emerald-400 ring-2 ring-emerald-100 transition-all">
+                    <Search size={16} className="text-emerald-500 flex-shrink-0" />
                     <input
                       autoFocus
                       value={searchQuery}
                       maxLength={100}
                       onChange={(e) => handleSearch(e.target.value)}
-                      placeholder={placeholder || 'Tìm kiếm sản phẩm (tối đa 100 ký tự)...'}
-                      className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
+                      placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
+                      className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
                     />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            next.delete('search');
+                            next.set('page', '1');
+                            return next;
+                          });
+                        }}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <X size={15} />
+                      </button>
+                    )}
                   </div>
                 </form>
-                
+                <button
+                  type="button"
+                  onClick={() => setSearchFocused(false)}
+                  className="text-xs font-bold text-gray-600 hover:text-emerald-600 px-2 py-1.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+                >
+                  Hủy
+                </button>
+              </div>
+
+              {/* Body of Mobile Search Modal */}
+              <div className="flex-1 overflow-y-auto p-4 relative">
                 <SearchPopup
-                  isOpen={searchFocused}
+                  isOpen={true}
                   searchQuery={searchQuery}
                   onSelectKeyword={(kw) => {
                     setSearchQuery(kw);
@@ -444,6 +473,7 @@ const Header = () => {
                     setMobileOpen(false);
                   }}
                   onClose={() => setSearchFocused(false)}
+                  isMobileModal={true}
                 />
               </div>
             </motion.div>

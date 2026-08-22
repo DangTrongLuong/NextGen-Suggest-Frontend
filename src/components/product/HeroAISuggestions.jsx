@@ -105,7 +105,7 @@ const HeroAISuggestions = () => {
   }
 
   return (
-    <div className="mt-12 w-full text-left bg-white/5 border border-white/8 backdrop-blur-md rounded-2xl p-6 shadow-xl">
+    <div className="mt-6 sm:mt-10 md:mt-12 w-full text-left bg-white/5 border border-white/8 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-xl">
       {/* Title & Description inside the same div */}
       <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/10 pb-4">
         <div>

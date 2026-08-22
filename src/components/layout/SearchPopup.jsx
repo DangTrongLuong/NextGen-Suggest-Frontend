@@ -5,6 +5,7 @@ import {
   Clock, Trash2, TrendingUp, Grid, Search, X, Sparkles, Flame, Eye, Compass, ArrowRight
 } from 'lucide-react';
 import { searchPopupService } from '../../services/searchPopupService';
+import { searchAnalyticsService } from '../../services/searchAnalyticsService';
 import { formatPrice } from '../../utils/formatPrice';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -17,7 +18,7 @@ const isMaliciousQuery = (q) => {
   return false;
 };
 
-const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
+const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose, isMobileModal = false }) => {
   const [popupData, setPopupData] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -145,7 +146,10 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl rounded-[26px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] overflow-hidden z-50 flex flex-col max-h-[580px] ring-1 ring-black/[0.03]"
+      className={isMobileModal 
+        ? "w-full bg-transparent flex flex-col h-full overflow-hidden" 
+        : "absolute top-full left-0 right-0 mt-3 bg-white/95 backdrop-blur-xl rounded-2xl md:rounded-[26px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] overflow-hidden z-50 flex flex-col max-h-[75vh] md:max-h-[580px] ring-1 ring-black/[0.05]"
+      }
     >
       {/* ── SUGGESTIONS LIST ── */}
       {showSuggestions ? (
@@ -290,18 +294,10 @@ const SearchPopup = ({ isOpen, searchQuery, onSelectKeyword, onClose }) => {
                           key={p.id}
                           to={`/products/${p.id}`}
                           onClick={() => {
-                            try {
-                              const sessionId = localStorage.getItem('nivora_session_id');
-                              fetch('/analytics/search/click', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  product_id: String(p.id || ''),
-                                  product_name: p.name || '',
-                                  session_id: sessionId || null
-                                })
-                              }).catch(() => {});
-                            } catch {}
+                            searchAnalyticsService.trackClick({
+                              productId: p.id || '',
+                              productName: p.name || '',
+                            });
                             if (onClose) onClose();
                           }}
                           className="flex-shrink-0 w-36 border border-gray-100 hover:border-emerald-300/80 rounded-2xl p-2.5 bg-gray-50/20 hover:bg-white transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(16,185,129,0.08)] hover:-translate-y-0.5 group snap-start"

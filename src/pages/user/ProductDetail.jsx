@@ -108,15 +108,15 @@ const Gallery = ({ images, activeUrl, onSelect }) => {
   };
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col-reverse sm:flex-row gap-4 sm:gap-6">
       {/* Thumbnail column */}
-      <div className="flex flex-col gap-3 w-20 max-h-[520px] overflow-y-auto scrollbar-none pr-1">
+      <div className="flex flex-row sm:flex-col gap-2.5 sm:gap-3 w-full sm:w-20 overflow-x-auto sm:overflow-y-auto max-h-none sm:max-h-[520px] scrollbar-none py-1 sm:py-0 pr-0 sm:pr-1 shrink-0">
         {images.map((img, idx) => (
           <button
             key={img.url}
             onClick={() => { setMainIdx(idx); onSelect(img); }}
             className={clsx(
-              'w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300 shadow-sm',
+              'w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300 shadow-sm cursor-pointer',
               mainIdx === idx
                 ? 'border-emerald-500 ring-2 ring-emerald-100 scale-105 shadow-md'
                 : 'border-gray-200 hover:border-gray-400 hover:scale-102 opacity-70 hover:opacity-100',

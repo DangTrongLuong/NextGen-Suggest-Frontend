@@ -14,7 +14,7 @@ const UserLayout = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       <CategoryNavBar />
-      <main className="flex-1 pt-28">
+      <main className="flex-1 pt-[108px] lg:pt-[112px]">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0 }}

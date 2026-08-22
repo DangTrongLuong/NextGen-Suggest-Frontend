@@ -6,6 +6,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { formatPrice } from '../../utils/formatPrice';
 import toast from 'react-hot-toast';
+import { searchAnalyticsService } from '../../services/searchAnalyticsService';
 
 const ProductCard = ({ product }) => {
   const { addToCart, isInCart } = useCart();
@@ -39,18 +40,11 @@ const ProductCard = ({ product }) => {
 
   const handleProductClick = () => {
     try {
-      const sessionId = localStorage.getItem('nivora_session_id');
-      const payload = {
-        product_id: String(product.id || product.uuid || ''),
-        product_name: product.name || product.title || '',
-        request_id: product.requestId || null,
-        session_id: sessionId || null,
-      };
-      fetch('/analytics/search/click', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(() => {});
+      searchAnalyticsService.trackClick({
+        productId: product.id || product.uuid || '',
+        productName: product.name || product.title || '',
+        requestId: product.requestId || null,
+      });
 
       if (window.location.search.includes('search=')) {
         sessionStorage.setItem('nivora_search_back_url', window.location.pathname + window.location.search);
@@ -117,59 +111,56 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Info Section */}
-      <div className="p-3 flex-1 flex flex-col justify-between">
+      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
         <div>
           {/* Category */}
-          <p className="text-[10px] text-gray-400 font-medium tracking-wide mb-1 uppercase">
+          <p className="text-[10px] text-gray-400 font-medium tracking-wide mb-1 uppercase truncate">
             {categoryName}
           </p>
 
           {/* Recommendation Reason */}
           {product.recommendationReason && (
-            <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[10px] font-semibold leading-normal w-fit">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-              {product.recommendationReason}
+            <div className="mb-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[9px] sm:text-[10px] font-semibold leading-normal max-w-full truncate">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0"></span>
+              <span className="truncate">{product.recommendationReason}</span>
             </div>
           )}
           
           {/* Title */}
           <Link to={`/products/${product.id}`} state={{ searchUrl: window.location.pathname + window.location.search }} onClick={handleProductClick}>
-            <h3 className="text-xs sm:text-sm font-normal text-gray-900 hover:text-black line-clamp-2 leading-snug mb-2 transition-colors">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-900 hover:text-emerald-600 line-clamp-2 leading-snug mb-1.5 transition-colors">
               {product.name}
             </h3>
           </Link>
         </div>
 
         <div>
-          {/* Rating - Compact Tiki/Amazon style (single star + value) */}
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="flex items-center text-amber-500">
-              <Star size={12} className="fill-current" />
+          {/* Rating */}
+          <div className="flex items-center gap-1 mb-2.5 flex-wrap">
+            <div className="flex items-center text-amber-500 shrink-0">
+              <Star size={11} className="fill-current" />
             </div>
-            <span className="text-xs font-semibold text-gray-700">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-700">
               {Number(rating).toFixed(1)}
             </span>
             <span className="text-[10px] text-gray-400 font-normal">
               ({reviewCount})
             </span>
             {product.views !== undefined && product.views !== null && (
-              <>
-                <span className="text-gray-300 text-[10px]">|</span>
-                <span className="text-[10px] text-gray-550 font-light flex items-center gap-0.5">
-                  👁️ {product.views} lượt xem
-                </span>
-              </>
+              <span className="text-[10px] text-gray-400 font-light hidden sm:inline-block ml-1">
+                • {product.views} lượt xem
+              </span>
             )}
           </div>
 
           {/* Price & Action Row */}
-          <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 truncate">
-              <span className="text-sm sm:text-base font-bold text-accent">
+          <div className="flex items-center justify-between gap-1 pt-2 border-t border-gray-100">
+            <div className="flex flex-col min-w-0 flex-1 pr-1">
+              <span className="text-xs sm:text-sm font-bold text-accent truncate tracking-tight">
                 {formatPrice(price)}
               </span>
               {originalPrice > price && (
-                <span className="text-[10px] sm:text-xs text-gray-400 line-through">
+                <span className="text-[10px] text-gray-400 line-through truncate">
                   {formatPrice(originalPrice)}
                 </span>
               )}
@@ -188,14 +179,14 @@ const ProductCard = ({ product }) => {
               }}
               disabled={!hasStock}
               className={clsx(
-                'w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border cursor-pointer',
+                'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border cursor-pointer',
                 inCart
                   ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                   : 'bg-emerald-50/80 border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white',
                 !hasStock && 'opacity-30 cursor-not-allowed border-gray-100 text-gray-300 bg-gray-50'
               )}
             >
-              <ShoppingCart size={13} />
+              <ShoppingCart size={12} className="sm:w-[13px] sm:h-[13px]" />
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, FolderOpen, ArrowRight, Filter, X, Check, Star, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductCard from '../../components/product/ProductCard';
@@ -760,7 +760,12 @@ const Products = () => {
               ) : products.length === 0 ? (
                 <div className="bg-white rounded-3xl p-16 border border-gray-100 shadow-sm text-center mb-8">
                   <FolderOpen className="text-gray-300 w-12 h-12 mx-auto mb-3 stroke-[1.5]" />
-                  <p className="text-gray-500 font-bold text-sm">Không tìm thấy sản phẩm nào phù hợp.</p>
+                  <p className="text-gray-700 font-bold text-sm">
+                    {searchQueryParam.trim()
+                      ? `Không tìm thấy sản phẩm nào phù hợp với từ khóa "${searchQueryParam.trim()}".`
+                      : "Không tìm thấy sản phẩm nào phù hợp."}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1">Vui lòng thử lại với từ khóa khác hoặc kiểm tra chính tả.</p>
                 </div>
               ) : (
                 <>
@@ -813,66 +818,71 @@ const Products = () => {
         </div>
 
         {/* ── MOBILE FILTER DRAWER OVERLAY ── */}
-        {isMobileFilterOpen && (
-          <div className="fixed inset-0 z-50 flex justify-end lg:hidden">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={() => setIsMobileFilterOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            />
+        <AnimatePresence>
+          {isMobileFilterOpen && (
+            <div className="fixed inset-0 z-50 flex justify-end lg:hidden">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              />
 
-            {/* Drawer Panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              className="relative w-80 max-w-full h-full bg-white shadow-2xl flex flex-col p-6 overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-gray-150 pb-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <Filter className="text-emerald-600" size={16} />
-                  <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wide">
-                    Bộ lọc sản phẩm
-                  </h3>
+              {/* Drawer Panel */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+                className="relative z-10 w-80 max-w-[88%] h-full bg-white shadow-2xl flex flex-col p-6 overflow-y-auto"
+              >
+                <div className="flex items-center justify-between border-b border-gray-150 pb-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Filter className="text-emerald-600" size={16} />
+                    <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wide">
+                      Bộ lọc sản phẩm
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileFilterOpen(false)}
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              {/* Filter Content */}
-              <div className="flex-1 space-y-6">
-                {renderFilterContent()}
-              </div>
+                {/* Filter Content */}
+                <div className="flex-1 space-y-6">
+                  {renderFilterContent()}
+                </div>
 
-              {/* Footer Buttons */}
-              <div className="border-t border-gray-100 pt-4 mt-6 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleClearAllFilters();
-                    setIsMobileFilterOpen(false);
-                  }}
-                  className="flex-1 py-3 border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-700 rounded-xl transition-all cursor-pointer"
-                >
-                  Xóa tất cả
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileFilterOpen(false)}
-                  className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  Áp dụng
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+                {/* Footer Buttons */}
+                <div className="border-t border-gray-100 pt-4 mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClearAllFilters();
+                      setIsMobileFilterOpen(false);
+                    }}
+                    className="flex-1 py-3 border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-700 rounded-xl transition-all cursor-pointer"
+                  >
+                    Xóa tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Áp dụng
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
