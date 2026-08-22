@@ -82,16 +82,16 @@ pipeline {
                     if [ -f "$SITE_ROOT/.env" ]; then
                         echo "Copy trực tiếp từ $SITE_ROOT/.env"
                         cp "$SITE_ROOT/.env" .env
-                    elif [ -f "$SITE_ROOT/NextGen-Suggest-Frontend/.env" ]; then
-                        echo "Copy trực tiếp từ $SITE_ROOT/NextGen-Suggest-Frontend/.env"
-                        cp "$SITE_ROOT/NextGen-Suggest-Frontend/.env" .env
+                    elif [ -f "$SITE_ROOT/.env" ]; then
+                        echo "Copy trực tiếp từ $SITE_ROOT/.env"
+                        cp "$SITE_ROOT/.env" .env
                     else
                         echo "Thử nạp file .env từ Host qua Docker Daemon..."
                         docker run --rm -v "$SITE_ROOT":/host_dir alpine sh -c "
                             if [ -f /host_dir/.env ]; then
                                 cat /host_dir/.env
-                            elif [ -f /host_dir/NextGen-Suggest-Frontend/.env ]; then
-                                cat /host_dir/NextGen-Suggest-Frontend/.env
+                            elif [ -f /host_dir/.env ]; then
+                                cat /host_dir/.env
                             fi
                         " > .env || true
                     fi
