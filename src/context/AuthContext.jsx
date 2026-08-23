@@ -236,27 +236,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const getIsAdminFromToken = () => {
-    try {
-      const tokensStr = localStorage.getItem('auth_tokens');
-      if (!tokensStr) return false;
-      const { accessToken } = JSON.parse(tokensStr);
-      if (!accessToken) return false;
-      const claims = parseJwt(accessToken);
-      if (!claims) return false;
-      
-      if (claims.exp && claims.exp * 1000 < Date.now()) {
-        return false;
-      }
-
-      const roles = claims.roles || [];
-      return roles.includes('admin') || roles.includes('ADMIN');
-    } catch {
-      return false;
-    }
-  };
-
-  const isAdmin = !!user && getIsAdminFromToken();
+  const isAdmin = !!user && isUserAdmin(user);
   const isAuthenticated = !!user;
 
   return (
@@ -268,8 +248,57 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+export const isUserAdmin = (user, accessToken = null) => {
+  if (user) {
+    const roleStr = String(user.role || '').toLowerCase();
+    if (roleStr === 'admin' || roleStr === 'role_admin') return true;
+
+    if (Array.isArray(user.roles)) {
+      const hasAdmin = user.roles.some((r) => {
+        const itemStr = typeof r === 'string' ? r.toLowerCase() : String(r?.name || '').toLowerCase();
+        return itemStr === 'admin' || itemStr === 'role_admin';
+      });
+      if (hasAdmin) return true;
+    }
+    if (user.roles && typeof user.roles[Symbol.iterator] === 'function') {
+      for (const r of user.roles) {
+        const itemStr = typeof r === 'string' ? r.toLowerCase() : String(r?.name || '').toLowerCase();
+        if (itemStr === 'admin' || itemStr === 'role_admin') return true;
+      }
+    }
+  }
+
+  const token = accessToken || (() => {
+    try {
+      const tokensStr = localStorage.getItem('auth_tokens');
+      return tokensStr ? JSON.parse(tokensStr)?.accessToken : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  if (token) {
+    const claims = parseJwt(token);
+    if (claims) {
+      if (claims.exp && claims.exp * 1000 < Date.now()) {
+        return false;
+      }
+      const roles = claims.roles || [];
+      if (Array.isArray(roles)) {
+        return roles.some((r) => {
+          const itemStr = typeof r === 'string' ? r.toLowerCase() : String(r?.name || '').toLowerCase();
+          return itemStr === 'admin' || itemStr === 'role_admin';
+        });
+      }
+    }
+  }
+
+  return false;
+};
+
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 };
+

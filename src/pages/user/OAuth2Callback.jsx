@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { isUserAdmin } from '../../context/AuthContext';
 
 /**
  * Nhận redirect từ backend sau Google OAuth2:
  * /oauth2/callback?token=...&refreshToken=...&user=<base64>
  *
- * Lưu token + user vào localStorage rồi full-reload về "/" để đảm bảo
+ * Lưu token + user vào localStorage rồi full-reload về "/" (hoặc "/admin" nếu là admin) để đảm bảo
  * tất cả context (Auth, Cart, Wishlist) khởi tạo lại với user đã đăng nhập.
  */
 const OAuth2Callback = () => {
@@ -35,6 +36,7 @@ const OAuth2Callback = () => {
         JSON.stringify({ accessToken: token, refreshToken })
       );
 
+      let userData = null;
       // Decode user info từ Base64 JSON
       if (userBase64) {
         const binaryString = atob(userBase64.replace(/-/g, '+').replace(/_/g, '/'));
@@ -43,13 +45,12 @@ const OAuth2Callback = () => {
           bytes[i] = binaryString.charCodeAt(i);
         }
         const json = new TextDecoder('utf-8').decode(bytes);
-        const userData = JSON.parse(json);
+        userData = JSON.parse(json);
         localStorage.setItem('user', JSON.stringify(userData));
       }
 
-      // Full reload — buộc AuthProvider khởi tạo lại với user mới
-      // Header sẽ tự render avatar
-      window.location.replace('/');
+      const isAdminUser = isUserAdmin(userData, token);
+      window.location.replace(isAdminUser ? '/admin' : '/');
     } catch (err) {
       console.error('OAuth2 callback error:', err);
       toast.error('Đăng nhập thất bại, vui lòng thử lại');
