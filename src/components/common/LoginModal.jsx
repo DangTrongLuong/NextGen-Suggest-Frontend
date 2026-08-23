@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, isUserAdmin } from '../../context/AuthContext';
 import logoNivora from '../../assets/logo-nivora.jpg';
 
 // Google SVG icon
@@ -110,10 +110,9 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login' }) => {
     const result = await login(form.email, form.password);
     if (result.success) {
       onClose();
-      // Check both `role` field and `roles` array to detect admin
-      const u = result.user;
-      const isAdminUser = u.role === 'admin' || u.roles?.includes?.('admin');
-      if (isAdminUser) navigate('/admin');
+      if (isUserAdmin(result.user)) {
+        navigate('/admin');
+      }
     } else if (result.error === 'NOT_VERIFIED') {
       onClose();
       navigate(`/verify?email=${encodeURIComponent(form.email)}`);

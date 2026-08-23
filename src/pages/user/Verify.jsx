@@ -5,7 +5,7 @@ import { ShieldCheck, Mail, ArrowRight, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, isUserAdmin } from '../../context/AuthContext';
 import { APP_NAME } from '../../utils/constants';
 
 const Verify = () => {
@@ -45,7 +45,7 @@ const Verify = () => {
     setError('');
     const result = await verify(email, code);
     if (result.success) {
-      navigate('/');
+      navigate(isUserAdmin(result.user) ? '/admin' : '/');
     }
   };
 

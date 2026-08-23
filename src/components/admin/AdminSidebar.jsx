@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Package, ShoppingBag, Users, Settings,
+  LayoutDashboard, Package, ShoppingBag, Users,
   LogOut, X, ChevronRight, Tag, History
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -16,7 +16,6 @@ const navItems = [
   { icon: ShoppingBag, label: 'Đơn hàng', to: '/admin/orders' },
   { icon: Users, label: 'Khách hàng', to: '/admin/customers' },
   { icon: History, label: 'Lịch sử Import', to: '/admin/import-history' },
-  { icon: Settings, label: 'Cài đặt', to: '/admin/settings' },
 ];
 
 const AdminSidebar = ({ open, onClose }) => {
