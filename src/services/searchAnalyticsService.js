@@ -13,9 +13,9 @@ export const searchAnalyticsService = {
 
       const jsonBody = JSON.stringify(payload);
 
-      // Use fetch with keepalive: true so browser delivers click payload even during route change / unmount
+      // Use fetch with keepalive: true so browser delivers click payload to FastAPI (/analytics/search/click)
       if (typeof window !== 'undefined' && window.fetch) {
-        window.fetch('/api/v1/analytics/search/click', {
+        window.fetch('/analytics/search/click', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -24,11 +24,16 @@ export const searchAnalyticsService = {
           body: jsonBody,
           keepalive: true,
         }).catch(() => {
-          // Fallback to Axios client if fetch fails
-          api.post('/analytics/search/click', payload).catch(() => {});
+          // Fallback to fetch without keepalive if needed
+          window.fetch('/analytics/search/click', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Session-Id': activeSessionId || '',
+            },
+            body: jsonBody,
+          }).catch(() => {});
         });
-      } else {
-        await api.post('/analytics/search/click', payload);
       }
     } catch (err) {
       console.warn('Click tracking notice:', err?.message);
