@@ -24,8 +24,11 @@ const OAuth2Callback = () => {
     const error        = searchParams.get('error');
 
     if (error || !token) {
-      toast.error('Đăng nhập Google thất bại');
-      window.location.replace('/');
+      const errorMsg = searchParams.get('message') || 'Đăng nhập Google thất bại. Vui lòng kiểm tra lại tài khoản hoặc cấu hình.';
+      toast.error(errorMsg, { duration: 4000 });
+      setTimeout(() => {
+        window.location.replace('/');
+      }, 2500);
       return;
     }
 
