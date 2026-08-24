@@ -21,14 +21,12 @@ const CheckoutForm = () => {
   const navigate = useNavigate();
   const { trackPurchase } = useBehaviorTracker();
 
-  // Address levels
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
   const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
   const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
 
-  // Mapbox loading states
   const [mapboxLoaded, setMapboxLoaded] = useState(false);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -56,7 +54,6 @@ const CheckoutForm = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Fetch provinces on component mount
   useEffect(() => {
     axios.get('https://provinces.open-api.vn/api/p/')
       .then(res => {
@@ -65,14 +62,12 @@ const CheckoutForm = () => {
       .catch(err => console.error('Lỗi khi tải danh sách tỉnh thành:', err));
   }, []);
 
-  // Fetch default address if available
   useEffect(() => {
     if (provinces.length > 0) {
       api.get('/user-addresses/default')
         .then(async (res) => {
           const defaultAddr = res.data?.data;
           if (defaultAddr) {
-            // Populate dropdown states first
             const matchedProv = provinces.find(p => p.name.toLowerCase() === defaultAddr.province.toLowerCase());
             if (matchedProv) {
               setSelectedProvinceCode(matchedProv.code);
@@ -104,14 +99,13 @@ const CheckoutForm = () => {
               latitude: defaultAddr.latitude || null,
               longitude: defaultAddr.longitude || null,
             }));
-            toast.success('Đã tự động điền địa chỉ mặc định của bạn');
+            toast.success('Đã tự động điền địa chỉ mặc định');
           }
         })
         .catch(err => console.log('Không có địa chỉ mặc định:', err));
     }
   }, [provinces]);
 
-  // Load Mapbox library dynamically
   useEffect(() => {
     if (step === 0 && MAPBOX_TOKEN) {
       const linkId = 'mapbox-gl-css';
@@ -136,7 +130,6 @@ const CheckoutForm = () => {
     }
   }, [step]);
 
-  // Initialize Mapbox map preview
   useEffect(() => {
     if (step === 0 && mapboxLoaded && mapContainerRef.current && shipping.latitude && shipping.longitude) {
       const mapboxgl = window.mapboxgl;
@@ -220,7 +213,6 @@ const CheckoutForm = () => {
     if (errors[e.target.name]) setErrors((p) => ({ ...p, [e.target.name]: '' }));
   };
 
-  // Perform geocoding based on typed address
   const triggerGeocoding = async () => {
     const { addressDetail, ward, district, province } = shipping;
     if (!addressDetail || !ward || !district || !province || !MAPBOX_TOKEN) return;
@@ -253,7 +245,6 @@ const CheckoutForm = () => {
       if (!shipping.ward.trim()) next.ward = 'Vui lòng chọn Phường/Xã';
       if (!shipping.addressDetail.trim()) next.addressDetail = 'Vui lòng nhập địa chỉ chi tiết';
     }
-    // Step 2 validation is only applicable if paymentMethod is CARD
     if (targetStep === 2 && shipping.paymentMethod === 'CARD') {
       if (!payment.cardNumber.trim()) next.cardNumber = 'Vui lòng nhập số thẻ';
       if (!payment.cardName.trim()) next.cardName = 'Vui lòng nhập tên chủ thẻ';
@@ -270,8 +261,8 @@ const CheckoutForm = () => {
       const payload = {
         recipientName: shipping.recipientName,
         phone: shipping.phone,
-        addressLine1: shipping.addressDetail, // fallback
-        city: shipping.province, // fallback
+        addressLine1: shipping.addressDetail,
+        city: shipping.province,
         postalCode: '100000',
         countryCode: 'VN',
         paymentMethod: shipping.paymentMethod,
@@ -287,7 +278,6 @@ const CheckoutForm = () => {
 
       await api.post('/orders/checkout', payload);
 
-      // Track behavior event for items
       (items || []).forEach((item) => {
         if (item.id) {
           trackPurchase(item.id);
@@ -312,19 +302,19 @@ const CheckoutForm = () => {
   return (
     <div>
       {/* Step Indicator */}
-      <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center justify-center mb-6">
         {steps.map((s, i) => (
           <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all ${
-              i <= step ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'
+            <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors ${
+              i <= step ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'
             }`}>
               {i + 1}
             </div>
-            <span className={`ml-2 text-sm font-medium hidden sm:block ${i <= step ? 'text-emerald-600' : 'text-gray-400'}`}>
+            <span className={`ml-2 text-xs font-semibold hidden sm:block ${i <= step ? 'text-slate-900' : 'text-slate-400'}`}>
               {s}
             </span>
             {i < steps.length - 1 && (
-              <div className={`w-12 sm:w-20 h-0.5 mx-3 transition-all ${i < step ? 'bg-emerald-600' : 'bg-gray-200'}`} />
+              <div className={`w-8 sm:w-16 h-0.5 mx-2 transition-colors ${i < step ? 'bg-slate-900' : 'bg-slate-200'}`} />
             )}
           </div>
         ))}
@@ -332,10 +322,10 @@ const CheckoutForm = () => {
 
       {/* Step 0: Address */}
       {step === 0 && (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin size={20} className="text-emerald-600" />
-            <h3 className="text-lg font-bold text-gray-900">Địa chỉ giao hàng</h3>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin size={18} className="text-slate-900" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Địa chỉ giao hàng</h3>
           </div>
 
           <Input
@@ -357,53 +347,52 @@ const CheckoutForm = () => {
             required
           />
 
-          {/* Vietnamese Address Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700">Tỉnh/Thành phố *</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-700">Tỉnh/Thành phố *</label>
               <select
                 value={selectedProvinceCode}
                 onChange={handleProvinceChange}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-colors shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-slate-900 transition-colors font-medium"
               >
                 <option value="">Chọn Tỉnh/Thành phố</option>
                 {provinces.map(p => (
                   <option key={p.code} value={p.code}>{p.name}</option>
                 ))}
               </select>
-              {errors.province && <p className="text-xs text-red-500">{errors.province}</p>}
+              {errors.province && <p className="text-xs text-rose-600">{errors.province}</p>}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700">Quận/Huyện *</label>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-700">Quận/Huyện *</label>
               <select
                 value={selectedDistrictCode}
                 onChange={handleDistrictChange}
                 disabled={!selectedProvinceCode}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-slate-900 transition-colors font-medium disabled:opacity-50"
               >
                 <option value="">Chọn Quận/Huyện</option>
                 {districts.map(d => (
                   <option key={d.code} value={d.code}>{d.name}</option>
                 ))}
               </select>
-              {errors.district && <p className="text-xs text-red-500">{errors.district}</p>}
+              {errors.district && <p className="text-xs text-rose-600">{errors.district}</p>}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700">Phường/Xã *</label>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-700">Phường/Xã *</label>
               <select
                 value={wards.find(w => w.name === shipping.ward)?.code || ''}
                 onChange={handleWardChange}
                 disabled={!selectedDistrictCode}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-slate-900 transition-colors font-medium disabled:opacity-50"
               >
                 <option value="">Chọn Phường/Xã</option>
                 {wards.map(w => (
                   <option key={w.code} value={w.code}>{w.name}</option>
                 ))}
               </select>
-              {errors.ward && <p className="text-xs text-red-500">{errors.ward}</p>}
+              {errors.ward && <p className="text-xs text-rose-600">{errors.ward}</p>}
             </div>
           </div>
 
@@ -417,11 +406,10 @@ const CheckoutForm = () => {
             required
           />
 
-          {/* Mapbox Live Preview */}
           {shipping.latitude && shipping.longitude && MAPBOX_TOKEN && (
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700 block">Xác thực vị trí trên bản đồ (Kéo marker để điều chỉnh)</label>
-              <div ref={mapContainerRef} className="w-full h-60 rounded-2xl overflow-hidden border border-gray-200 shadow-sm" />
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700 block">Xác thực vị trí trên bản đồ</label>
+              <div ref={mapContainerRef} className="w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-xs" />
             </div>
           )}
 
@@ -430,25 +418,29 @@ const CheckoutForm = () => {
             name="notes"
             value={shipping.notes}
             onChange={handleShippingChange}
-            placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi đến..."
+            placeholder="Ví dụ: Giao giờ hành chính..."
           />
 
-          <Button fullWidth size="lg" onClick={() => validateStep(1) && setStep(1)}>Tiếp tục: Phương thức thanh toán</Button>
+          <button
+            onClick={() => validateStep(1) && setStep(1)}
+            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs"
+          >
+            Tiếp tục: Thanh toán
+          </button>
         </motion.div>
       )}
 
       {/* Step 1: Payment Method */}
       {step === 1 && (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard size={20} className="text-emerald-600" />
-            <h3 className="text-lg font-bold text-gray-900">Phương thức thanh toán</h3>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <CreditCard size={18} className="text-slate-900" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Phương thức thanh toán</h3>
           </div>
 
-          <div className="space-y-3">
-            {/* COD option */}
-            <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              shipping.paymentMethod === 'COD' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-200 hover:border-gray-300'
+          <div className="space-y-2.5">
+            <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
+              shipping.paymentMethod === 'COD' ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300'
             }`}>
               <input
                 type="radio"
@@ -456,17 +448,16 @@ const CheckoutForm = () => {
                 value="COD"
                 checked={shipping.paymentMethod === 'COD'}
                 onChange={() => setShipping(s => ({ ...s, paymentMethod: 'COD' }))}
-                className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                className="text-slate-900 focus:ring-slate-900 h-4 w-4"
               />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Thanh toán khi nhận hàng (COD)</p>
-                <p className="text-xs text-gray-500 mt-0.5">Thanh toán bằng tiền mặt khi shipper giao hàng tận nơi</p>
+                <p className="text-xs font-bold text-slate-900">Thanh toán khi nhận hàng (COD)</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Thanh toán tiền mặt trực tiếp cho shipper khi nhận hàng</p>
               </div>
             </label>
 
-            {/* Card option */}
-            <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              shipping.paymentMethod === 'CARD' ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-200 hover:border-gray-300'
+            <label className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
+              shipping.paymentMethod === 'CARD' ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300'
             }`}>
               <input
                 type="radio"
@@ -474,24 +465,23 @@ const CheckoutForm = () => {
                 value="CARD"
                 checked={shipping.paymentMethod === 'CARD'}
                 onChange={() => setShipping(s => ({ ...s, paymentMethod: 'CARD' }))}
-                className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                className="text-slate-900 focus:ring-slate-900 h-4 w-4"
               />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Thanh toán bằng thẻ ngân hàng</p>
-                <p className="text-xs text-gray-500 mt-0.5">Sử dụng thẻ tín dụng Visa/MasterCard hoặc thẻ nội địa (Dummy)</p>
+                <p className="text-xs font-bold text-slate-900">Thẻ ngân hàng / Thẻ quốc tế</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Hỗ trợ Visa, MasterCard, ATM nội địa</p>
               </div>
             </label>
           </div>
 
-          {/* Card Form - Displayed only if CARD is selected */}
           {shipping.paymentMethod === 'CARD' && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl text-sm text-emerald-700">
-                <Lock size={14} />
-                Thông tin thanh toán của bạn được mã hóa an toàn.
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+                <Lock size={13} />
+                Thông tin được mã hóa bảo mật theo tiêu chuẩn PCI DSS.
               </div>
               <Input
-                label="Số thẻ (Tùy chọn)"
+                label="Số thẻ"
                 name="cardNumber"
                 placeholder="1234 5678 9012 3456"
                 value={payment.cardNumber}
@@ -500,7 +490,7 @@ const CheckoutForm = () => {
                 required
               />
               <Input
-                label="Tên chủ thẻ (Tùy chọn)"
+                label="Tên chủ thẻ"
                 name="cardName"
                 placeholder="NGUYEN VAN A"
                 value={payment.cardName}
@@ -508,9 +498,9 @@ const CheckoutForm = () => {
                 error={errors.cardName}
                 required
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Ngày hết hạn (MM/YY)"
+                  label="Hạn thẻ (MM/YY)"
                   name="expiry"
                   placeholder="12/28"
                   value={payment.expiry}
@@ -519,7 +509,7 @@ const CheckoutForm = () => {
                   required
                 />
                 <Input
-                  label="Mã bảo mật (CVV)"
+                  label="Mã CVV"
                   name="cvv"
                   placeholder="123"
                   value={payment.cvv}
@@ -528,87 +518,99 @@ const CheckoutForm = () => {
                   required
                 />
               </div>
-            </motion.div>
+            </div>
           )}
 
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setStep(0)}>
-              <ArrowLeft size={16} className="mr-1" /> Quay lại
-            </Button>
-            <Button fullWidth size="lg" onClick={() => validateStep(2) && setStep(2)}>Tiếp tục: Xác nhận đơn hàng</Button>
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={() => setStep(0)}
+              className="px-4 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Quay lại
+            </button>
+            <button
+              onClick={() => validateStep(2) && setStep(2)}
+              className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs"
+            >
+              Xác nhận đơn hàng
+            </button>
           </div>
         </motion.div>
       )}
 
       {/* Step 2: Review Order */}
       {step === 2 && (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-          <div className="flex items-center gap-2 mb-4">
-            <User size={20} className="text-emerald-600" />
-            <h3 className="text-lg font-bold text-gray-900">Xác nhận đơn hàng</h3>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <User size={18} className="text-slate-900" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Xác nhận đơn hàng</h3>
           </div>
 
-          {/* Order Details Preview */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase">Người nhận hàng</p>
-              <p className="text-sm font-bold text-gray-800 mt-0.5">{shipping.recipientName} - {shipping.phone}</p>
+              <p className="font-bold text-slate-400 uppercase tracking-wider">Người nhận</p>
+              <p className="font-bold text-slate-900 mt-0.5">{shipping.recipientName} - {shipping.phone}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase">Địa chỉ nhận</p>
-              <p className="text-sm text-gray-700 mt-0.5">
+              <p className="font-bold text-slate-400 uppercase tracking-wider">Địa chỉ</p>
+              <p className="text-slate-700 font-medium mt-0.5">
                 {shipping.addressDetail}, {shipping.ward}, {shipping.district}, {shipping.province}
               </p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase">Phương thức thanh toán</p>
-              <p className="text-sm text-gray-700 font-bold mt-0.5">
-                {shipping.paymentMethod === 'COD' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Thanh toán qua Thẻ'}
+              <p className="font-bold text-slate-400 uppercase tracking-wider">Thanh toán</p>
+              <p className="text-slate-900 font-bold mt-0.5">
+                {shipping.paymentMethod === 'COD' ? 'Thanh toán tiền mặt (COD)' : 'Thẻ ngân hàng'}
               </p>
             </div>
           </div>
 
-          {/* Items */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Danh sách sản phẩm</p>
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sản phẩm ({items.length})</p>
             {items.map((item) => (
-              <div key={`${item.id}-${item.color}`} className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
-                <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover bg-gray-50" />
+              <div key={`${item.id}-${item.color}`} className="flex items-center gap-3 p-2.5 bg-white border border-slate-200/80 rounded-xl">
+                <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-slate-50" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name}</p>
-                  <p className="text-xs text-gray-500">Màu sắc: {item.color || 'Mặc định'} | Số lượng: {item.quantity}</p>
+                  <p className="text-xs font-bold text-slate-900 line-clamp-1">{item.name}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">SL: {item.quantity} {item.color && `| ${item.color}`}</p>
                 </div>
-                <p className="text-sm font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</p>
+                <p className="text-xs font-extrabold text-slate-900">{formatPrice(item.price * item.quantity)}</p>
               </div>
             ))}
           </div>
 
-          {/* Totals */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
-            <div className="flex justify-between text-sm text-gray-600">
+          <div className="bg-slate-50 rounded-xl p-3.5 space-y-1.5 border border-slate-200/80 text-xs">
+            <div className="flex justify-between text-slate-600">
               <span>Tạm tính</span><span>{formatPrice(cartTotal)}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-slate-600">
               <span>Phí vận chuyển</span>
-              <span className={shippingFee === 0 ? 'text-emerald-600 font-semibold' : ''}>
+              <span className={shippingFee === 0 ? 'text-emerald-600 font-bold' : ''}>
                 {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}
               </span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-slate-600">
               <span>Thuế (8%)</span><span>{formatPrice(tax)}</span>
             </div>
-            <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Tổng cộng</span><span className="text-emerald-600 text-lg">{formatPrice(total)}</span>
+            <div className="flex justify-between font-bold text-slate-900 pt-2 border-t border-slate-200">
+              <span>Tổng cộng</span><span className="text-slate-900 text-sm font-extrabold">{formatPrice(total)}</span>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setStep(1)}>
-              <ArrowLeft size={16} className="mr-1" /> Quay lại
-            </Button>
-            <Button fullWidth size="lg" loading={loading} onClick={handlePlaceOrder}>
-              Đặt hàng — {formatPrice(total)}
-            </Button>
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={() => setStep(1)}
+              className="px-4 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Quay lại
+            </button>
+            <button
+              onClick={handlePlaceOrder}
+              disabled={loading}
+              className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {loading ? 'Đang xử lý...' : `Đặt hàng • ${formatPrice(total)}`}
+            </button>
           </div>
         </motion.div>
       )}

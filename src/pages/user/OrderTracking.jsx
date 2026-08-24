@@ -12,7 +12,6 @@ import { formatPrice } from '../../utils/formatPrice';
 import Breadcrumb from '../../components/layout/Breadcrumb';
 import { Spinner } from '../../components/common/Loading';
 
-// ── Status map ────────────────────────────────────────────
 const ORDER_STEPS = [
   { key: 'pending',   label: 'Đã đặt hàng' },
   { key: 'confirmed', label: 'Đã xác nhận' },
@@ -22,13 +21,13 @@ const ORDER_STEPS = [
 ];
 
 const ORDER_STATUS_MAP = {
-  pending:   { label: 'Đã đặt hàng',   color: 'bg-gray-100 text-gray-700',     dot: 'bg-gray-400' },
-  confirmed: { label: 'Đã xác nhận',   color: 'bg-blue-100 text-blue-700',     dot: 'bg-blue-500' },
-  packing:   { label: 'Đang đóng gói', color: 'bg-amber-100 text-amber-700',   dot: 'bg-amber-500' },
-  shipping:  { label: 'Đang giao hàng',color: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500' },
-  delivered: { label: 'Đã giao hàng',  color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-  cancelled: { label: 'Đã hủy',        color: 'bg-red-100 text-red-700',       dot: 'bg-red-500' },
-  refunded:  { label: 'Đã hoàn tiền',  color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
+  pending:   { label: 'Đã đặt hàng',   color: 'bg-slate-100 text-slate-800', dot: 'bg-slate-400' },
+  confirmed: { label: 'Đã xác nhận',   color: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  packing:   { label: 'Đang đóng gói', color: 'bg-amber-50 text-amber-700',   dot: 'bg-amber-500' },
+  shipping:  { label: 'Đang giao hàng',color: 'bg-slate-100 text-slate-900', dot: 'bg-slate-800' },
+  delivered: { label: 'Đã giao hàng',  color: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  cancelled: { label: 'Đã hủy',        color: 'bg-rose-50 text-rose-700',     dot: 'bg-rose-500' },
+  refunded:  { label: 'Đã hoàn tiền',  color: 'bg-purple-50 text-purple-700', dot: 'bg-purple-500' },
 };
 
 const formatDate = (dateStr) => {
@@ -41,7 +40,7 @@ const getStepIndex = (status) => ORDER_STEPS.findIndex((s) => s.key === status);
 const StatusBadge = ({ status }) => {
   const info = ORDER_STATUS_MAP[status] || ORDER_STATUS_MAP.pending;
   return (
-    <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold', info.color)}>
+    <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold', info.color)}>
       <span className={clsx('w-1.5 h-1.5 rounded-full', info.dot)} />
       {info.label}
     </span>
@@ -52,36 +51,35 @@ const OrderTimeline = ({ status }) => {
   const isCancelled = status === 'cancelled' || status === 'refunded';
   const currentIdx = isCancelled ? 0 : getStepIndex(status);
   if (isCancelled) return (
-    <div className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-200">
-      <XCircle size={22} className="text-red-500 flex-shrink-0" />
+    <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-xl border border-rose-200 text-xs">
+      <XCircle size={18} className="text-rose-600 flex-shrink-0" />
       <div>
-        <p className="text-sm font-bold text-red-700">Đơn hàng đã bị hủy</p>
-        <p className="text-xs text-red-500 mt-0.5">Đơn hàng này đã được hủy và không thể khôi phục.</p>
+        <p className="font-bold text-rose-800">Đơn hàng đã bị hủy</p>
+        <p className="text-rose-600 mt-0.5">Đơn hàng này không còn hiệu lực.</p>
       </div>
     </div>
   );
   return (
     <div className="relative">
-      <div className="absolute top-5 left-5 right-5 h-0.5 bg-gray-200 hidden sm:block" style={{ zIndex: 0 }} />
-      <div className="absolute top-5 left-5 h-0.5 bg-emerald-500 hidden sm:block transition-all duration-700"
+      <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-200 hidden sm:block" style={{ zIndex: 0 }} />
+      <div className="absolute top-4 left-4 h-0.5 bg-slate-900 hidden sm:block transition-all duration-500"
         style={{ zIndex: 1, width: currentIdx === 0 ? '0%' : `calc(${(currentIdx / (ORDER_STEPS.length - 1)) * 100}%)` }} />
-      <div className="flex flex-col sm:flex-row sm:justify-between gap-4 sm:gap-0 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:justify-between gap-3 sm:gap-0 relative z-10">
         {ORDER_STEPS.map((step, idx) => {
           const done = idx < currentIdx;
           const active = idx === currentIdx;
           return (
-            <div key={step.key} className="flex sm:flex-col items-center gap-3 sm:gap-2 flex-1">
-              <div className={clsx('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all duration-300',
-                done ? 'bg-emerald-500 border-emerald-500 text-white' :
-                active ? 'bg-white border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-200' :
-                'bg-white border-gray-200 text-gray-300')}>
-                {done ? <CheckCircle size={18} /> : active ? (
-                  <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="w-3 h-3 rounded-full bg-emerald-500" />
-                ) : <div className="w-3 h-3 rounded-full bg-gray-200" />}
+            <div key={step.key} className="flex sm:flex-col items-center gap-2 flex-1">
+              <div className={clsx('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors',
+                done ? 'bg-slate-900 border-slate-900 text-white' :
+                active ? 'bg-white border-slate-900 text-slate-900' :
+                'bg-white border-slate-200 text-slate-300')}>
+                {done ? <CheckCircle size={14} /> : active ? (
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-900" />
+                ) : <div className="w-2 h-2 rounded-full bg-slate-200" />}
               </div>
-              <p className={clsx('text-xs font-medium text-center leading-tight',
-                done ? 'text-emerald-600' : active ? 'text-emerald-700 font-bold' : 'text-gray-400')}>
+              <p className={clsx('text-[11px] text-center leading-tight',
+                done ? 'text-slate-900 font-semibold' : active ? 'text-slate-900 font-bold' : 'text-slate-400')}>
                 {step.label}
               </p>
             </div>
@@ -116,102 +114,97 @@ const OrderDetailModal = ({ order, onClose, onCancelSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Chi tiết đơn hàng</h3>
-            <p className="text-sm text-gray-500">#{order.orderNumber}</p>
+            <h3 className="text-base font-extrabold text-slate-900">Chi tiết đơn hàng</h3>
+            <p className="text-xs text-slate-500 font-medium">#{order.orderNumber}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <StatusBadge status={order.status} />
-            <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors"><X size={18} /></button>
+            <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"><X size={16} /></button>
           </div>
         </div>
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
           <div>
-            <p className="text-sm font-bold text-gray-700 mb-4">Trạng thái đơn hàng</p>
+            <p className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Trạng thái đơn hàng</p>
             <OrderTimeline status={order.status} />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-700 mb-3">Sản phẩm đã đặt</p>
-            <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Sản phẩm</p>
+            <div className="space-y-2">
               {(order.items || []).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                  {item.imageUrl && <img src={item.imageUrl} alt={item.productName} className="w-14 h-14 rounded-xl object-cover bg-gray-200 flex-shrink-0" />}
+                <div key={item.id} className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl">
+                  {item.imageUrl && <img src={item.imageUrl} alt={item.productName} className="w-12 h-12 rounded-lg object-cover bg-slate-200 shrink-0" />}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.productName}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.variantName} · SL: {item.quantity}</p>
+                    <p className="text-xs font-bold text-slate-900 line-clamp-1">{item.productName}</p>
+                    <p className="text-[11px] text-slate-500 font-medium">{item.variantName} · SL: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-bold text-gray-900 flex-shrink-0">{formatPrice(item.totalPrice)}</p>
+                  <p className="text-xs font-extrabold text-slate-900 shrink-0">{formatPrice(item.totalPrice)}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-3 text-xs">
             {shipping && (
-              <div className="p-4 bg-gray-50 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin size={15} className="text-emerald-600" />
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Địa chỉ giao hàng</p>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <MapPin size={14} className="text-slate-800" />
+                  <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Địa chỉ giao hàng</p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {shipping.recipientName} · {shipping.phone}<br />
+                <p className="text-slate-600 font-medium">
+                  {shipping.recipientName} • {shipping.phone}<br />
                   {shipping.addressLine1}{shipping.addressLine2 ? `, ${shipping.addressLine2}` : ''}, {shipping.city}
                 </p>
               </div>
             )}
             {payment && (
-              <div className="p-4 bg-gray-50 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard size={15} className="text-emerald-600" />
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Thanh toán</p>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CreditCard size={14} className="text-slate-800" />
+                  <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Thanh toán</p>
                 </div>
-                <p className="text-sm text-gray-600">{payment.method}</p>
-                <StatusBadge status={payment.status === 'completed' ? 'delivered' : 'pending'} />
+                <p className="text-slate-600 font-medium">{payment.method}</p>
               </div>
             )}
           </div>
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
-            <div className="flex justify-between text-sm text-gray-600"><span>Tạm tính</span><span>{formatPrice(order.subtotal)}</span></div>
-            <div className="flex justify-between text-sm text-gray-600">
+          <div className="bg-slate-50 rounded-xl p-3.5 space-y-1.5 border border-slate-200/80 text-xs">
+            <div className="flex justify-between text-slate-600"><span>Tạm tính</span><span>{formatPrice(order.subtotal)}</span></div>
+            <div className="flex justify-between text-slate-600">
               <span>Phí vận chuyển</span>
-              <span className={order.shippingFee === 0 ? 'text-emerald-600 font-medium' : ''}>{order.shippingFee === 0 ? 'Miễn phí' : formatPrice(order.shippingFee)}</span>
+              <span className={order.shippingFee === 0 ? 'text-emerald-600 font-bold' : ''}>{order.shippingFee === 0 ? 'Miễn phí' : formatPrice(order.shippingFee)}</span>
             </div>
-            <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
-              <span>Tổng cộng</span><span className="text-lg">{formatPrice(order.totalAmount)}</span>
+            <div className="flex justify-between font-bold text-slate-900 pt-2 border-t border-slate-200">
+              <span>Tổng cộng</span><span className="text-slate-900 font-extrabold text-sm">{formatPrice(order.totalAmount)}</span>
             </div>
           </div>
           {canCancel && (
             !confirmCancel ? (
               <button onClick={() => setConfirmCancel(true)}
-                className="w-full py-3 border-2 border-red-200 text-red-500 text-sm font-semibold rounded-2xl hover:bg-red-50 hover:border-red-300 transition-all">
-                Hủy đơn hàng
+                className="w-full py-2.5 border border-rose-300 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-50 transition-colors cursor-pointer">
+                Hủy đơn hàng này
               </button>
             ) : (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-red-50 border border-red-200 rounded-2xl">
-                <div className="flex items-start gap-3 mb-4">
-                  <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-red-700">Xác nhận hủy đơn hàng?</p>
-                    <p className="text-xs text-red-500 mt-1">Hành động này không thể hoàn tác.</p>
-                  </div>
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle size={15} className="text-rose-600 shrink-0" />
+                  <p className="font-bold text-rose-800">Xác nhận hủy đơn hàng?</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button onClick={() => setConfirmCancel(false)}
-                    className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors">
-                    Giữ đơn hàng
+                    className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg cursor-pointer">
+                    Hủy thao tác
                   </button>
                   <button onClick={handleCancel} disabled={cancelling}
-                    className="flex-1 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-60">
-                    {cancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+                    className="flex-1 py-2 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 cursor-pointer disabled:opacity-50">
+                    {cancelling ? 'Đang xử lý...' : 'Xác nhận hủy'}
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )
           )}
         </div>
@@ -220,7 +213,6 @@ const OrderDetailModal = ({ order, onClose, onCancelSuccess }) => {
   );
 };
 
-// ── Main Page ─────────────────────────────────────────────
 const OrderTracking = () => {
   const { isAuthenticated } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -257,113 +249,76 @@ const OrderTracking = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6"><Breadcrumb items={[{ label: 'Theo dõi đơn hàng', to: '/orders' }]} /></div>
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-          <Truck size={20} className="text-emerald-600" />
+    <div className="min-h-screen bg-[#fafbfd] py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="mb-4"><Breadcrumb items={[{ label: 'Đơn hàng của tôi', to: '/orders' }]} /></div>
+        <div className="flex items-center gap-2.5 mb-6">
+          <Truck size={20} className="text-slate-900" />
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight uppercase">
+            Đơn hàng của tôi
+            <span className="ml-2 text-sm font-semibold text-slate-500">({orders.length})</span>
+          </h1>
         </div>
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Theo dõi đơn hàng</h1>
-          <p className="text-sm text-gray-500">{orders.length} đơn hàng của bạn</p>
-        </div>
-      </div>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6">
-        {statusFilters.map((f) => (
-          <button key={f.key} onClick={() => setFilterStatus(f.key)}
-            className={clsx('flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
-              filterStatus === f.key ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' :
-              'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600')}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-      ) : displayOrders.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <Package size={36} className="text-gray-300" />
-          </div>
-          <p className="text-lg font-semibold text-gray-900 mb-1">Không có đơn hàng</p>
-          <p className="text-gray-500 text-sm">Chưa có đơn hàng nào phù hợp với bộ lọc này.</p>
-        </motion.div>
-      ) : (
-        <div className="space-y-4">
-          {displayOrders.map((order, i) => (
-            <motion.div key={order.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Package size={16} className="text-gray-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">#{order.orderNumber}</p>
-                    <p className="text-xs text-gray-400">{formatDate(order.createdAt)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={order.status} />
-                  <p className="text-sm font-bold text-gray-900 hidden sm:block">{formatPrice(order.totalAmount)}</p>
-                </div>
-              </div>
-              <div className="px-5 py-3 flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {(order.items || []).slice(0, 3).map((item) => (
-                    item.imageUrl && <img key={item.id} src={item.imageUrl} alt={item.productName}
-                      className="w-10 h-10 rounded-xl object-cover border-2 border-white bg-gray-100" />
-                  ))}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-600 truncate">{(order.items || []).map((i) => i.productName).join(', ')}</p>
-                  <p className="text-xs text-gray-400">{(order.items || []).length} sản phẩm</p>
-                </div>
-                <p className="text-sm font-bold text-gray-900 sm:hidden">{formatPrice(order.totalAmount)}</p>
-              </div>
-              {order.status !== 'cancelled' && order.status !== 'refunded' && (
-                <div className="px-5 pb-3">
-                  <div className="flex items-center gap-1">
-                    {ORDER_STEPS.map((step, idx) => {
-                      const stepIdx = getStepIndex(order.status);
-                      const done = idx <= stepIdx;
-                      return (
-                        <div key={step.key} className="flex items-center flex-1">
-                          <div className={clsx('w-2 h-2 rounded-full flex-shrink-0 transition-colors', done ? 'bg-emerald-500' : 'bg-gray-200')} />
-                          {idx < ORDER_STEPS.length - 1 && <div className={clsx('flex-1 h-0.5 transition-colors', idx < stepIdx ? 'bg-emerald-500' : 'bg-gray-200')} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <p className="text-[10px] text-gray-400">Đặt hàng</p>
-                    <p className="text-[10px] text-gray-400">Đã giao</p>
-                  </div>
-                </div>
-              )}
-              <div className="px-5 py-3 bg-gray-50/50 flex items-center justify-between">
-                <p className="text-xs text-gray-400">{order.payment?.method || ''}</p>
-                <button onClick={() => setSelectedOrder(order)}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
-                  Xem chi tiết <ChevronDown size={14} className="-rotate-90" />
-                </button>
-              </div>
-            </motion.div>
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2 mb-5">
+          {statusFilters.map((f) => (
+            <button key={f.key} onClick={() => setFilterStatus(f.key)}
+              className={clsx('flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer',
+                filterStatus === f.key ? 'bg-slate-900 text-white font-bold' :
+                'bg-white text-slate-700 border border-slate-200 hover:border-slate-300')}>
+              {f.label}
+            </button>
           ))}
         </div>
-      )}
 
-      <AnimatePresence>
-        {selectedOrder && (
-          <OrderDetailModal
-            order={selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-            onCancelSuccess={handleCancelSuccess}
-          />
+        {loading ? (
+          <div className="flex justify-center py-16"><Spinner /></div>
+        ) : displayOrders.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-card text-center">
+            <Package size={36} className="text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-800 font-bold text-xs">Không có đơn hàng nào</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {displayOrders.map((order) => (
+              <div key={order.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Package size={15} className="text-slate-700" />
+                    <span className="font-bold text-slate-900">#{order.orderNumber}</span>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500">{formatDate(order.createdAt)}</span>
+                  </div>
+                  <StatusBadge status={order.status} />
+                </div>
+                <div className="px-4 py-3 flex items-center gap-3 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-800 truncate">{(order.items || []).map((i) => i.productName).join(', ')}</p>
+                    <p className="text-[11px] text-slate-400">{(order.items || []).length} sản phẩm</p>
+                  </div>
+                  <p className="font-extrabold text-slate-900">{formatPrice(order.totalAmount)}</p>
+                </div>
+                <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+                  <button onClick={() => setSelectedOrder(order)}
+                    className="flex items-center gap-1 text-xs font-bold text-slate-800 hover:text-slate-900 cursor-pointer">
+                    Xem chi tiết <ChevronDown size={13} className="-rotate-90" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
-      </AnimatePresence>
+
+        <AnimatePresence>
+          {selectedOrder && (
+            <OrderDetailModal
+              order={selectedOrder}
+              onClose={() => setSelectedOrder(null)}
+              onCancelSuccess={handleCancelSuccess}
+            />
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

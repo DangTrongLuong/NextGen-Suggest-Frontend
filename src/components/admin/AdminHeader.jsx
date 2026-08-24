@@ -3,16 +3,17 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const pageTitles = {
-  '/admin': 'Dashboard',
-  '/admin/products': 'Sản phẩm',
-  '/admin/products/add': 'Thêm sản phẩm',
+  '/admin': 'Tổng quan Quản trị',
+  '/admin/products': 'Quản lý Sản phẩm',
+  '/admin/products/add': 'Thêm sản phẩm mới',
   '/admin/category-mains': 'Danh mục chính',
   '/admin/category-mains/add': 'Thêm danh mục chính',
-  '/admin/categories': 'Danh mục',
+  '/admin/categories': 'Danh mục sản phẩm',
   '/admin/categories/add': 'Thêm danh mục',
-  '/admin/orders': 'Đơn hàng',
-  '/admin/customers': 'Khách hàng',
-  '/admin/settings': 'Cài đặt',
+  '/admin/orders': 'Quản lý Đơn hàng',
+  '/admin/customers': 'Quản lý Khách hàng',
+  '/admin/import-history': 'Lịch sử Nhập Excel',
+  '/admin/settings': 'Cài đặt Hệ thống',
 };
 
 const AdminHeader = ({ onMenuClick }) => {
@@ -21,38 +22,37 @@ const AdminHeader = ({ onMenuClick }) => {
 
   const title = Object.entries(pageTitles).find(([path]) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
-  )?.[1] || 'Admin';
+  )?.[1] || 'Quản trị viên';
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200/60 px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between shadow-card">
+      <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
+          className="lg:hidden p-1.5 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
         <div>
-          <h1 className="text-base font-bold text-gray-900">{title}</h1>
-          <p className="text-xs text-gray-400 hidden sm:block">NIVORA Admin</p>
+          <h1 className="text-sm font-extrabold text-slate-900 tracking-tight uppercase">{title}</h1>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button className="p-2.5 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors relative">
-          <Bell size={19} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+      <div className="flex items-center gap-3">
+        <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors relative cursor-pointer">
+          <Bell size={18} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-600 rounded-full" />
         </button>
         {user && (
-          <div className="flex items-center gap-2.5 pl-2 border-l border-gray-200 ml-1">
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
             <img
-              src={user.avatarUrl || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=10b981&color=fff`}
+              src={user.avatarUrl || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=0f172a&color=fff`}
               alt={user.name}
-              className="w-8 h-8 rounded-full bg-gray-200 ring-2 ring-emerald-200 object-cover"
+              className="w-7 h-7 rounded-full bg-slate-100 object-cover border border-slate-200"
             />
             <div className="hidden sm:block">
-              <p className="text-sm font-semibold text-gray-800 leading-tight">{user.name}</p>
-              <p className="text-xs text-emerald-600 font-medium capitalize">{user.role}</p>
+              <p className="text-xs font-bold text-slate-900 leading-tight">{user.name}</p>
+              <p className="text-[10px] text-emerald-600 font-semibold uppercase">{user.role}</p>
             </div>
           </div>
         )}

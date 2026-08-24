@@ -41,106 +41,81 @@ const HeroAISuggestions = () => {
   }, [user]);
 
   const handleCardClick = (query) => {
-    // 1. Fill the search input on the Header
     const searchInputs = document.querySelectorAll('input[placeholder*="Tìm kiếm"]');
     searchInputs.forEach(input => {
       input.value = query;
-      // Trigger input event to update React state
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     });
 
-    // 2. Navigate to search page
     navigate(`/products?search=${encodeURIComponent(query)}`);
   };
 
-  // Framer motion variants for stagger animation
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.06
+        staggerChildren: 0.05
       }
     }
   };
 
   const cardVariants = {
-    hidden: { opacity: 0, y: 15 },
+    hidden: { opacity: 0, y: 8 },
     show: { 
       opacity: 1, 
       y: 0, 
-      transition: { 
-        type: 'spring', 
-        stiffness: 110, 
-        damping: 15 
-      } 
+      transition: { duration: 0.2 } 
     }
   };
 
   if (loading) {
     return (
-      <div className="mt-12 w-full text-left bg-white/5 border border-white/8 backdrop-blur-md rounded-2xl p-6 shadow-xl animate-pulse">
-        <div className="h-5 w-48 bg-white/10 rounded mb-2.5" />
-        <div className="h-4 w-64 bg-white/5 rounded mb-5 border-b border-white/5 pb-4" />
-        <div className="flex flex-wrap gap-2.5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-9 w-28 rounded-full bg-white/5 border border-white/5" />
+      <div className="mt-8 w-full text-left bg-white border border-slate-200/80 rounded-2xl p-5 shadow-card animate-pulse">
+        <div className="h-4 w-40 bg-slate-200 rounded mb-2" />
+        <div className="h-3 w-56 bg-slate-100 rounded mb-4" />
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-8 w-28 rounded-lg bg-slate-100" />
           ))}
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="mt-12 w-full text-left bg-white/5 border border-white/8 backdrop-blur-md rounded-2xl p-6 shadow-xl text-white/50 text-xs font-light">
-        Không thể tải gợi ý tìm kiếm AI. Vui lòng làm mới trang.
-      </div>
-    );
-  }
-
-  if (suggestions.length === 0) {
+  if (error || suggestions.length === 0) {
     return null;
   }
 
   return (
-    <div className="mt-6 sm:mt-10 md:mt-12 w-full text-left bg-white/5 border border-white/8 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-xl">
-      {/* Title & Description inside the same div */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/10 pb-4">
+    <div className="mt-8 w-full text-left bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 shadow-card">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 border-b border-slate-100 pb-3">
         <div>
-          <h3 className="text-white text-sm font-bold tracking-wider flex items-center gap-2 uppercase">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            Bạn đang tìm gì hôm nay?
+          <h3 className="text-slate-900 text-xs font-bold tracking-wider flex items-center gap-2 uppercase">
+            <Sparkles size={14} className="text-emerald-600" />
+            Gợi ý chọn đồ theo phong cách sống
           </h3>
-          <p className="text-gray-300 text-xs font-light mt-1.5 opacity-90">
-            AI gợi ý những nhu cầu phù hợp để bạn bắt đầu tìm kiếm.
+          <p className="text-slate-500 text-xs font-normal mt-0.5">
+            Nhấp vào gợi ý để khám phá các sản phẩm phù hợp tức thì
           </p>
         </div>
       </div>
 
-      {/* Grid of Suggestions as Pill Buttons */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="flex flex-wrap gap-2.5 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0 scrollbar-none"
+        className="flex flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide"
       >
         {suggestions.map((item, index) => (
           <motion.button
             key={index}
             variants={cardVariants}
             onClick={() => handleCardClick(item.title || item.query)}
-            className="flex-shrink-0 px-4.5 py-2 rounded-full cursor-pointer bg-white/5 border border-white/8 hover:bg-white/12 hover:border-white/20 text-white text-[12.5px] font-semibold transition-all duration-250 shadow-sm outline-none focus:outline-none"
-            whileHover={{ 
-              y: -3, 
-              scale: 1.025, 
-              boxShadow: '0 6px 15px -4px rgba(0, 0, 0, 0.35)'
-            }}
-            whileTap={{ scale: 0.97 }}
+            className="flex-shrink-0 px-3.5 py-1.5 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-900 hover:text-white border border-slate-200 text-slate-800 text-xs font-semibold transition-all duration-150 shadow-xs outline-none"
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
           >
             {item.title}
           </motion.button>
