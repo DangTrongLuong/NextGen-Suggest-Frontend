@@ -6,7 +6,6 @@ import { useProducts } from '../../context/ProductContext';
 import { SORT_OPTIONS } from '../../utils/constants';
 import CategoryTreeSidebar from './CategoryTreeSidebar';
 
-// ── Constants (unchanged) ─────────────────────────────────
 const COLORS = [
   { key: 'black',  label: 'Đen',   hex: '#111827' },
   { key: 'white',  label: 'Trắng', hex: '#f9fafb', border: true },
@@ -27,12 +26,9 @@ const DISCOUNT_OPTIONS = [
   { label: '≥ 50%', value: 50 },
 ];
 
-// ── Dropdown wrapper ──────────────────────────────────────
-// Renders the label + trigger button + floating panel
 const FilterDropdown = ({ label, triggerText, isActive, isOpen, onToggle, children, badge }) => {
   const ref = useRef(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e) => {
@@ -44,41 +40,38 @@ const FilterDropdown = ({ label, triggerText, isActive, isOpen, onToggle, childr
 
   return (
     <div ref={ref} className="relative">
-      {/* Label row */}
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{label}</span>
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
         {badge > 0 && (
-          <span className="w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {badge}
           </span>
         )}
       </div>
 
-      {/* Trigger button */}
       <button
         onClick={() => onToggle(!isOpen)}
         className={clsx(
-          'w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm transition-all duration-150',
+          'w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer',
           isActive
-            ? 'border-emerald-400 bg-emerald-50 text-emerald-700 font-semibold'
-            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+            ? 'border-slate-900 bg-slate-100 text-slate-900 font-bold'
+            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
         )}
       >
         <span className="truncate">{triggerText}</span>
         <ChevronDown
           size={14}
-          className={clsx('flex-shrink-0 ml-2 transition-transform duration-200 text-gray-400', isOpen && 'rotate-180')}
+          className={clsx('flex-shrink-0 ml-2 transition-transform duration-200 text-slate-400', isOpen && 'rotate-180')}
         />
       </button>
 
-      {/* Floating dropdown panel */}
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: -6, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, scale: 0.98 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15 }}
+          className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-dropdown overflow-hidden"
         >
           {children}
         </motion.div>
@@ -87,7 +80,6 @@ const FilterDropdown = ({ label, triggerText, isActive, isOpen, onToggle, childr
   );
 };
 
-// ── Searchable option list (used inside dropdowns) ────────
 const OptionList = ({ options, getValue, getLabel, isSelected, onSelect, showSearch = false }) => {
   const [search, setSearch] = useState('');
   const filtered = showSearch
@@ -97,22 +89,22 @@ const OptionList = ({ options, getValue, getLabel, isSelected, onSelect, showSea
   return (
     <>
       {showSearch && (
-        <div className="p-2 border-b border-gray-100">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded-xl border border-gray-200 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-300 transition-all">
-            <Search size={13} className="text-gray-400 flex-shrink-0" />
+        <div className="p-2 border-b border-slate-100">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+            <Search size={13} className="text-slate-400 flex-shrink-0" />
             <input
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm..."
-              className="flex-1 bg-transparent text-xs outline-none text-gray-700 placeholder-gray-400"
+              className="flex-1 bg-transparent text-xs outline-none text-slate-700 placeholder-slate-400"
             />
           </div>
         </div>
       )}
       <div className="overflow-y-auto max-h-60 scrollbar-hide py-1">
         {filtered.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-4">Không tìm thấy</p>
+          <p className="text-xs text-slate-400 text-center py-4">Không tìm thấy</p>
         ) : (
           filtered.map((opt) => {
             const val = getValue(opt);
@@ -123,14 +115,14 @@ const OptionList = ({ options, getValue, getLabel, isSelected, onSelect, showSea
                 key={val}
                 onClick={() => onSelect(val)}
                 className={clsx(
-                  'w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-colors',
+                  'w-full flex items-center justify-between px-3.5 py-2 text-xs transition-colors cursor-pointer',
                   selected
-                    ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-slate-100 text-slate-900 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
                 )}
               >
                 <span>{lbl}</span>
-                {selected && <Check size={13} className="text-emerald-600 flex-shrink-0" />}
+                {selected && <Check size={13} className="text-slate-900 flex-shrink-0" />}
               </button>
             );
           })
@@ -140,14 +132,10 @@ const OptionList = ({ options, getValue, getLabel, isSelected, onSelect, showSea
   );
 };
 
-// ── Main Component ────────────────────────────────────────
 const ProductFilter = ({ className = '' }) => {
   const { filters, sortBy, updateFilter, setSortBy, resetFilters, filteredProducts, categories } = useProducts();
-
-  // Which dropdown is open (only one at a time)
   const [openKey, setOpenKey] = useState(null);
 
-  // Filter states (unchanged)
   const [brandSearch, setBrandSearch] = useState('');
   const [selectedColors, setSelectedColors] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
@@ -155,7 +143,6 @@ const ProductFilter = ({ className = '' }) => {
   const [selectedDiscount, setSelectedDiscount] = useState(null);
   const [stockFilter, setStockFilter] = useState('all');
 
-  // Toggle a specific dropdown — opening one closes others
   const toggle = useCallback((key) => (nextOpen) => {
     setOpenKey(nextOpen ? key : null);
   }, []);
@@ -168,11 +155,6 @@ const ProductFilter = ({ className = '' }) => {
 
   const toggleBrand = (b) =>
     setSelectedBrands((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
-
-  const filteredBrands = useMemo(
-    () => BRANDS.filter((b) => b.toLowerCase().includes(brandSearch.toLowerCase())),
-    [brandSearch]
-  );
 
   const handleReset = () => {
     resetFilters();
@@ -196,9 +178,6 @@ const ProductFilter = ({ className = '' }) => {
     stockFilter !== 'all',
   ].filter(Boolean).length;
 
-  const allCategories = ['All', ...categories.map((c) => c.name)];
-
-  // Derived display labels for trigger buttons
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Chọn...';
   const categoryLabel = filters.category === 'All' ? 'Tất cả danh mục' : filters.category;
   const ratingLabel = filters.minRating ? `≥ ${filters.minRating} sao` : 'Chọn đánh giá';
@@ -211,39 +190,33 @@ const ProductFilter = ({ className = '' }) => {
   return (
     <div
       className={clsx(
-        'rounded-3xl border border-gray-100/80 bg-white/80 backdrop-blur-xl',
-        'shadow-[0_4px_24px_rgba(0,0,0,0.06)]',
+        'rounded-2xl border border-slate-200/80 bg-white shadow-card',
         className
       )}
     >
-      {/* ── Header (unchanged) ── */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-            <SlidersHorizontal size={15} className="text-emerald-600" />
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+            <SlidersHorizontal size={14} className="text-slate-800" />
           </div>
-          <span className="font-bold text-gray-900">Bộ lọc</span>
+          <span className="font-extrabold text-xs uppercase tracking-wider text-slate-900">Bộ lọc</span>
           {activeCount > 0 && (
-            <span className="w-5 h-5 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {activeCount}
             </span>
           )}
         </div>
         {activeCount > 0 && (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-semibold transition-colors"
+            className="flex items-center gap-1 text-xs text-rose-600 font-semibold cursor-pointer"
           >
-            <X size={12} /> Xóa tất cả
-          </motion.button>
+            <X size={12} /> Xóa bộ lọc
+          </button>
         )}
       </div>
 
-      {/* ── Filter rows ── */}
-      <div className="px-5 py-4 space-y-4">
-
-        {/* Sắp xếp theo */}
+      <div className="px-4 py-3.5 space-y-3.5">
         <FilterDropdown
           label="Sắp xếp theo"
           triggerText={sortLabel}
@@ -260,7 +233,6 @@ const ProductFilter = ({ className = '' }) => {
           />
         </FilterDropdown>
 
-        {/* Danh mục */}
         <FilterDropdown
           label="Danh mục"
           triggerText={categoryLabel}
@@ -280,7 +252,6 @@ const ProductFilter = ({ className = '' }) => {
           </div>
         </FilterDropdown>
 
-        {/* Thương hiệu */}
         <FilterDropdown
           label="Thương hiệu"
           triggerText={brandLabel}
@@ -299,51 +270,48 @@ const ProductFilter = ({ className = '' }) => {
           />
         </FilterDropdown>
 
-        {/* Khoảng giá — inline, no dropdown */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Khoảng giá</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Khoảng giá (đ)</span>
             {(filters.minPrice || filters.maxPrice) && (
-              <span className="w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">1</span>
+              <span className="w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">1</span>
             )}
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">$</span>
+            <div className="flex-1">
               <input
                 type="number"
-                placeholder="Tối thiểu"
+                placeholder="Từ"
                 value={filters.minPrice}
                 onChange={(e) => updateFilter('minPrice', e.target.value)}
-                className="w-full pl-7 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white transition-all"
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-slate-900 bg-white font-medium"
               />
             </div>
-            <div className="w-3 h-px bg-gray-300 flex-shrink-0" />
-            <div className="flex-1 relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">$</span>
+            <div className="w-2 h-px bg-slate-300 flex-shrink-0" />
+            <div className="flex-1">
               <input
                 type="number"
-                placeholder="Tối đa"
+                placeholder="Đến"
                 value={filters.maxPrice}
                 onChange={(e) => updateFilter('maxPrice', e.target.value)}
-                className="w-full pl-7 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white transition-all"
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-slate-900 bg-white font-medium"
               />
             </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1">
             {[
-              { label: '< $100', min: '', max: '100' },
-              { label: '$100–$300', min: '100', max: '300' },
-              { label: '> $300', min: '300', max: '' },
+              { label: '< 500k', min: '', max: '500000' },
+              { label: '500k–2tr', min: '500000', max: '2000000' },
+              { label: '> 2tr', min: '2000000', max: '' },
             ].map(({ label, min, max }) => (
               <button
                 key={label}
                 onClick={() => { updateFilter('minPrice', min); updateFilter('maxPrice', max); }}
                 className={clsx(
-                  'px-2.5 py-1 text-xs rounded-lg border transition-all font-medium',
+                  'px-2 py-0.5 text-[11px] rounded border transition-colors font-medium cursor-pointer',
                   filters.minPrice === min && filters.maxPrice === max
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'border-gray-200 text-gray-600 hover:border-emerald-400 hover:text-emerald-600 bg-white'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-400 bg-white'
                 )}
               >
                 {label}
@@ -352,7 +320,6 @@ const ProductFilter = ({ className = '' }) => {
           </div>
         </div>
 
-        {/* Đánh giá */}
         <FilterDropdown
           label="Đánh giá"
           triggerText={ratingLabel}
@@ -367,24 +334,23 @@ const ProductFilter = ({ className = '' }) => {
                 key={r}
                 onClick={() => { updateFilter('minRating', filters.minRating === r ? '' : r); setOpenKey(null); }}
                 className={clsx(
-                  'w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-colors',
+                  'w-full flex items-center justify-between px-3 py-2 text-xs transition-colors cursor-pointer',
                   filters.minRating === r
-                    ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-slate-100 text-slate-900 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
                 )}
               >
-                <span className="flex items-center gap-1.5">
-                  <span className="text-amber-400 tracking-tight">{'★'.repeat(r)}</span>
-                  <span className="text-gray-300 tracking-tight">{'★'.repeat(5 - r)}</span>
-                  <span className="text-xs text-gray-500 ml-1">trở lên</span>
+                <span className="flex items-center gap-1">
+                  <span className="text-amber-400">{'★'.repeat(r)}</span>
+                  <span className="text-slate-300">{'★'.repeat(5 - r)}</span>
+                  <span className="text-slate-500 ml-1">trở lên</span>
                 </span>
-                {filters.minRating === r && <Check size={13} className="text-emerald-600" />}
+                {filters.minRating === r && <Check size={13} className="text-slate-900" />}
               </button>
             ))}
           </div>
         </FilterDropdown>
 
-        {/* Tình trạng kho */}
         <FilterDropdown
           label="Tình trạng kho"
           triggerText={stockLabel}
@@ -406,7 +372,6 @@ const ProductFilter = ({ className = '' }) => {
           />
         </FilterDropdown>
 
-        {/* Mức giảm giá */}
         <FilterDropdown
           label="Mức giảm giá"
           triggerText={discountLabel}
@@ -424,7 +389,6 @@ const ProductFilter = ({ className = '' }) => {
           />
         </FilterDropdown>
 
-        {/* Màu sắc */}
         <FilterDropdown
           label="Màu sắc"
           triggerText={colorLabel}
@@ -434,36 +398,30 @@ const ProductFilter = ({ className = '' }) => {
           badge={selectedColors.length}
         >
           <div className="p-3">
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2">
               {COLORS.map(({ key, label, hex, border }) => (
                 <button
                   key={key}
                   onClick={() => toggleColor(key)}
                   title={label}
                   className={clsx(
-                    'w-8 h-8 rounded-full transition-all duration-150 flex items-center justify-center',
-                    border && 'border border-gray-300',
+                    'w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer',
+                    border && 'border border-slate-300',
                     selectedColors.includes(key)
-                      ? 'ring-2 ring-offset-2 ring-emerald-500 scale-110'
-                      : 'hover:scale-110'
+                      ? 'ring-2 ring-offset-2 ring-slate-900 scale-105'
+                      : 'hover:scale-105'
                   )}
                   style={{ backgroundColor: hex }}
                 >
                   {selectedColors.includes(key) && (
-                    <Check size={12} className={key === 'white' ? 'text-gray-700' : 'text-white'} />
+                    <Check size={11} className={key === 'white' ? 'text-slate-800' : 'text-white'} />
                   )}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2.5">
-              {selectedColors.length > 0
-                ? `Đã chọn: ${selectedColors.map((k) => COLORS.find((c) => c.key === k)?.label).join(', ')}`
-                : 'Chọn một hoặc nhiều màu'}
-            </p>
           </div>
         </FilterDropdown>
 
-        {/* Kích thước */}
         <FilterDropdown
           label="Kích thước"
           triggerText={sizeLabel}
@@ -472,17 +430,17 @@ const ProductFilter = ({ className = '' }) => {
           onToggle={toggle('size')}
           badge={selectedSizes.length}
         >
-          <div className="p-3">
-            <div className="flex flex-wrap gap-2">
+          <div className="p-2.5">
+            <div className="flex flex-wrap gap-1.5">
               {SIZES.map((s) => (
                 <button
                   key={s}
                   onClick={() => toggleSize(s)}
                   className={clsx(
-                    'px-3.5 py-2 rounded-xl text-sm font-semibold border-2 transition-all',
+                    'px-3 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
                     selectedSizes.includes(s)
-                      ? 'bg-emerald-600 border-emerald-600 text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-emerald-400 hover:text-emerald-600'
+                      ? 'bg-slate-900 border-slate-900 text-white'
+                      : 'border-slate-200 text-slate-700 hover:border-slate-400'
                   )}
                 >
                   {s}
@@ -491,20 +449,18 @@ const ProductFilter = ({ className = '' }) => {
             </div>
           </div>
         </FilterDropdown>
-
       </div>
 
-      {/* ── Footer (unchanged) ── */}
-      <div className="px-5 pb-5 pt-2 border-t border-gray-100 space-y-3">
-        <p className="text-xs text-center text-gray-400">
-          <span className="text-emerald-600 font-bold">{filteredProducts.length}</span> sản phẩm được tìm thấy
+      <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-2">
+        <p className="text-xs text-center text-slate-500 font-medium">
+          <span className="text-slate-900 font-bold">{filteredProducts.length}</span> sản phẩm được tìm thấy
         </p>
         {activeCount > 0 && (
           <button
             onClick={handleReset}
-            className="w-full py-2.5 border-2 border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-all"
+            className="w-full py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
-            Xóa tất cả ({activeCount})
+            Xóa bộ lọc ({activeCount})
           </button>
         )}
       </div>

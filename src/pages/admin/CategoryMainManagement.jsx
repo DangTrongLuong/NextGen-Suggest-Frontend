@@ -51,87 +51,84 @@ const CategoryMainManagement = () => {
   const headers = ['STT', 'Ảnh', 'Tên danh mục chính', 'Slug', 'Thứ tự', 'Thao tác'];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Quản lý danh mục chính</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight">Danh mục chính</h2>
+          <p className="text-xs text-slate-500 font-medium">
             Có {categoryMains.length} danh mục chính của hệ thống
           </p>
         </div>
         <Link
           to="/admin/category-mains/add"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 transition-colors shadow-xs"
         >
-          <Plus size={16} /> Thêm danh mục chính
+          <Plus size={14} /> Thêm danh mục chính
         </Link>
       </div>
 
       <div className="relative">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm kiếm danh mục chính..."
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-900 font-medium"
         />
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
+                <tr className="border-b border-slate-100 bg-slate-50">
                   {headers.map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    <th key={h} className="px-4 py-3 text-left font-bold text-slate-700 uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {filtered.map((cat, idx) => (
-                  <motion.tr
+                  <tr
                     key={cat.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: idx * 0.04 }}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-slate-50/60 transition-colors"
                   >
-                    <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5 font-semibold text-slate-500">{idx + 1}</td>
+                    <td className="px-4 py-2.5">
                       {cat.imageUrl ? (
-                        <img src={cat.imageUrl} alt={cat.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100 flex-shrink-0" />
+                        <img src={cat.imageUrl} alt={cat.name} className="w-8 h-8 rounded-lg object-cover bg-slate-100 border border-slate-200" />
                       ) : (
-                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <ImgIcon size={16} className="text-gray-300" />
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <ImgIcon size={14} className="text-slate-400" />
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{cat.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{cat.slug}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{cat.displayOrder ?? 0}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link to={`/admin/category-mains/edit/${cat.id}`} className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                          <Edit2 size={15} />
+                    <td className="px-4 py-2.5 font-bold text-slate-900">{cat.name}</td>
+                    <td className="px-4 py-2.5 text-slate-500 font-medium">{cat.slug}</td>
+                    <td className="px-4 py-2.5 text-slate-500 font-medium">{cat.displayOrder ?? 0}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Link to={`/admin/category-mains/edit/${cat.id}`} className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                          <Edit2 size={14} />
                         </Link>
-                        <button onClick={() => setDeleteTarget(cat)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
-                          <Trash2 size={15} />
+                        <button onClick={() => setDeleteTarget(cat)} className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-16 text-gray-400">
-              <p className="font-medium">Chưa có danh mục chính nào</p>
+            <div className="text-center py-12 text-slate-400 text-xs">
+              <p className="font-semibold">Chưa có danh mục chính nào</p>
             </div>
           )}
         </div>
@@ -140,20 +137,12 @@ const CategoryMainManagement = () => {
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Xóa danh mục chính" size="sm">
         {deleteTarget && (
           <div>
-            <div className="flex items-start gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 mb-1">
-                  Xóa "{deleteTarget.name}"?
-                </p>
-                <p className="text-xs text-gray-500">Hành động này sẽ không xóa các danh mục con, nhưng chúng sẽ mất liên kết tới danh mục chính này. Hành động không thể hoàn tác.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" fullWidth onClick={() => setDeleteTarget(null)}>Hủy</Button>
-              <Button variant="danger" fullWidth onClick={handleDeleteConfirm}>Xóa</Button>
+            <p className="text-xs text-slate-600 mb-5">
+              Bạn có chắc muốn xóa "{deleteTarget.name}"? Hành động không thể hoàn tác.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" fullWidth onClick={() => setDeleteTarget(null)}>Hủy</Button>
+              <Button variant="danger" size="sm" fullWidth onClick={handleDeleteConfirm}>Xóa</Button>
             </div>
           </div>
         )}

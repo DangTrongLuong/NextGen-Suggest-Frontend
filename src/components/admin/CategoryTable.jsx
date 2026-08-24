@@ -10,7 +10,6 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [expandedIds, setExpandedIds] = useState([]);
 
-  // Use allCategories (full set) for tree relations, fallback to categories
   const fullList = allCategories || categories;
   const rootCats = fullList.filter((c) => !c.parentId);
   const getChildren = (parentId) => fullList.filter((c) => c.parentId === parentId);
@@ -41,12 +40,12 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
   };
 
   const ImgCell = ({ src, alt, depth = 0 }) => (
-    <div className="flex items-center gap-2" style={{ paddingLeft: depth * 20 }}>
+    <div className="flex items-center gap-2" style={{ paddingLeft: depth * 16 }}>
       {src ? (
-        <img src={src} alt={alt} className="w-10 h-10 rounded-xl object-cover bg-gray-100 flex-shrink-0" />
+        <img src={src} alt={alt} className="w-8 h-8 rounded-lg object-cover bg-slate-100 border border-slate-200" />
       ) : (
-        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-          <ImgIcon size={16} className="text-gray-300" />
+        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+          <ImgIcon size={14} className="text-slate-400" />
         </div>
       )}
     </div>
@@ -56,97 +55,93 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
     const children = getChildren(cat.id);
     const expanded = expandedIds.includes(cat.id);
     return (
-      <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50 transition-colors">
-        <td className="px-4 py-3 text-sm text-gray-500">{pageOffset + idx + 1}</td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-2" style={{ paddingLeft: depth * 20 }}>
+      <tr className="hover:bg-slate-50/60 transition-colors">
+        <td className="px-4 py-2.5 text-slate-500 font-semibold">{pageOffset + idx + 1}</td>
+        <td className="px-4 py-2.5">
+          <div className="flex items-center gap-1.5" style={{ paddingLeft: depth * 16 }}>
             {children.length > 0 ? (
-              <button onClick={() => toggleExpand(cat.id)} className="p-0.5 rounded text-gray-400 hover:text-gray-600">
+              <button onClick={() => toggleExpand(cat.id)} className="p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer">
                 {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
             ) : (
-              <span className="w-5" />
+              <span className="w-4" />
             )}
             <ImgCell src={cat.imageUrl} alt={cat.name} />
           </div>
         </td>
-        <td className="px-4 py-3">
-          <p className="text-sm font-semibold text-gray-900">{cat.name}</p>
-          <p className="text-xs text-gray-400">{cat.slug}</p>
+        <td className="px-4 py-2.5">
+          <p className="font-bold text-slate-900">{cat.name}</p>
+          <p className="text-[10px] text-slate-400 font-medium">{cat.slug}</p>
         </td>
-        <td className="px-4 py-3">
+        <td className="px-4 py-2.5">
           {cat.parentId ? (
-            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded text-[11px]">
               {getParentName(cat.parentId)}
             </span>
           ) : (
-            <span className="text-gray-400 text-sm">—</span>
+            <span className="text-slate-300">—</span>
           )}
         </td>
-        <td className="px-4 py-3">
-          <span className="text-sm font-semibold text-emerald-600">{getTotalProductCount(cat)}</span>
-        </td>
-        <td className="px-4 py-3">
+        <td className="px-4 py-2.5 font-extrabold text-slate-900">{getTotalProductCount(cat)}</td>
+        <td className="px-4 py-2.5">
           <button
             onClick={() => onToggleActive(cat.id)}
-            className={clsx('relative w-10 h-5 rounded-full transition-colors duration-200', cat.isActive ? 'bg-emerald-500' : 'bg-gray-300')}
+            className={clsx('relative w-8 h-4 rounded-full transition-colors duration-200 cursor-pointer', cat.isActive ? 'bg-slate-900' : 'bg-slate-200')}
           >
-            <span className={clsx('absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200', cat.isActive ? 'translate-x-5' : 'translate-x-0.5')} />
+            <span className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-200', cat.isActive ? 'translate-x-4.5' : 'translate-x-0.5')} />
           </button>
         </td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Link to={`/admin/categories/edit/${cat.id}`} className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-              <Edit2 size={15} />
+        <td className="px-4 py-2.5">
+          <div className="flex items-center gap-1.5">
+            <Link to={`/admin/categories/edit/${cat.id}`} className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+              <Edit2 size={14} />
             </Link>
-            <button onClick={() => setDeleteTarget(cat)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
-              <Trash2 size={15} />
+            <button onClick={() => setDeleteTarget(cat)} className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
+              <Trash2 size={14} />
             </button>
           </div>
         </td>
-      </motion.tr>
+      </tr>
     );
   };
 
   const FlatRow = ({ cat, idx }) => (
-    <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: (idx % 10) * 0.03 }} className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-500">{pageOffset + idx + 1}</td>
-      <td className="px-4 py-3"><ImgCell src={cat.imageUrl} alt={cat.name} /></td>
-      <td className="px-4 py-3">
-        <p className="text-sm font-semibold text-gray-900">{cat.name}</p>
-        <p className="text-xs text-gray-400">{cat.slug}</p>
+    <tr className="hover:bg-slate-50/60 transition-colors">
+      <td className="px-4 py-2.5 text-slate-500 font-semibold">{pageOffset + idx + 1}</td>
+      <td className="px-4 py-2.5"><ImgCell src={cat.imageUrl} alt={cat.name} /></td>
+      <td className="px-4 py-2.5">
+        <p className="font-bold text-slate-900">{cat.name}</p>
+        <p className="text-[10px] text-slate-400 font-medium">{cat.slug}</p>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         {cat.parentId ? (
-          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">
+          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded text-[11px]">
             {getParentName(cat.parentId)}
           </span>
         ) : (
-          <span className="text-gray-400 text-sm">—</span>
+          <span className="text-slate-300">—</span>
         )}
       </td>
-      <td className="px-4 py-3">
-        <span className="text-sm font-semibold text-emerald-600">{getTotalProductCount(cat)}</span>
-      </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5 font-extrabold text-slate-900">{getTotalProductCount(cat)}</td>
+      <td className="px-4 py-2.5">
         <button
           onClick={() => onToggleActive(cat.id)}
-          className={clsx('relative w-10 h-5 rounded-full transition-colors duration-200', cat.isActive ? 'bg-emerald-500' : 'bg-gray-300')}
+          className={clsx('relative w-8 h-4 rounded-full transition-colors duration-200 cursor-pointer', cat.isActive ? 'bg-slate-900' : 'bg-slate-200')}
         >
-          <span className={clsx('absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200', cat.isActive ? 'translate-x-5' : 'translate-x-0.5')} />
+          <span className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-200', cat.isActive ? 'translate-x-4.5' : 'translate-x-0.5')} />
         </button>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Link to={`/admin/categories/edit/${cat.id}`} className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Edit2 size={15} />
+      <td className="px-4 py-2.5">
+        <div className="flex items-center gap-1.5">
+          <Link to={`/admin/categories/edit/${cat.id}`} className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+            <Edit2 size={14} />
           </Link>
-          <button onClick={() => setDeleteTarget(cat)} className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
-            <Trash2 size={15} />
+          <button onClick={() => setDeleteTarget(cat)} className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">
+            <Trash2 size={14} />
           </button>
         </div>
       </td>
-    </motion.tr>
+    </tr>
   );
 
   const getVisibleTreeItems = () => {
@@ -163,24 +158,23 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
   };
 
   const visibleTreeItems = getVisibleTreeItems();
-
   const headers = ['STT', 'Ảnh', 'Tên danh mục', 'Danh mục cha', 'Sản phẩm', 'Trạng thái', 'Thao tác'];
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
+              <tr className="border-b border-slate-100 bg-slate-50">
                 {headers.map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-4 py-3 text-left font-bold text-slate-700 uppercase tracking-wider">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-100">
               {viewMode === 'tree'
                 ? visibleTreeItems.map(({ cat, depth }, idx) => (
                     <TreeRow key={cat.id} cat={cat} depth={depth} idx={idx} />
@@ -193,8 +187,8 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
           </table>
         </div>
         {categories.length === 0 && (
-          <div className="text-center py-16 text-gray-400">
-            <p className="font-medium">Chưa có danh mục nào</p>
+          <div className="text-center py-12 text-slate-400 text-xs">
+            <p className="font-semibold">Chưa có danh mục nào</p>
           </div>
         )}
       </div>
@@ -202,30 +196,12 @@ const CategoryTable = ({ categories, allCategories, onDelete, onToggleActive, vi
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Xóa danh mục" size="sm">
         {deleteTarget && (
           <div>
-            <div className="flex items-start gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 mb-1">
-                  Xóa "{deleteTarget.name}"?
-                </p>
-                {deleteTarget.productCount > 0 && (
-                  <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg mb-2">
-                    ⚠️ Có {deleteTarget.productCount} sản phẩm thuộc danh mục này.
-                  </p>
-                )}
-                {hasChildren(deleteTarget.id) && (
-                  <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                    ⚠️ Có danh mục con phụ thuộc — cân nhắc kỹ trước khi xóa.
-                  </p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">Hành động không thể hoàn tác.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" fullWidth onClick={() => setDeleteTarget(null)}>Hủy</Button>
-              <Button variant="danger" fullWidth onClick={handleDeleteConfirm}>Xóa danh mục</Button>
+            <p className="text-xs text-slate-600 mb-5">
+              Bạn có chắc muốn xóa "{deleteTarget.name}"? Hành động không thể hoàn tác.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" fullWidth onClick={() => setDeleteTarget(null)}>Hủy</Button>
+              <Button variant="danger" size="sm" fullWidth onClick={handleDeleteConfirm}>Xóa</Button>
             </div>
           </div>
         )}

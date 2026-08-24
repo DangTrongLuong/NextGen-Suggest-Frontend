@@ -42,7 +42,6 @@ const CategoryManagement = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Reset to page 1 when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter]);
@@ -107,51 +106,51 @@ const CategoryManagement = () => {
   const rootCount = categories.filter((c) => !c.parentId).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Quản lý danh mục</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {categories.length} danh mục · {activeCount} đang hoạt động · {rootCount} danh mục gốc
+          <h2 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight">Quản lý Danh mục</h2>
+          <p className="text-xs text-slate-500 font-medium">
+            {categories.length} danh mục • {activeCount} đang hoạt động • {rootCount} danh mục gốc
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setIsImportOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-xl transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
           >
-            <Upload size={16} /> Import Excel
+            <Upload size={14} /> Import Excel
           </button>
           <Link
             to="/admin/categories/add"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 transition-colors shadow-xs"
           >
-            <Plus size={16} /> Thêm danh mục
+            <Plus size={14} /> Thêm danh mục
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2.5">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm kiếm danh mục..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-900 font-medium"
           />
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
           {statusFilters.map((f) => (
             <button
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
               className={clsx(
-                'flex-shrink-0 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all',
+                'flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer',
                 statusFilter === f.key
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-emerald-300'
+                  ? 'bg-slate-900 text-white font-bold'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'
               )}
             >
               {f.label}
@@ -159,45 +158,40 @@ const CategoryManagement = () => {
           ))}
         </div>
 
-        <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+        <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden flex-shrink-0">
           <button
             onClick={() => setViewMode('table')}
-            className={clsx('px-3 py-2.5 transition-colors', viewMode === 'table' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-50')}
+            className={clsx('px-3 py-2 transition-colors cursor-pointer', viewMode === 'table' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50')}
             title="Dạng bảng"
           >
-            <LayoutList size={16} />
+            <LayoutList size={15} />
           </button>
           <button
             onClick={() => setViewMode('tree')}
-            className={clsx('px-3 py-2.5 transition-colors', viewMode === 'tree' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-50')}
+            className={clsx('px-3 py-2 transition-colors cursor-pointer', viewMode === 'tree' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50')}
             title="Dạng cây"
           >
-            <GitBranch size={16} />
+            <GitBranch size={15} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Tổng danh mục', value: categories.length, color: 'bg-gray-50 text-gray-700' },
-          { label: 'Đang hoạt động', value: activeCount, color: 'bg-emerald-50 text-emerald-700' },
-          { label: 'Danh mục gốc', value: rootCount, color: 'bg-blue-50 text-blue-700' },
-          { label: 'Danh mục con', value: categories.length - rootCount, color: 'bg-purple-50 text-purple-700' },
+          { label: 'Tổng danh mục', value: categories.length, color: 'bg-white text-slate-900 border border-slate-200/80 shadow-card' },
+          { label: 'Đang hoạt động', value: activeCount, color: 'bg-emerald-50/60 text-emerald-800 border border-emerald-200/80' },
+          { label: 'Danh mục gốc', value: rootCount, color: 'bg-emerald-50/60 text-emerald-800 border border-emerald-200/80' },
+          { label: 'Danh mục con', value: categories.length - rootCount, color: 'bg-slate-100 text-slate-800 border border-slate-200' },
         ].map(({ label, value, color }) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-2xl p-4 ${color}`}
-          >
-            <p className="text-2xl font-black">{value}</p>
-            <p className="text-xs font-medium mt-0.5 opacity-70">{label}</p>
-          </motion.div>
+          <div key={label} className={`rounded-2xl p-4 ${color}`}>
+            <p className="text-xl font-extrabold">{value}</p>
+            <p className="text-xs font-medium mt-0.5 opacity-80">{label}</p>
+          </div>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
         <>
           <CategoryTable
@@ -209,72 +203,31 @@ const CategoryManagement = () => {
             pageOffset={startIndex}
           />
 
-          {/* Pagination Controls (10 items per page with Ellipsis) */}
           {filtered.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-              <p className="text-xs text-gray-500 font-medium whitespace-nowrap shrink-0">
-                Hiển thị <span className="font-bold text-gray-900">{startIndex + 1} - {Math.min(startIndex + itemsPerPage, filtered.length)}</span> trong tổng số <span className="font-bold text-gray-900">{filtered.length}</span> danh mục
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-card">
+              <p className="text-xs text-slate-500 font-medium shrink-0">
+                Hiển thị <span className="font-bold text-slate-900">{startIndex + 1} - {Math.min(startIndex + itemsPerPage, filtered.length)}</span> / <span className="font-bold text-slate-900">{filtered.length}</span>
               </p>
 
-              <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap justify-center">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  title="Trang trước"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={15} />
                 </button>
 
-                {(() => {
-                  const getPageNumbers = (current, total) => {
-                    if (total <= 7) {
-                      return Array.from({ length: total }, (_, i) => i + 1);
-                    }
-                    if (current <= 4) {
-                      return [1, 2, 3, 4, 5, '...', total];
-                    }
-                    if (current >= total - 3) {
-                      return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
-                    }
-                    return [1, '...', current - 1, current, current + 1, '...', total];
-                  };
-
-                  return getPageNumbers(currentPage, totalPages).map((item, idx) => {
-                    if (item === '...') {
-                      return (
-                        <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 font-bold select-none">
-                          ...
-                        </span>
-                      );
-                    }
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => setCurrentPage(item)}
-                        className={clsx(
-                          'w-9 h-9 text-xs font-bold rounded-xl transition-all cursor-pointer',
-                          currentPage === item
-                            ? 'bg-emerald-600 text-white shadow-sm'
-                            : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-400 hover:bg-gray-50'
-                        )}
-                      >
-                        {item}
-                      </button>
-                    );
-                  });
-                })()}
+                <span className="text-xs font-bold px-2 text-slate-900">{currentPage}/{totalPages}</span>
 
                 <button
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  title="Trang sau"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>

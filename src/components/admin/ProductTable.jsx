@@ -30,10 +30,10 @@ const ProductTable = ({ products, onDelete }) => {
   });
 
   const SortIcon = ({ field }) => {
-    if (sortField !== field) return <ChevronUp size={14} className="text-gray-300" />;
+    if (sortField !== field) return <ChevronUp size={13} className="text-slate-300" />;
     return sortDir === 'asc'
-      ? <ChevronUp size={14} className="text-emerald-600" />
-      : <ChevronDown size={14} className="text-emerald-600" />;
+      ? <ChevronUp size={13} className="text-slate-900" />
+      : <ChevronDown size={13} className="text-slate-900" />;
   };
 
   const handleDelete = async () => {
@@ -53,18 +53,18 @@ const ProductTable = ({ products, onDelete }) => {
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
+              <tr className="border-b border-slate-100 bg-slate-50">
                 {headers.map(({ label, field }) => (
                   <th
                     key={label}
                     onClick={() => field && handleSort(field)}
                     className={clsx(
-                      'px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide',
-                      field && 'cursor-pointer hover:text-gray-900 select-none'
+                      'px-4 py-3 text-left font-bold text-slate-700 uppercase tracking-wider',
+                      field && 'cursor-pointer hover:text-slate-900 select-none'
                     )}
                   >
                     <div className="flex items-center gap-1">
@@ -75,104 +75,102 @@ const ProductTable = ({ products, onDelete }) => {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-100">
               {sorted.map((product) => (
-                <motion.tr
+                <tr
                   key={product.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-slate-50/60 transition-colors"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.images.find(img => img.isPrimary)?.url ?? product.images[0]?.url ?? 'https://via.placeholder.com/40'}
+                        src={product.images.find(img => img.isPrimary)?.url ?? product.images[0]?.url ?? 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=80'}
                         alt={product.name}
-                        className="w-10 h-10 rounded-xl object-cover bg-gray-100"
+                        className="w-9 h-9 rounded-lg object-cover bg-slate-100 border border-slate-200"
                       />
                       <div>
-                        <p className="text-sm font-semibold text-gray-900 line-clamp-1">{product.name}</p>
-                        <p className="text-xs text-gray-500">{product.brand || product.sku || '—'}</p>
+                        <p className="font-bold text-slate-900 line-clamp-1">{product.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{product.brand || product.sku || '—'}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg">
+                  <td className="px-4 py-2.5">
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded text-[11px]">
                       {product.categoryName || '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{formatPrice(product.price)}</p>
+                      <p className="font-extrabold text-slate-900">{formatPrice(product.price)}</p>
                       {product.originalPrice > product.price && (
-                        <p className="text-xs text-gray-400 line-through">{formatPrice(product.originalPrice)}</p>
+                        <p className="text-[10px] text-slate-400 line-through">{formatPrice(product.originalPrice)}</p>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <span className={clsx(
-                      'px-2.5 py-1 text-xs font-semibold rounded-lg',
+                      'px-2 py-0.5 text-[11px] font-bold rounded',
                       product.stock === 0
-                        ? 'bg-red-100 text-red-700'
+                        ? 'bg-rose-50 text-rose-600'
                         : product.stock < 20
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-emerald-50 text-emerald-700'
                     )}>
                       {product.stock === 0 ? 'Hết hàng' : `${product.stock}`}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1">
-                      <Star size={13} className="text-amber-400 fill-amber-400" />
-                      <span className="text-sm font-medium text-gray-900">{(product.rating || 0).toFixed(1)}</span>
-                      <span className="text-xs text-gray-400">({product.reviewCount})</span>
+                      <Star size={12} className="text-amber-400 fill-amber-400" />
+                      <span className="font-bold text-slate-900">{(product.rating || 0).toFixed(1)}</span>
+                      <span className="text-[10px] text-slate-400">({product.reviewCount})</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <span className={clsx(
-                      'px-2.5 py-1 text-xs font-semibold rounded-lg',
-                      product.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                      'px-2 py-0.5 text-[11px] font-bold rounded',
+                      product.isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'
                     )}>
                       {product.isActive ? 'Hoạt động' : 'Tạm ẩn'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-1.5">
                       <Link
                         to={`/admin/products/edit/${product.id}`}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                       >
-                        <Edit2 size={15} />
+                        <Edit2 size={14} />
                       </Link>
                       <button
                         onClick={() => setDeleteId(product.id)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
-                </motion.tr>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
 
         {products.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Package size={40} className="text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">Chưa có sản phẩm</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Package size={36} className="text-slate-300 mb-2" />
+            <p className="text-slate-600 font-bold text-xs">Chưa có sản phẩm nào</p>
           </div>
         )}
       </div>
 
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Xóa sản phẩm" size="sm">
-        <p className="text-gray-600 mb-6">
-          Bạn có chắc muốn xóa sản phẩm này? Hành động không thể hoàn tác.
+        <p className="text-xs text-slate-600 mb-5">
+          Bạn có chắc muốn xóa sản phẩm này? Hành động này không thể hoàn tác.
         </p>
-        <div className="flex gap-3">
-          <Button variant="ghost" onClick={() => setDeleteId(null)} fullWidth>Hủy</Button>
-          <Button variant="danger" onClick={handleDelete} fullWidth>Xóa</Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setDeleteId(null)} fullWidth>Hủy</Button>
+          <Button variant="danger" size="sm" onClick={handleDelete} fullWidth>Xóa</Button>
         </div>
       </Modal>
     </>

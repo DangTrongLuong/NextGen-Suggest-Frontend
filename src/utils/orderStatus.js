@@ -8,13 +8,13 @@ export const ORDER_STEPS = [
 ];
 
 export const ORDER_STATUS_MAP = {
-  pending:   { label: 'Đã đặt hàng',   color: 'bg-gray-100 text-gray-700',     dot: 'bg-gray-400' },
-  confirmed: { label: 'Đã xác nhận',   color: 'bg-blue-100 text-blue-700',     dot: 'bg-blue-500' },
-  packing:   { label: 'Đang đóng gói', color: 'bg-amber-100 text-amber-700',   dot: 'bg-amber-500' },
-  shipping:  { label: 'Đang giao hàng',color: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500' },
-  delivered: { label: 'Đã giao hàng',  color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-  cancelled: { label: 'Đã hủy',        color: 'bg-red-100 text-red-700',       dot: 'bg-red-500' },
-  refunded:  { label: 'Đã hoàn tiền',  color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
+  pending:   { label: 'Đã đặt hàng',   color: 'bg-slate-100 text-slate-700',   dot: 'bg-slate-400' },
+  confirmed: { label: 'Đã xác nhận',   color: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  packing:   { label: 'Đang đóng gói', color: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-500' },
+  shipping:  { label: 'Đang giao hàng',color: 'bg-slate-800 text-white',       dot: 'bg-slate-900' },
+  delivered: { label: 'Đã giao hàng',  color: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-600' },
+  cancelled: { label: 'Đã hủy',        color: 'bg-rose-50 text-rose-700',       dot: 'bg-rose-500' },
+  refunded:  { label: 'Đã hoàn tiền',  color: 'bg-purple-50 text-purple-700',   dot: 'bg-purple-500' },
 };
 
 export const ORDER_STATUS_OPTIONS = [

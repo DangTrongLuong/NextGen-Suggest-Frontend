@@ -6,18 +6,12 @@ import clsx from 'clsx';
 import { useCategoryTree } from '../../hooks/useCategoryTree';
 import MegaMenu from './MegaMenu';
 
-/**
- * Responsive Category Navigation Bar.
- * Desktop: Horizontal bar under Header, opens MegaMenu on hover.
- * Mobile: Slide-in Drawer with a multi-level accordion layout.
- */
 const CategoryNavBar = () => {
   const { categoryMains, categoryTreeByMain, loading } = useCategoryTree();
   const [activeMainId, setActiveMainId] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Mobile Accordion states
   const [expandedMainId, setExpandedMainId] = useState(null);
   const [expandedLevel1Id, setExpandedLevel1Id] = useState(null);
 
@@ -26,7 +20,6 @@ const CategoryNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Listen to scroll to apply light shadow when sticky
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 60);
@@ -35,7 +28,6 @@ const CategoryNavBar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menus and reset accordion on page transition
   useEffect(() => {
     setActiveMainId(null);
     setMobileDrawerOpen(false);
@@ -43,7 +35,6 @@ const CategoryNavBar = () => {
     setExpandedLevel1Id(null);
   }, [location.pathname]);
 
-  // Handle keyboard navigation for desktop accessibility
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -55,7 +46,6 @@ const CategoryNavBar = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Desktop Hover Timers to prevent flicker
   const handleMouseEnterMain = (mainId) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -66,12 +56,11 @@ const CategoryNavBar = () => {
   const handleMouseLeaveMain = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveMainId(null);
-    }, 200); // 200ms delay to keep open while moving to Mega Menu
+    }, 200);
   };
 
   const activeMain = categoryMains.find((m) => m.id === activeMainId);
 
-  // Keyboard navigation helpers
   const handleMainKeyDown = (e, index, main) => {
     if (e.key === 'ArrowRight') {
       e.preventDefault();
@@ -92,13 +81,12 @@ const CategoryNavBar = () => {
     }
   };
 
-  // Skeleton Loader for NavBar
   if (loading && categoryMains.length === 0) {
     return (
-      <div className="w-full bg-white border-b border-gray-100 h-11 flex items-center justify-center">
+      <div className="w-full bg-white border-b border-slate-100 h-10 flex items-center justify-center">
         <div className="flex gap-6 animate-pulse">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-4 bg-gray-200 rounded w-16" />
+            <div key={i} className="h-3.5 bg-slate-200 rounded w-16" />
           ))}
         </div>
       </div>
@@ -108,20 +96,19 @@ const CategoryNavBar = () => {
   return (
     <div
       ref={navBarRef}
-      className="w-full z-30 fixed top-16 lg:top-[68px] left-0 right-0 bg-white border-b border-gray-100"
+      className="w-full z-30 fixed top-16 lg:top-[68px] left-0 right-0 bg-white/95 backdrop-blur-md border-b border-slate-200/70"
     >
-      {/* ── DESKTOP & TABLET NAVBAR ── */}
+      {/* Desktop NavBar */}
       <div className="hidden md:block max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
         <nav
           aria-label="Category Main Navigation"
-          className="relative flex items-center justify-between h-11"
+          className="relative flex items-center justify-between h-10"
         >
-          {/* Scrollable container for CategoryMains */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-grow select-none pr-4 py-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-grow select-none pr-4 py-0.5">
             {categoryMains.map((main, index) => {
               const isOpened = activeMainId === main.id;
               const hasChildren = categoryTreeByMain[main.id]?.length > 0;
-              
+
               return (
                 <div
                   key={main.id}
@@ -138,10 +125,10 @@ const CategoryNavBar = () => {
                     onKeyDown={(e) => handleMainKeyDown(e, index, main)}
                     onClick={() => navigate(`/products/${main.slug}`)}
                     className={clsx(
-                      'px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-xl transition-all duration-200 cursor-pointer outline-none',
+                      'px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-all duration-150 cursor-pointer outline-none',
                       isOpened
-                        ? 'text-emerald-600 bg-emerald-50/60 shadow-inner'
-                        : 'text-gray-650 hover:text-gray-900 hover:bg-gray-100/50'
+                        ? 'text-slate-900 bg-slate-100 font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     )}
                   >
                     {main.name}
@@ -151,36 +138,35 @@ const CategoryNavBar = () => {
             })}
           </div>
 
-          {/* Quick link for All Categories */}
           <Link
             to="/products"
-            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-gray-600 hover:text-emerald-600 transition-colors group"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-slate-600 hover:text-emerald-600 transition-colors group"
           >
-            <Grid size={13} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
+            <Grid size={13} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
             <span>Tất cả danh mục</span>
           </Link>
         </nav>
       </div>
 
-      {/* ── MOBILE NAVBAR TRIGGER ── */}
-      <div className="md:hidden w-full h-11 px-4 flex items-center justify-between bg-white">
+      {/* Mobile Trigger */}
+      <div className="md:hidden w-full h-10 px-4 flex items-center justify-between bg-white border-b border-slate-100">
         <button
           onClick={() => setMobileDrawerOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase text-emerald-650 bg-emerald-50/60 hover:bg-emerald-100/60 active:scale-95 transition-all outline-none"
+          className="flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold uppercase text-slate-800 bg-slate-100 hover:bg-slate-200 transition-all outline-none"
         >
-          <Menu size={14} className="text-emerald-500" />
+          <Menu size={14} className="text-slate-600" />
           <span>Danh mục sản phẩm</span>
         </button>
 
         <Link
           to="/products"
-          className="text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors"
+          className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
         >
           Tất cả sản phẩm
         </Link>
       </div>
 
-      {/* ── DESKTOP MEGA MENU CONTAINER ── */}
+      {/* Desktop Mega Menu */}
       <AnimatePresence>
         {activeMain && (
           <div
@@ -199,41 +185,37 @@ const CategoryNavBar = () => {
         )}
       </AnimatePresence>
 
-      {/* ── MOBILE DRAWER NAVIGATION (Slide in from Left with Accordion) ── */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileDrawerOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileDrawerOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 bg-slate-900/40 z-50 backdrop-blur-xs"
             />
 
-            {/* Drawer Body */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="md:hidden fixed top-0 left-0 bottom-0 w-[290px] max-w-[85%] bg-white z-50 shadow-2xl flex flex-col"
+              className="md:hidden fixed top-0 left-0 bottom-0 w-[290px] max-w-[85%] bg-white z-50 shadow-xl flex flex-col"
             >
-              {/* Drawer Header */}
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white text-gray-900">
-                <span className="text-sm font-bold tracking-wide uppercase text-gray-800">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white text-slate-900">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
                   Danh mục sản phẩm
                 </span>
                 <button
                   onClick={() => setMobileDrawerOpen(false)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* Drawer Scrollable Accordion Area */}
               <div className="flex-1 overflow-y-auto py-2">
                 <div className="flex flex-col">
                   {categoryMains.map((main) => {
@@ -242,31 +224,30 @@ const CategoryNavBar = () => {
                     const hasSub = rootCats.length > 0;
 
                     return (
-                      <div key={main.id} className="border-b border-gray-200 last:border-0">
-                        {/* CategoryMain Row */}
+                      <div key={main.id} className="border-b border-slate-100 last:border-0">
                         <button
                           onClick={() => {
                             if (hasSub) {
                               setExpandedMainId(isMainExpanded ? null : main.id);
-                              setExpandedLevel1Id(null); // Close Level 1 children on main toggle
+                              setExpandedLevel1Id(null);
                             } else {
                               navigate(`/products/${main.slug}`);
                               setMobileDrawerOpen(false);
                             }
                           }}
                           className={clsx(
-                            'w-full flex items-center justify-between px-4 py-3.5 text-[13px] font-bold transition-colors text-left outline-none',
+                            'w-full flex items-center justify-between px-4 py-3 text-xs font-bold transition-colors text-left outline-none',
                             isMainExpanded
-                              ? 'text-emerald-600 bg-emerald-50/20'
-                              : 'text-gray-800 hover:bg-gray-50'
+                              ? 'text-slate-900 bg-slate-50'
+                              : 'text-slate-800 hover:bg-slate-50'
                           )}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             {main.imageUrl && (
                               <img
                                 src={main.imageUrl}
                                 alt={main.name}
-                                className="w-6 h-6 rounded-lg object-cover bg-gray-50 border border-gray-100"
+                                className="w-5 h-5 rounded-md object-cover bg-slate-50 border border-slate-200"
                               />
                             )}
                             <span className="truncate">{main.name}</span>
@@ -275,14 +256,13 @@ const CategoryNavBar = () => {
                             <ChevronRight
                               size={14}
                               className={clsx(
-                                'text-gray-400 transition-transform duration-200',
-                                isMainExpanded && 'rotate-90 text-emerald-600'
+                                'text-slate-400 transition-transform duration-200',
+                                isMainExpanded && 'rotate-90 text-slate-900'
                               )}
                             />
                           )}
                         </button>
 
-                        {/* Level 1 Accordion Content */}
                         <AnimatePresence initial={false}>
                           {isMainExpanded && hasSub && (
                             <motion.div
@@ -290,13 +270,12 @@ const CategoryNavBar = () => {
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="overflow-hidden bg-gray-50/40 pl-4 pr-2 py-1 flex flex-col gap-0.5 border-t border-gray-100/50"
+                              className="overflow-hidden bg-slate-50/60 pl-4 pr-2 py-1 flex flex-col gap-0.5"
                             >
-                              {/* Option to view all products under this Main category */}
                               <Link
                                 to={`/products/${main.slug}`}
                                 onClick={() => setMobileDrawerOpen(false)}
-                                className="px-3 py-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 block"
+                                className="px-3 py-1.5 text-xs font-bold text-emerald-600 block"
                               >
                                 Xem tất cả "{main.name}"
                               </Link>
@@ -308,7 +287,6 @@ const CategoryNavBar = () => {
 
                                 return (
                                   <div key={level1Cat.id} className="flex flex-col">
-                                    {/* Level 1 Row */}
                                     <button
                                       onClick={() => {
                                         if (hasSub) {
@@ -319,10 +297,10 @@ const CategoryNavBar = () => {
                                         }
                                       }}
                                       className={clsx(
-                                        'w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors text-left rounded-lg outline-none',
+                                        'w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold transition-colors text-left rounded-md outline-none',
                                         isLevel1Expanded
-                                          ? 'text-emerald-600 font-bold bg-gray-100/30'
-                                          : 'text-gray-700 hover:bg-gray-100/40'
+                                          ? 'text-slate-900 font-bold bg-slate-200/50'
+                                          : 'text-slate-700 hover:bg-slate-200/40'
                                       )}
                                     >
                                       <span>{level1Cat.name}</span>
@@ -330,14 +308,13 @@ const CategoryNavBar = () => {
                                         <ChevronRight
                                           size={12}
                                           className={clsx(
-                                            'text-gray-400 transition-transform duration-200',
-                                            isLevel1Expanded && 'rotate-90 text-emerald-600'
+                                            'text-slate-400 transition-transform duration-200',
+                                            isLevel1Expanded && 'rotate-90 text-slate-900'
                                           )}
                                         />
                                       )}
                                     </button>
 
-                                    {/* Level 2 Accordion Content */}
                                     <AnimatePresence initial={false}>
                                       {isLevel1Expanded && hasLevel2 && (
                                         <motion.div
@@ -350,7 +327,7 @@ const CategoryNavBar = () => {
                                           <Link
                                             to={`/products/${main.slug}/${level1Cat.slug}`}
                                             onClick={() => setMobileDrawerOpen(false)}
-                                            className="px-2 py-1.5 text-[11px] font-bold text-emerald-600 block hover:text-emerald-700"
+                                            className="px-2 py-1 text-[11px] font-bold text-emerald-600 block"
                                           >
                                             Xem tất cả "{level1Cat.name}"
                                           </Link>
@@ -360,7 +337,7 @@ const CategoryNavBar = () => {
                                               key={level2Cat.id}
                                               to={`/products/${main.slug}/${level1Cat.slug}/${level2Cat.slug}`}
                                               onClick={() => setMobileDrawerOpen(false)}
-                                              className="px-2 py-1.5 text-[11px] font-medium text-gray-500 hover:text-emerald-600 block rounded-md"
+                                              className="px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 block rounded-md"
                                             >
                                               {level2Cat.name}
                                             </Link>
@@ -379,13 +356,13 @@ const CategoryNavBar = () => {
                   })}
                 </div>
 
-                <div className="border-t border-gray-100 my-2 pt-2 px-2">
+                <div className="border-t border-slate-100 my-2 pt-2 px-2">
                   <Link
                     to="/products"
                     onClick={() => setMobileDrawerOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-[13px] font-black text-emerald-600 hover:bg-emerald-50 rounded-xl"
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-900 hover:bg-slate-100 rounded-lg"
                   >
-                    <Grid size={15} className="text-emerald-600" />
+                    <Grid size={14} className="text-slate-700" />
                     <span>Xem tất cả danh mục</span>
                   </Link>
                 </div>

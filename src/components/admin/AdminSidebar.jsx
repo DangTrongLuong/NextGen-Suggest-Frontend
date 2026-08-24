@@ -28,88 +28,76 @@ const AdminSidebar = ({ open, onClose }) => {
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-gray-950">
+    <div className="flex flex-col h-full bg-slate-900 text-white">
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-white/5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
           <img
             src={logoNivora}
             alt="NIVORA"
-            className="h-8 w-auto object-contain rounded-lg"
+            className="h-7 w-auto object-contain rounded"
           />
           <div>
-            <p className="text-xs font-bold text-white tracking-widest uppercase">NIVORA</p>
-            <p className="text-[10px] text-gray-500 tracking-wide">Admin Panel</p>
+            <p className="text-xs font-extrabold tracking-wider uppercase text-white">NIVORA</p>
+            <p className="text-[10px] text-slate-400 font-medium">Control Center</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-white/5 hover:text-gray-300 transition-colors"
+          className="lg:hidden p-1 rounded text-slate-400 hover:text-white cursor-pointer"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
-        {navItems.map(({ icon: Icon, label, to }, i) => (
-          <motion.div
+      <nav className="flex-1 px-2.5 py-4 space-y-1 overflow-y-auto">
+        {navItems.map(({ icon: Icon, label, to }) => (
+          <NavLink
             key={to}
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
+            to={to}
+            end={to === '/admin'}
+            onClick={onClose}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer',
+                isActive
+                  ? 'bg-emerald-600 text-white font-bold'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              )
+            }
           >
-            <NavLink
-              to={to}
-              end={to === '/admin'}
-              onClick={onClose}
-              className={({ isActive }) =>
-                clsx(
-                  'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group',
-                  isActive
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon size={17} className={clsx('flex-shrink-0 transition-transform', !isActive && 'group-hover:scale-110')} />
-                  <span className="flex-1">{label}</span>
-                  <ChevronRight
-                    size={13}
-                    className={clsx(
-                      'transition-all',
-                      isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 group-hover:opacity-40 group-hover:translate-x-0'
-                    )}
-                  />
-                </>
-              )}
-            </NavLink>
-          </motion.div>
+            {({ isActive }) => (
+              <>
+                <Icon size={16} className="flex-shrink-0" />
+                <span className="flex-1">{label}</span>
+                {isActive && <ChevronRight size={13} className="text-white" />}
+              </>
+            )}
+          </NavLink>
         ))}
       </nav>
 
       {/* User + Logout */}
-      <div className="border-t border-white/5 p-4">
+      <div className="border-t border-slate-800 p-3 space-y-2">
         {user && (
-          <div className="flex items-center gap-3 mb-3 px-2 py-2 rounded-xl bg-white/3">
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-800/60 text-xs">
             <img
-              src={user.avatarUrl || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=10b981&color=fff`}
+              src={user.avatarUrl || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=4f46e5&color=fff`}
               alt={user.name}
-              className="w-9 h-9 rounded-full bg-gray-700 ring-2 ring-emerald-600/30"
+              className="w-7 h-7 rounded-full bg-slate-700 object-cover"
             />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="font-bold text-white truncate">{user.name}</p>
+              <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
             </div>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 group"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors cursor-pointer"
         >
-          <LogOut size={17} className="group-hover:scale-110 transition-transform" />
+          <LogOut size={15} />
           Đăng xuất
         </button>
       </div>
@@ -118,12 +106,10 @@ const AdminSidebar = ({ open, onClose }) => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-white/5">
+      <aside className="hidden lg:flex flex-col w-60 h-screen sticky top-0 border-r border-slate-800">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {open && (
           <>
@@ -131,16 +117,16 @@ const AdminSidebar = ({ open, onClose }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
               onClick={onClose}
             />
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -260 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed left-0 top-0 bottom-0 z-50 w-64 shadow-2xl lg:hidden"
+              exit={{ x: -260 }}
+              transition={{ duration: 0.2 }}
+              className="fixed left-0 top-0 bottom-0 z-50 w-60 shadow-2xl lg:hidden"
             >
               <SidebarContent />
             </motion.aside>

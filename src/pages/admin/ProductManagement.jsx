@@ -70,42 +70,42 @@ const ProductManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Sản phẩm</h2>
-          <p className="text-sm text-gray-500">{totalElements} sản phẩm</p>
+          <h2 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight">Quản lý Sản phẩm</h2>
+          <p className="text-xs text-slate-500 font-medium">{totalElements} sản phẩm trong hệ thống</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setIsImportOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-xl transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
           >
-            <Upload size={16} /> Import Excel
+            <Upload size={14} /> Import Excel
           </button>
           <Link
             to="/admin/products/add"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 transition-colors shadow-xs"
           >
-            <Plus size={16} /> Thêm sản phẩm
+            <Plus size={14} /> Thêm sản phẩm
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2.5">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             defaultValue={search}
             onChange={(e) => debouncedSearch(e.target.value)}
-            placeholder="Tìm tên, brand, SKU..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            placeholder="Tìm tên, thương hiệu, SKU..."
+            className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-900 font-medium"
           />
         </div>
         <select
           value={categoryId}
           onChange={(e) => { setPage(0); setCategoryId(e.target.value); }}
-          className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 min-w-48"
+          className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-slate-900 min-w-48 cursor-pointer"
         >
           <option value="">Tất cả danh mục</option>
           {categories.map((c) => (
@@ -115,16 +115,18 @@ const ProductManagement = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
         <>
           <ProductTable products={products} onDelete={handleDelete} />
           {totalPages > 1 && (
-            <Pagination
-              currentPage={page + 1}
-              totalPages={totalPages}
-              onPageChange={(p) => setPage(p - 1)}
-            />
+            <div className="flex justify-center pt-2">
+              <Pagination
+                currentPage={page + 1}
+                totalPages={totalPages}
+                onPageChange={(p) => setPage(p - 1)}
+              />
+            </div>
           )}
         </>
       )}

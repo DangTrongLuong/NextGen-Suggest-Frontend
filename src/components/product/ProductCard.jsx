@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Star } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -14,7 +14,6 @@ const ProductCard = ({ product }) => {
   const inWishlist = isInWishlist(product.id);
   const inCart = isInCart(product.id);
 
-  // ✅ Normalize fields — support both API format and mapped format
   const price = product.price ?? product.basePrice ?? 0;
   const originalPrice = product.originalPrice ?? product.comparePrice ?? 0;
   const rating = product.rating ?? product.ratingAvg ?? 0;
@@ -23,7 +22,6 @@ const ProductCard = ({ product }) => {
   const hasStock = stock > 0;
   const categoryName = product.categoryName ?? product.category?.name ?? 'Sản phẩm';
 
-  // ✅ Calculate discount if not present
   const discount =
     product.discount != null
       ? product.discount
@@ -31,7 +29,6 @@ const ProductCard = ({ product }) => {
       ? Math.round((1 - price / originalPrice) * 100)
       : 0;
 
-  // ✅ Read imageUrl directly (needed for FastAPI mapped products), fallback to images array
   const primaryImage =
     product.imageUrl ??
     product.images?.find((img) => img.isPrimary === true)?.url ??
@@ -58,52 +55,52 @@ const ProductCard = ({ product }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
-      transition={{ duration: 0.2 }}
-      className="group bg-white rounded-xl overflow-hidden border border-gray-200/80 hover:border-gray-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full"
+      transition={{ duration: 0.18 }}
+      className="group bg-white rounded-xl overflow-hidden border border-slate-200/80 hover:border-slate-300 shadow-card hover:shadow-dropdown transition-all duration-200 flex flex-col justify-between h-full"
     >
-      {/* Product Image Section */}
-      <div className="relative overflow-hidden bg-gray-50 aspect-square flex-shrink-0">
+      {/* Product Image */}
+      <div className="relative overflow-hidden bg-slate-50 aspect-square flex-shrink-0">
         <Link to={`/products/${product.id}`} state={{ searchUrl: window.location.pathname + window.location.search }} onClick={handleProductClick} className="block w-full h-full">
           <img
             src={primaryImage}
             alt={product.name}
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
           />
         </Link>
 
         {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
           {product.isNew && (
-            <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-bold tracking-wider rounded-sm">
-              NEW
+            <span className="px-2 py-0.5 bg-slate-900 text-white text-[10px] font-semibold tracking-wider rounded">
+              MỚI
             </span>
           )}
           {discount > 0 && (
-            <span className="px-2 py-0.5 bg-accent text-white text-[10px] font-bold rounded-sm">
+            <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded">
               -{discount}%
             </span>
           )}
         </div>
 
-        {/* Wishlist Button - Top Right Overlay */}
+        {/* Wishlist Toggle Button */}
         <button
           onClick={() => toggleWishlist(product)}
           className={clsx(
-            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 hover:bg-white text-gray-650 hover:text-red-500 shadow-sm border border-gray-100 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100',
-            inWishlist && 'opacity-100 text-red-500 bg-white'
+            'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 hover:bg-white text-slate-500 hover:text-rose-500 shadow-xs border border-slate-200/80 transition-all duration-150 z-10 opacity-0 group-hover:opacity-100 cursor-pointer',
+            inWishlist && 'opacity-100 text-rose-500 bg-white'
           )}
+          title="Thêm vào yêu thích"
         >
-          <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} className="transition-transform duration-200 active:scale-75" />
+          <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} className="transition-transform active:scale-75" />
         </button>
 
-        {/* Out of stock overlay */}
         {!hasStock && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
-            <span className="px-2.5 py-1 bg-gray-400 text-white text-[11px] font-medium tracking-wide rounded-sm">
+          <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
+            <span className="px-2.5 py-1 bg-slate-700 text-white text-[10px] font-semibold rounded">
               Hết hàng
             </span>
           </div>
@@ -111,24 +108,21 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Info Section */}
-      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
+      <div className="p-3 flex-1 flex flex-col justify-between">
         <div>
-          {/* Category */}
-          <p className="text-[10px] text-gray-400 font-medium tracking-wide mb-1 uppercase truncate">
+          <p className="text-[10px] text-slate-400 font-semibold tracking-wider mb-1 uppercase truncate">
             {categoryName}
           </p>
 
-          {/* Recommendation Reason */}
           {product.recommendationReason && (
-            <div className="mb-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[9px] sm:text-[10px] font-semibold leading-normal max-w-full truncate">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0"></span>
+            <div className="mb-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-semibold truncate max-w-full">
+              <Sparkles size={10} className="text-emerald-500 shrink-0" />
               <span className="truncate">{product.recommendationReason}</span>
             </div>
           )}
-          
-          {/* Title */}
+
           <Link to={`/products/${product.id}`} state={{ searchUrl: window.location.pathname + window.location.search }} onClick={handleProductClick}>
-            <h3 className="text-xs sm:text-sm font-medium text-gray-900 hover:text-emerald-600 line-clamp-2 leading-snug mb-1.5 transition-colors">
+            <h3 className="text-xs font-semibold text-slate-900 hover:text-emerald-600 line-clamp-2 leading-snug mb-1.5 transition-colors">
               {product.name}
             </h3>
           </Link>
@@ -136,37 +130,29 @@ const ProductCard = ({ product }) => {
 
         <div>
           {/* Rating */}
-          <div className="flex items-center gap-1 mb-2.5 flex-wrap">
-            <div className="flex items-center text-amber-500 shrink-0">
-              <Star size={11} className="fill-current" />
-            </div>
-            <span className="text-[11px] sm:text-xs font-semibold text-gray-700">
+          <div className="flex items-center gap-1 mb-2.5">
+            <Star size={11} className="text-amber-400 fill-amber-400 shrink-0" />
+            <span className="text-[11px] font-bold text-slate-800">
               {Number(rating).toFixed(1)}
             </span>
-            <span className="text-[10px] text-gray-400 font-normal">
+            <span className="text-[10px] text-slate-400 font-medium">
               ({reviewCount})
             </span>
-            {product.views !== undefined && product.views !== null && (
-              <span className="text-[10px] text-gray-400 font-light hidden sm:inline-block ml-1">
-                • {product.views} lượt xem
-              </span>
-            )}
           </div>
 
           {/* Price & Action Row */}
-          <div className="flex items-center justify-between gap-1 pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
             <div className="flex flex-col min-w-0 flex-1 pr-1">
-              <span className="text-xs sm:text-sm font-bold text-accent truncate tracking-tight">
+              <span className="text-xs font-bold text-slate-900 truncate tracking-tight">
                 {formatPrice(price)}
               </span>
               {originalPrice > price && (
-                <span className="text-[10px] text-gray-400 line-through truncate">
+                <span className="text-[10px] text-slate-400 line-through truncate font-normal">
                   {formatPrice(originalPrice)}
                 </span>
               )}
             </div>
-            
-            {/* Add to Cart Button */}
+
             <button
               onClick={() => {
                 const isLoggedIn = !!localStorage.getItem('auth_tokens');
@@ -179,14 +165,15 @@ const ProductCard = ({ product }) => {
               }}
               disabled={!hasStock}
               className={clsx(
-                'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 border cursor-pointer',
+                'w-7 h-7 rounded-lg flex items-center justify-center transition-all flex-shrink-0 border cursor-pointer',
                 inCart
-                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                  : 'bg-emerald-50/80 border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white',
-                !hasStock && 'opacity-30 cursor-not-allowed border-gray-100 text-gray-300 bg-gray-50'
+                  ? 'bg-slate-900 border-slate-900 text-white'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-900 hover:border-slate-900 hover:text-white',
+                !hasStock && 'opacity-30 cursor-not-allowed border-slate-100 text-slate-300 bg-slate-50'
               )}
+              title="Thêm vào giỏ"
             >
-              <ShoppingCart size={12} className="sm:w-[13px] sm:h-[13px]" />
+              <ShoppingCart size={13} />
             </button>
           </div>
         </div>

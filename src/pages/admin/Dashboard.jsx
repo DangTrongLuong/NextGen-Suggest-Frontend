@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign, ShoppingBag, Users, Package,
-  TrendingUp, ArrowRight, Star, Tag, AlertTriangle, ChevronRight
+  TrendingUp, ArrowRight, Tag, AlertTriangle, ChevronRight, Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -12,25 +12,24 @@ import { ORDER_STATUS_MAP } from '../../utils/orderStatus';
 import { Spinner } from '../../components/common/Loading';
 
 const colorMap = {
-  emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-  blue: 'bg-blue-50 text-blue-600 border-blue-100',
-  purple: 'bg-purple-50 text-purple-600 border-purple-100',
-  amber: 'bg-amber-50 text-amber-600 border-amber-100',
+  emerald: 'bg-slate-100 text-slate-900 border-slate-200',
+  blue: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  purple: 'bg-slate-100 text-slate-800 border-slate-200',
+  amber: 'bg-amber-50 text-amber-700 border-amber-100',
 };
 
 const chartColors = [
-  '#16a34a', // Primary Green
-  '#3b82f6', // Blue
-  '#8b5cf6', // Purple
-  '#f59e0b', // Amber
-  '#ec4899', // Pink
-  '#6366f1', // Indigo
+  '#0f172a', // Slate 900
+  '#10b981', // Emerald 500
+  '#64748b', // Slate 500
+  '#f59e0b', // Amber 500
+  '#ec4899', // Pink 500
 ];
 
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
-  transition: { delay, duration: 0.4 },
+  transition: { delay, duration: 0.2 },
 });
 
 const Dashboard = () => {
@@ -40,8 +39,8 @@ const Dashboard = () => {
   const [categoryStats, setCategoryStats] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('30d'); // '24h' | '7d' | '30d' | '12m'
 
-  // Tooltip interactive state
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [hoveredBar, setHoveredBar] = useState(null);
 
@@ -72,17 +71,36 @@ const Dashboard = () => {
     loadDashboard();
   }, [loadDashboard]);
 
-  // Line Chart Helper
+  // Filter revenue data by selected time range
+  const filteredRevenueData = useMemo(() => {
+    if (!revenueChartData || revenueChartData.length === 0) return [];
+    if (timeRange === '24h') {
+      return revenueChartData.slice(-2);
+    }
+    if (timeRange === '7d') {
+      return revenueChartData.slice(-7);
+    }
+    if (timeRange === '12m') {
+      return revenueChartData;
+    }
+    return revenueChartData.slice(-30);
+  }, [revenueChartData, timeRange]);
+
+  const totalRevenueInPeriod = useMemo(() => {
+    return filteredRevenueData.reduce((sum, d) => sum + (d.revenue || 0), 0);
+  }, [filteredRevenueData]);
+
   const lineChart = useMemo(() => {
-    if (revenueChartData.length < 2) return null;
+    if (filteredRevenueData.length === 0) return null;
     const width = 500;
     const height = 160;
     const padding = 20;
 
-    const maxVal = Math.max(...revenueChartData.map(d => d.revenue), 100000);
+    const maxVal = Math.max(...filteredRevenueData.map(d => d.revenue), 100000);
 
-    const points = revenueChartData.map((d, index) => {
-      const x = padding + (index / (revenueChartData.length - 1)) * (width - 2 * padding);
+    const points = filteredRevenueData.map((d, index) => {
+      const divisor = filteredRevenueData.length > 1 ? filteredRevenueData.length - 1 : 1;
+      const x = padding + (index / divisor) * (width - 2 * padding);
       const y = height - padding - (d.revenue / maxVal) * (height - 2 * padding);
       return { x, y, date: d.date, value: d.revenue };
     });
@@ -91,9 +109,8 @@ const Dashboard = () => {
     const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
 
     return { points, linePath, areaPath, width, height, maxVal };
-  }, [revenueChartData]);
+  }, [filteredRevenueData]);
 
-  // Bar Chart Helper (Last 10 days of orders)
   const barChart = useMemo(() => {
     const data = revenueChartData.slice(-10);
     if (data.length === 0) return null;
@@ -105,13 +122,13 @@ const Dashboard = () => {
 
     const bars = data.map((d, index) => {
       const colWidth = (width - 2 * padding) / data.length;
-      const x = padding + index * colWidth + 5;
+      const x = padding + index * colWidth + 4;
       const barHeight = (d.orders / maxVal) * (height - 2 * padding);
       const y = height - padding - barHeight;
       return {
         x,
         y,
-        w: colWidth - 10,
+        w: colWidth - 8,
         h: Math.max(barHeight, 2),
         date: d.date,
         value: d.orders
@@ -121,14 +138,32 @@ const Dashboard = () => {
     return { bars, width, height, maxVal };
   }, [revenueChartData]);
 
-  // Donut Chart Helper
-  const donutChart = useMemo(() => {
-    if (categoryStats.length === 0) return null;
-    const r = 70;
-    const circ = 2 * Math.PI * r;
+  // Clean Grouped Category Donut Chart (Top 4 + Others)
+  const groupedCategoryChart = useMemo(() => {
+    if (!categoryStats || categoryStats.length === 0) return null;
 
+    const sorted = [...categoryStats].sort((a, b) => b.count - a.count);
+    const totalCountAll = sorted.reduce((sum, item) => sum + item.count, 0);
+
+    let topSlices = [];
+    if (sorted.length <= 4) {
+      topSlices = sorted;
+    } else {
+      const mainSlices = sorted.slice(0, 4);
+      const otherCount = sorted.slice(4).reduce((sum, item) => sum + item.count, 0);
+      const otherPercentage = totalCountAll > 0 ? parseFloat(((otherCount / totalCountAll) * 100).toFixed(1)) : 0;
+
+      topSlices = [
+        ...mainSlices,
+        { name: 'Các danh mục khác', count: otherCount, percentage: otherPercentage }
+      ];
+    }
+
+    const r = 64;
+    const circ = 2 * Math.PI * r;
     let accumulatedPercent = 0;
-    const slices = categoryStats.map((slice, index) => {
+
+    const slices = topSlices.map((slice, index) => {
       const strokeDasharray = `${(slice.percentage / 100) * circ} ${circ}`;
       const strokeDashoffset = -((accumulatedPercent / 100) * circ);
       accumulatedPercent += slice.percentage;
@@ -140,7 +175,7 @@ const Dashboard = () => {
       };
     });
 
-    return { slices, r, circ };
+    return { slices, r, circ, totalProducts: totalCountAll };
   }, [categoryStats]);
 
   if (loading || !stats) {
@@ -152,125 +187,142 @@ const Dashboard = () => {
   }
 
   const statCards = [
-    { label: 'Doanh thu', value: formatPrice(stats.totalRevenue || 0), icon: DollarSign, color: 'emerald' },
-    { label: 'Đơn hàng', value: stats.totalOrders, icon: ShoppingBag, color: 'blue' },
+    { label: 'Tổng doanh thu', value: formatPrice(stats.totalRevenue || 0), icon: DollarSign, color: 'emerald' },
+    { label: 'Tổng đơn hàng', value: stats.totalOrders, icon: ShoppingBag, color: 'blue' },
     { label: 'Khách hàng', value: stats.totalCustomers, icon: Users, color: 'purple' },
-    { label: 'Sản phẩm', value: stats.totalProducts, icon: Package, color: 'amber' },
+    { label: 'Tổng sản phẩm', value: stats.totalProducts, icon: Package, color: 'amber' },
+  ];
+
+  const timeFilterButtons = [
+    { key: '24h', label: '24h' },
+    { key: '7d', label: '7 Ngày' },
+    { key: '30d', label: '30 Ngày' },
+    { key: '12m', label: 'Tất cả' },
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-8">
       
-      {/* ── STATS CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {statCards.map(({ label, value, icon: Icon, color }, i) => (
           <motion.div
             key={label}
-            {...fadeUp(i * 0.08)}
-            className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-all duration-300"
+            {...fadeUp(i * 0.05)}
+            className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${colorMap[color]}`}>
-                <Icon size={22} />
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorMap[color]}`}>
+                <Icon size={18} />
               </div>
               <TrendingUp size={14} className="text-emerald-500" />
             </div>
-            <p className="text-2xl font-black text-gray-900 leading-tight">{value}</p>
-            <p className="text-sm font-semibold text-gray-400 mt-1">{label}</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">{value}</p>
+            <p className="text-xs font-semibold text-slate-500 mt-1">{label}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* ── ALERT CARDS ── */}
+      {/* Alert Banners */}
       <div className="grid sm:grid-cols-3 gap-4">
-        <motion.div {...fadeUp(0.35)} className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <motion.div {...fadeUp(0.2)} className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between shadow-card">
           <div>
             <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">Đơn chờ xử lý</p>
-            <p className="text-3xl font-black text-amber-700 mt-1">{stats.pendingOrders}</p>
+            <p className="text-2xl font-extrabold text-amber-900 mt-0.5">{stats.pendingOrders}</p>
           </div>
-          <Link to="/admin/orders" className="text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-100/60 px-3 py-1.5 rounded-xl transition-colors">
-            Xử lý ngay
+          <Link to="/admin/orders" className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors">
+            Xử lý
           </Link>
         </motion.div>
         
-        <motion.div {...fadeUp(0.40)} className="bg-blue-50/50 border border-blue-200/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <motion.div {...fadeUp(0.25)} className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 flex items-center justify-between shadow-card">
           <div>
-            <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Đang giao hàng</p>
-            <p className="text-3xl font-black text-blue-700 mt-1">{stats.processingOrders}</p>
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Đang giao hàng</p>
+            <p className="text-2xl font-extrabold text-emerald-900 mt-0.5">{stats.processingOrders}</p>
           </div>
-          <Link to="/admin/orders" className="text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-100/60 px-3 py-1.5 rounded-xl transition-colors">
+          <Link to="/admin/orders" className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-lg hover:bg-emerald-200 transition-colors">
             Xem ngay
           </Link>
         </motion.div>
 
-        <motion.div {...fadeUp(0.45)} className="bg-red-50/50 border border-red-200/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <motion.div {...fadeUp(0.3)} className="bg-rose-50/60 border border-rose-200/80 rounded-2xl p-4 flex items-center justify-between shadow-card">
           <div>
-            <p className="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-1.5">
+            <p className="text-xs font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1">
               <AlertTriangle size={13} /> Sắp hết hàng
             </p>
-            <p className="text-3xl font-black text-red-700 mt-1">{stats.lowStockProducts}</p>
+            <p className="text-2xl font-extrabold text-rose-900 mt-0.5">{stats.lowStockProducts}</p>
           </div>
-          <Link to="/admin/products" className="text-xs font-bold text-red-700 hover:text-red-900 bg-red-100/60 px-3 py-1.5 rounded-xl transition-colors">
-            Nhập hàng
+          <Link to="/admin/products" className="text-xs font-bold text-rose-800 bg-rose-100 px-3 py-1.5 rounded-lg hover:bg-rose-200 transition-colors">
+            Nhập kho
           </Link>
         </motion.div>
       </div>
 
-      {/* ── CHARTS SECTION ── */}
+      {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Line Chart: Revenue over Time */}
-        <motion.div {...fadeUp(0.5)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
+        {/* Revenue Line Chart with 24h / 7d / 30d / 12m filters */}
+        <motion.div {...fadeUp(0.35)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="font-extrabold text-gray-900">Doanh thu theo thời gian</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Biểu đồ doanh thu 30 ngày gần đây</p>
-            </div>
-            {hoveredPoint && (
-              <div className="text-right">
-                <span className="text-xs font-bold text-gray-400">{hoveredPoint.date}</span>
-                <p className="text-sm font-black text-emerald-600">{formatPrice(hoveredPoint.value)}</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900">Doanh thu</h3>
+                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                  {formatPrice(totalRevenueInPeriod)}
+                </span>
               </div>
-            )}
+            </div>
+
+            {/* Time Filter Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+              {timeFilterButtons.map((btn) => (
+                <button
+                  key={btn.key}
+                  onClick={() => setTimeRange(btn.key)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                    timeRange === btn.key
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {hoveredPoint && (
+            <div className="mb-2 text-right">
+              <span className="text-[10px] font-bold text-slate-400">{hoveredPoint.date}</span>
+              <p className="text-xs font-extrabold text-slate-900">{formatPrice(hoveredPoint.value)}</p>
+            </div>
+          )}
 
           {lineChart ? (
             <div className="relative w-full aspect-[2.5/1]">
               <svg className="w-full h-full" viewBox={`0 0 ${lineChart.width} ${lineChart.height}`} preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#16a34a" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
-                {/* Grid Lines */}
-                <line x1="20" y1="20" x2="480" y2="20" stroke="#f3f4f6" strokeWidth="1" />
-                <line x1="20" y1="80" x2="480" y2="80" stroke="#f3f4f6" strokeWidth="1" />
-                <line x1="20" y1="140" x2="480" y2="140" stroke="#e5e7eb" strokeWidth="1" />
+                <line x1="20" y1="20" x2="480" y2="20" stroke="#f1f5f9" strokeWidth="1" />
+                <line x1="20" y1="80" x2="480" y2="80" stroke="#f1f5f9" strokeWidth="1" />
+                <line x1="20" y1="140" x2="480" y2="140" stroke="#e2e8f0" strokeWidth="1" />
 
-                {/* Shaded Area */}
                 <path d={lineChart.areaPath} fill="url(#areaGrad)" />
+                <path d={lineChart.linePath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
-                {/* Line */}
-                <path
-                  d={lineChart.linePath}
-                  fill="none"
-                  stroke="#16a34a"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                {/* Active hover points */}
                 {lineChart.points.map((p, idx) => (
                   <circle
                     key={idx}
                     cx={p.x}
                     cy={p.y}
-                    r={hoveredPoint?.date === p.date ? 6 : 4}
-                    fill={hoveredPoint?.date === p.date ? '#16a34a' : '#ffffff'}
-                    stroke="#16a34a"
-                    strokeWidth="2.5"
+                    r={hoveredPoint?.date === p.date ? 5 : 3}
+                    fill={hoveredPoint?.date === p.date ? '#10b981' : '#ffffff'}
+                    stroke="#10b981"
+                    strokeWidth="2"
                     className="cursor-pointer transition-all"
                     onMouseEnter={() => setHoveredPoint(p)}
                     onMouseLeave={() => setHoveredPoint(null)}
@@ -279,21 +331,20 @@ const Dashboard = () => {
               </svg>
             </div>
           ) : (
-            <p className="text-center text-gray-400 py-12 text-sm font-medium">Chưa đủ dữ liệu để vẽ biểu đồ</p>
+            <p className="text-center text-slate-400 py-12 text-xs font-medium">Chưa phát sinh doanh thu trong khoảng thời gian này</p>
           )}
         </motion.div>
 
-        {/* Bar Chart: Orders per Day */}
-        <motion.div {...fadeUp(0.55)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
+        {/* Orders Bar Chart */}
+        <motion.div {...fadeUp(0.4)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-3">
             <div>
-              <h3 className="font-extrabold text-gray-900">Số lượng đơn hàng</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Thống kê số đơn hàng 10 ngày gần đây</p>
+              <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900">Số đơn 10 ngày gần nhất</h3>
             </div>
             {hoveredBar && (
               <div className="text-right">
-                <span className="text-xs font-bold text-gray-400">{hoveredBar.date}</span>
-                <p className="text-sm font-black text-blue-600">{hoveredBar.value} đơn hàng</p>
+                <span className="text-[10px] font-bold text-slate-400">{hoveredBar.date}</span>
+                <p className="text-xs font-extrabold text-slate-900">{hoveredBar.value} đơn hàng</p>
               </div>
             )}
           </div>
@@ -301,12 +352,10 @@ const Dashboard = () => {
           {barChart ? (
             <div className="relative w-full aspect-[2.5/1]">
               <svg className="w-full h-full" viewBox={`0 0 ${barChart.width} ${barChart.height}`} preserveAspectRatio="none">
-                {/* Grid Lines */}
-                <line x1="20" y1="20" x2="480" y2="20" stroke="#f3f4f6" strokeWidth="1" />
-                <line x1="20" y1="80" x2="480" y2="80" stroke="#f3f4f6" strokeWidth="1" />
-                <line x1="20" y1="140" x2="480" y2="140" stroke="#e5e7eb" strokeWidth="1" />
+                <line x1="20" y1="20" x2="480" y2="20" stroke="#f1f5f9" strokeWidth="1" />
+                <line x1="20" y1="80" x2="480" y2="80" stroke="#f1f5f9" strokeWidth="1" />
+                <line x1="20" y1="140" x2="480" y2="140" stroke="#e2e8f0" strokeWidth="1" />
 
-                {/* Bars */}
                 {barChart.bars.map((bar, idx) => (
                   <rect
                     key={idx}
@@ -314,9 +363,9 @@ const Dashboard = () => {
                     y={bar.y}
                     width={bar.w}
                     height={bar.h}
-                    rx="4"
-                    fill={hoveredBar?.date === bar.date ? '#16a34a' : '#22c55e'}
-                    className="cursor-pointer transition-all duration-200"
+                    rx="3"
+                    fill={hoveredBar?.date === bar.date ? '#10b981' : '#0f172a'}
+                    className="cursor-pointer transition-colors"
                     onMouseEnter={() => setHoveredBar(bar)}
                     onMouseLeave={() => setHoveredBar(null)}
                   />
@@ -324,88 +373,104 @@ const Dashboard = () => {
               </svg>
             </div>
           ) : (
-            <p className="text-center text-gray-400 py-12 text-sm font-medium">Chưa có dữ liệu đơn hàng</p>
+            <p className="text-center text-slate-400 py-12 text-xs font-medium">Chưa có dữ liệu đơn hàng</p>
           )}
         </motion.div>
       </div>
 
+      {/* Secondary Row: Category Structure & Top Selling Products */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Category Stats Donut Chart */}
-        <motion.div {...fadeUp(0.6)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 lg:col-span-1 flex flex-col justify-between">
+        {/* Redesigned Clean Category Donut Chart (Top 4 + Others) */}
+        <motion.div {...fadeUp(0.45)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 lg:col-span-1 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900">Cơ cấu ngành hàng</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Phân bố sản phẩm theo danh mục chính</p>
+            <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900">Cơ cấu danh mục</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Phân bổ sản phẩm theo nhóm danh mục chính</p>
           </div>
 
-          {donutChart ? (
-            <div className="flex flex-col items-center py-6 justify-center">
-              <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 200 200">
-                {donutChart.slices.map((slice, idx) => (
-                  <circle
-                    key={idx}
-                    cx="100"
-                    cy="100"
-                    r={donutChart.r}
-                    fill="transparent"
-                    stroke={slice.color}
-                    strokeWidth="20"
-                    strokeDasharray={slice.strokeDasharray}
-                    strokeDashoffset={slice.strokeDashoffset}
-                    className="transition-all duration-500"
-                  />
-                ))}
-              </svg>
+          {groupedCategoryChart ? (
+            <div className="flex flex-col items-center py-4 justify-center">
+              
+              {/* Donut with Total Products in Center */}
+              <div className="relative w-40 h-40 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                  {groupedCategoryChart.slices.map((slice, idx) => (
+                    <circle
+                      key={idx}
+                      cx="100"
+                      cy="100"
+                      r={groupedCategoryChart.r}
+                      fill="transparent"
+                      stroke={slice.color}
+                      strokeWidth="16"
+                      strokeDasharray={slice.strokeDasharray}
+                      strokeDashoffset={slice.strokeDashoffset}
+                      className="transition-all duration-300"
+                    />
+                  ))}
+                </svg>
+                
+                {/* Center text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xl font-extrabold text-slate-900 leading-none">
+                    {groupedCategoryChart.totalProducts}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                    Sản phẩm
+                  </span>
+                </div>
+              </div>
 
-              <div className="w-full mt-6 space-y-2">
-                {donutChart.slices.slice(0, 4).map((slice, idx) => (
+              {/* Clean Legend List */}
+              <div className="w-full mt-5 space-y-2">
+                {groupedCategoryChart.slices.map((slice, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: slice.color }} />
-                      <span className="text-gray-700 font-semibold truncate max-w-[120px]">{slice.name}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                      <span className="text-slate-800 font-semibold truncate max-w-[140px]">{slice.name}</span>
                     </div>
-                    <span className="text-gray-400 font-bold font-mono">
-                      {slice.count} SP ({slice.percentage}%)
+                    <span className="text-slate-600 font-bold shrink-0">
+                      {slice.count} SP <span className="text-slate-400 font-normal">({slice.percentage}%)</span>
                     </span>
                   </div>
                 ))}
               </div>
+
             </div>
           ) : (
-            <p className="text-center text-gray-400 py-12 text-sm font-medium">Chưa có dữ liệu danh mục</p>
+            <p className="text-center text-slate-400 py-12 text-xs font-medium">Chưa có dữ liệu danh mục</p>
           )}
         </motion.div>
 
         {/* Top Selling Products List */}
-        <motion.div {...fadeUp(0.65)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 lg:col-span-2 flex flex-col justify-between">
+        <motion.div {...fadeUp(0.5)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 lg:col-span-2 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900">Sản phẩm bán chạy nhất</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Top 5 sản phẩm có sản lượng cao nhất</p>
+            <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 mb-3">Top bán chạy nhất</h3>
           </div>
 
-          <div className="py-4 space-y-4">
+          <div className="space-y-3.5">
             {topProducts.length === 0 ? (
-              <p className="text-center text-gray-400 py-12 text-sm font-medium">Chưa có dữ liệu bán chạy</p>
+              <p className="text-center text-slate-400 py-12 text-xs font-medium">Chưa có dữ liệu bán chạy</p>
             ) : (() => {
               const maxSold = Math.max(...topProducts.map(p => p.soldCount), 1);
               return topProducts.map((p, idx) => {
                 const percentage = (p.soldCount / maxSold) * 100;
                 return (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-800">
-                      <span className="truncate max-w-[300px]">{p.name}</span>
-                      <span className="text-emerald-600">{formatPrice(p.revenue)}</span>
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between items-center text-xs font-bold text-slate-800">
+                      <span className="truncate max-w-[280px]">{p.name}</span>
+                      <span className="text-slate-900 font-extrabold">{formatPrice(p.revenue)}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${percentage}%` }}
-                          transition={{ duration: 0.8, ease: 'easeOut' }}
-                          className="h-full bg-emerald-500 rounded-full"
+                          transition={{ duration: 0.5 }}
+                          className="h-full bg-emerald-600 rounded-full"
                         />
                       </div>
-                      <span className="text-xs font-extrabold text-gray-500 whitespace-nowrap min-w-[70px] text-right">
+                      <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
                         {p.soldCount} lượt bán
                       </span>
                     </div>
@@ -417,30 +482,30 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
+      {/* Bottom Row: Recent Orders & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Orders List */}
-        <motion.div {...fadeUp(0.7)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-gray-900">Đơn hàng gần đây</h3>
-            <Link to="/admin/orders" className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-semibold group">
-              Quản lý đơn hàng <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+        <motion.div {...fadeUp(0.55)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900">Đơn hàng gần đây</h3>
+            <Link to="/admin/orders" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
+              Quản lý đơn hàng <ChevronRight size={13} />
             </Link>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {recentOrders.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-6">Chưa có đơn hàng nào</p>
+              <p className="text-xs text-slate-400 text-center py-6">Chưa có đơn hàng nào</p>
             )}
             {recentOrders.map((order) => {
               const statusInfo = ORDER_STATUS_MAP[order.status] || ORDER_STATUS_MAP.pending;
               return (
-                <div key={order.id} className="flex items-center justify-between p-3.5 bg-gray-50/50 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-colors">
+                <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-100/50 rounded-xl border border-slate-100 transition-colors text-xs">
                   <div>
-                    <p className="text-sm font-extrabold text-gray-900">{order.orderNumber}</p>
-                    <p className="text-xs text-gray-400 font-semibold mt-0.5">{order.customerName || 'Khách vãng lai'}</p>
+                    <p className="font-bold text-slate-900">#{order.orderNumber}</p>
+                    <p className="text-[11px] text-slate-500 font-medium">{order.customerName || 'Khách vãng lai'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-gray-900">{formatPrice(order.totalAmount)}</p>
-                    <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full mt-1 uppercase ${statusInfo.color}`}>
+                    <p className="font-extrabold text-slate-900">{formatPrice(order.totalAmount)}</p>
+                    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded mt-0.5 uppercase ${statusInfo.color}`}>
                       {statusInfo.label}
                     </span>
                   </div>
@@ -450,24 +515,23 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Quick Actions Panel */}
-        <motion.div {...fadeUp(0.75)} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 lg:col-span-1">
-          <h3 className="font-bold text-gray-900 mb-5">Thao tác nhanh</h3>
-          <div className="grid grid-cols-1 gap-3">
+        <motion.div {...fadeUp(0.6)} className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 lg:col-span-1">
+          <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 mb-4">Thao tác nhanh</h3>
+          <div className="grid grid-cols-1 gap-2 text-xs font-bold">
             <Link to="/admin/products/add"
-              className="flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-md shadow-emerald-100">
-              <Package size={15} /> Thêm sản phẩm mới
+              className="flex items-center justify-center gap-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors shadow-xs uppercase tracking-wider">
+              <Package size={14} /> Thêm sản phẩm
             </Link>
             <Link to="/admin/categories/add"
-              className="flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-md shadow-blue-100">
-              <Tag size={15} /> Thêm danh mục mới
+              className="flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl transition-colors uppercase tracking-wider">
+              <Tag size={14} /> Thêm danh mục
             </Link>
             <Link to="/admin/customers"
-              className="flex items-center justify-center py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-2xl transition-colors">
-              Xem danh sách khách hàng
+              className="flex items-center justify-center py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition-colors uppercase tracking-wider">
+              Danh sách khách hàng
             </Link>
             <Link to="/" target="_blank"
-              className="flex items-center justify-center py-3 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 text-sm font-bold rounded-2xl transition-all">
+              className="flex items-center justify-center py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition-colors">
               Xem trang mua sắm ↗
             </Link>
           </div>

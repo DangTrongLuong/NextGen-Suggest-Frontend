@@ -53,35 +53,33 @@ const Verify = () => {
     if (cooldown > 0) return;
     const result = await resendCode(email);
     if (result.success) {
-      setCooldown(60); // 60s cooldown
+      setCooldown(60);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#fafbfd]">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className="w-full max-w-md"
       >
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-600" />
-          
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-              <ShieldCheck size={36} />
+        <div className="bg-white rounded-2xl shadow-card border border-slate-200/80 p-8">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
+              <ShieldCheck size={24} />
             </div>
           </div>
 
-          <h1 className="text-2xl font-black text-center text-gray-900 mb-2">Xác thực tài khoản</h1>
-          <p className="text-center text-gray-500 text-sm mb-6">
-            Chúng tôi đã gửi mã kích hoạt gồm 8 chữ số đến email: <br />
-            <span className="font-semibold text-gray-800 break-all">{email}</span>
+          <h1 className="text-xl font-extrabold text-center text-slate-900 mb-1 uppercase tracking-tight">Xác thực tài khoản</h1>
+          <p className="text-center text-slate-500 text-xs mb-6">
+            Mã kích hoạt 8 chữ số đã được gửi đến email: <br />
+            <span className="font-bold text-slate-900 break-all">{email}</span>
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Nhập mã xác nhận (8 chữ số)"
+              label="Mã xác nhận (8 chữ số)"
               placeholder="12345678"
               value={code}
               onChange={(e) => {
@@ -90,32 +88,34 @@ const Verify = () => {
               }}
               error={error}
               icon={Mail}
-              className="text-center tracking-[0.2em] font-mono text-lg"
+              className="text-center tracking-[0.2em] font-mono text-base"
               required
             />
 
-            <Button type="submit" fullWidth size="lg" loading={loading}>
-              <span className="flex items-center justify-center gap-2">
-                Kích hoạt tài khoản <ArrowRight size={18} />
-              </span>
-            </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {loading ? 'Đang kích hoạt...' : 'Kích hoạt ngay'}
+            </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Không nhận được mã?{' '}
+          <div className="mt-5 text-center">
+            <p className="text-xs text-slate-500">
+              Chưa nhận được mã?{' '}
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={cooldown > 0}
-                className={`font-semibold transition-all inline-flex items-center gap-1 ${
+                className={`font-bold transition-colors inline-flex items-center gap-1 cursor-pointer ${
                   cooldown > 0
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-emerald-600 hover:text-emerald-700'
+                    ? 'text-slate-400 cursor-not-allowed'
+                    : 'text-slate-900 hover:underline'
                 }`}
               >
-                <RefreshCw size={14} className={cooldown > 0 ? '' : 'animate-spin-slow'} />
-                {cooldown > 0 ? `Gửi lại sau (${cooldown}s)` : 'Gửi lại mã'}
+                <RefreshCw size={13} />
+                {cooldown > 0 ? `Gửi lại (${cooldown}s)` : 'Gửi lại mã'}
               </button>
             </p>
           </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart, Heart, Search, User, Menu, X,
-  ChevronDown, LogOut, Settings, Package
+  ChevronDown, LogOut, Settings, Package, Sparkles
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
@@ -12,7 +12,6 @@ import { useWishlist } from '../../context/WishlistContext';
 import LoginModal from '../common/LoginModal';
 import logoNivora from '../../assets/logo-nivora.jpg';
 import toast from 'react-hot-toast';
-import { formatPrice } from '../../utils/formatPrice';
 import SearchPopup from './SearchPopup';
 
 const navLinks = [
@@ -38,18 +37,16 @@ const Header = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Synchronize search query state with the URL query parameter
   const urlSearch = searchParams.get('search') || '';
   useEffect(() => {
     setSearchQuery(urlSearch);
   }, [urlSearch]);
 
-  // Typewriter placeholder phrases
   const placeholderPhrases = useMemo(() => [
-    'Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ, kệ tủ...',
-    'Tìm kiếm áo thun, quần jean, áo khoác, váy đầm, thời trang nam nữ...',
-    'Tìm kiếm giày thể thao, giày tây, túi xách thời thượng, ví da...',
-    'Tìm kiếm thảm trải sàn, đèn ngủ thông minh, đồ trang trí tinh tế cho ngôi nhà bạn...'
+    'Tìm kiếm bàn làm việc, ghế xoay, sofa, giường ngủ...',
+    'Tìm kiếm thời trang nam nữ, áo thun, quần jean, áo khoác...',
+    'Tìm kiếm giày thể thao, giày tây, túi xách thời thượng...',
+    'Tìm kiếm thảm trải sàn, đèn ngủ thông minh, đồ trang trí...'
   ], []);
 
   const [placeholder, setPlaceholder] = useState('');
@@ -87,8 +84,6 @@ const Header = () => {
     tick();
     return () => clearTimeout(timer);
   }, [placeholderPhrases]);
-
-
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -151,35 +146,30 @@ const Header = () => {
     <>
       <header
         className={clsx(
-          'fixed top-0 left-0 right-0 z-40 transition-all duration-500',
+          'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
           scrolled
-            ? 'bg-white shadow-sm border-b border-gray-100'
-            : 'bg-white'
+            ? 'glass-header shadow-xs'
+            : 'bg-white border-b border-slate-100'
         )}
       >
         <div className="max-w-[96%] xl:max-w-[94%] mx-auto w-full px-4 sm:px-6">
           <div className="flex items-center justify-between h-16 lg:h-[68px] gap-4">
 
-            {/* Group Logo + Desktop Nav together on the left */}
+            {/* Logo & Navigation */}
             <div className="flex items-center gap-8">
-              {/* ── Logo ── */}
-              <Link
-                to="/"
-                className="flex items-center gap-3 flex-shrink-0 group"
-              >
+              <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
                 <motion.img
                   src={logoNivora}
                   alt="NIVORA"
-                  whileHover={{ scale: 1.04 }}
+                  whileHover={{ scale: 1.03 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                  className="h-9 w-auto object-contain rounded-xl shadow-sm group-hover:shadow-glow-sm transition-shadow duration-300"
+                  className="h-9 w-auto object-contain rounded-lg border border-slate-200/80 shadow-xs"
                 />
-                <span className="text-2xl font-extrabold tracking-wide text-gray-900 group-hover:text-emerald-600 transition-colors duration-300">
+                <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors">
                   NIVORA
                 </span>
               </Link>
 
-              {/* ── Desktop Nav ── */}
               <nav className="hidden md:flex items-center gap-1">
                 {navLinks.map((link) => (
                   <Link
@@ -187,67 +177,64 @@ const Header = () => {
                     to={link.to}
                     onClick={(e) => handleNavLinkClick(e, link)}
                     className={clsx(
-                      'relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                      'relative px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
                       location.pathname === link.to
-                        ? 'text-emerald-700 bg-emerald-50'
-                        : 'text-gray-650 hover:text-gray-900 hover:bg-gray-50/80'
+                        ? 'text-slate-900 font-semibold bg-slate-100/80'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     )}
                   >
                     {link.label}
-                    {location.pathname === link.to && (
-                      <motion.div
-                        layoutId="nav-indicator"
-                        className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-emerald-600 rounded-full"
-                      />
-                    )}
                   </Link>
                 ))}
               </nav>
             </div>
 
-            {/* ── Search Bar (desktop center) ── */}
-            <div ref={searchRef} className="hidden md:flex flex-1 max-w-[450px] lg:max-w-[500px] xl:max-w-[550px] mx-4 relative">
+            {/* Prominent Central AI Search Input */}
+            <div ref={searchRef} className="hidden md:flex flex-1 max-w-[480px] lg:max-w-[540px] xl:max-w-[600px] mx-4 relative">
               <form onSubmit={handleSearchSubmit} className="w-full">
                 <div className={clsx(
-                  'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-300',
+                  'flex items-center gap-2.5 px-4 py-2 rounded-xl border transition-all duration-200',
                   searchFocused
-                    ? 'bg-white border-emerald-400 shadow-md shadow-emerald-100 ring-2 ring-emerald-200'
-                    : 'bg-gray-50/80 border-gray-200 hover:border-gray-300 hover:bg-white'
+                    ? 'bg-white border-emerald-500 ring-3 ring-emerald-500/10 shadow-sm'
+                    : 'bg-slate-50/80 border-slate-200 hover:border-slate-300 hover:bg-white'
                 )}>
-                  <Search size={15} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-500' : 'text-gray-400')} />
+                  <Search size={16} className={clsx('flex-shrink-0 transition-colors', searchFocused ? 'text-emerald-600' : 'text-slate-400')} />
                   <input
                     value={searchQuery}
                     maxLength={100}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
-                    placeholder={placeholder || 'Tìm kiếm sản phẩm (tối đa 100 ký tự)...'}
-                    className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
+                    placeholder={placeholder || 'Tìm kiếm sản phẩm thông minh...'}
+                    className="flex-1 bg-transparent text-sm outline-none text-slate-900 placeholder-slate-400 min-w-0 font-normal"
                   />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSearchResults([]);
-                        setSearchParams((prev) => {
-                          const next = new URLSearchParams(prev);
-                          next.delete('search');
-                          next.set('page', '1');
-                          return next;
-                        });
-                        if (!location.pathname.startsWith('/products')) {
-                          navigate('/products');
-                        }
-                      }}
-                      className="cursor-pointer flex items-center justify-center"
-                    >
-                      <X size={14} className="text-gray-400 hover:text-gray-600" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="hidden lg:flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-md border border-emerald-100">
+                      <Sparkles size={11} className="text-emerald-500" /> AI Search
+                    </span>
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            next.delete('search');
+                            next.set('page', '1');
+                            return next;
+                          });
+                          if (!location.pathname.startsWith('/products')) {
+                            navigate('/products');
+                          }
+                        }}
+                        className="cursor-pointer flex items-center justify-center p-1 text-slate-400 hover:text-slate-600"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </form>
 
-              {/* Search popup & suggestions */}
               <AnimatePresence>
                 <SearchPopup
                   isOpen={searchFocused}
@@ -262,118 +249,99 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            {/* ── Right Actions ── */}
-            <div className="flex items-center gap-0.5">
-
-              {/* Mobile search icon */}
+            {/* Right User & Cart Actions */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setSearchFocused(!searchFocused)}
-                className="md:hidden p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
                 <Search size={20} />
               </button>
 
-              {/* Wishlist */}
               <Link
                 to="/wishlist"
-                className="relative p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 group"
+                className="relative p-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors group"
+                title="Danh sách yêu thích"
               >
-                <Heart size={20} className="group-hover:scale-110 transition-transform" />
-                <AnimatePresence>
-                  {wishlist.length > 0 && (
-                    <motion.span
-                      key={wishlist.length}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold"
-                    >
-                      {wishlist.length}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <Heart size={20} className="group-hover:scale-105 transition-transform" />
+                {wishlist.length > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {wishlist.length}
+                  </span>
+                )}
               </Link>
 
-              {/* Cart */}
               <Link
                 to="/cart"
-                className="relative p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 group"
+                className="relative p-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors group"
+                title="Giỏ hàng"
               >
-                <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
-                <AnimatePresence>
-                  {cartCount > 0 && (
-                    <motion.span
-                      key={cartCount}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-emerald-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold"
-                    >
-                      {cartCount > 9 ? '9+' : cartCount}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <ShoppingCart size={20} className="group-hover:scale-105 transition-transform" />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-slate-900 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
               </Link>
 
-              {/* User / Login */}
               {user ? (
                 <div ref={userMenuRef} className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
                   >
                     <img
-                      src={user.avatar || user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=16a34a&color=fff`}
+                      src={user.avatar || user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=0f172a&color=fff`}
                       alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover bg-gray-250 ring-2 ring-emerald-100"
+                      className="w-8 h-8 rounded-full object-cover border border-slate-200"
                     />
                     <ChevronDown
                       size={14}
-                      className={clsx('text-gray-500 hidden sm:block transition-transform duration-200', userMenuOpen && 'rotate-180')}
+                      className={clsx('text-slate-500 hidden sm:block transition-transform duration-200', userMenuOpen && 'rotate-180')}
                     />
                   </button>
                   <AnimatePresence>
                     {userMenuOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                        transition={{ duration: 0.18 }}
-                        className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden py-2 z-50"
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-dropdown border border-slate-100 overflow-hidden py-1.5 z-50"
                       >
-                        <div className="px-4 py-3 border-b border-gray-100">
-                          <p className="text-sm font-bold text-gray-900">{user.name}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
+                        <div className="px-4 py-2.5 border-b border-slate-100">
+                          <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                         </div>
                         <Link
                           to="/profile"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                          <User size={15} /> Tài khoản của tôi
+                          <User size={14} /> Tài khoản của tôi
                         </Link>
                         <Link
                           to="/orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                          <Package size={15} /> Đơn hàng của tôi
+                          <Package size={14} /> Đơn hàng của tôi
                         </Link>
                         {isAdmin && (
                           <Link
                             to="/admin"
                             onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
-                            <Settings size={15} /> Quản trị
+                            <Settings size={14} /> Quản trị
                           </Link>
                         )}
-                        <div className="border-t border-gray-100 mt-1 pt-1">
+                        <div className="border-t border-slate-100 mt-1 pt-1">
                           <button
                             onClick={() => { logout(); setUserMenuOpen(false); }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
                           >
-                            <LogOut size={15} /> Đăng xuất
+                            <LogOut size={14} /> Đăng xuất
                           </button>
                         </div>
                       </motion.div>
@@ -383,34 +351,23 @@ const Header = () => {
               ) : (
                 <button
                   onClick={() => setLoginModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-200 shine"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-lg hover:bg-slate-800 transition-all duration-200 cursor-pointer shadow-xs"
                 >
-                  <User size={15} /> Đăng nhập
+                  <User size={14} /> Đăng nhập
                 </button>
               )}
 
-              {/* Mobile menu toggle */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors ml-1"
+                className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors ml-1"
               >
-                <AnimatePresence mode="wait">
-                  {mobileOpen ? (
-                    <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                      <X size={20} />
-                    </motion.div>
-                  ) : (
-                    <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                      <Menu size={20} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Search Modal Overlay */}
+        {/* Mobile Search Overlay */}
         <AnimatePresence>
           {searchFocused && (
             <motion.div
@@ -420,18 +377,17 @@ const Header = () => {
               transition={{ duration: 0.2 }}
               className="md:hidden fixed inset-0 z-50 bg-white flex flex-col"
             >
-              {/* Header inside Mobile Search Modal */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white shrink-0">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 bg-white shrink-0">
                 <form onSubmit={handleSearchSubmit} className="flex-1">
-                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-gray-100 rounded-2xl border border-emerald-400 ring-2 ring-emerald-100 transition-all">
-                    <Search size={16} className="text-emerald-500 flex-shrink-0" />
+                  <div className="flex items-center gap-2.5 px-3.5 py-2 bg-slate-100 rounded-xl border border-emerald-400 transition-all">
+                    <Search size={16} className="text-emerald-600 flex-shrink-0" />
                     <input
                       autoFocus
                       value={searchQuery}
                       maxLength={100}
                       onChange={(e) => handleSearch(e.target.value)}
                       placeholder={placeholder || 'Tìm kiếm sản phẩm...'}
-                      className="flex-1 bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400 min-w-0"
+                      className="flex-1 bg-transparent text-sm outline-none text-slate-900 placeholder-slate-400 min-w-0"
                     />
                     {searchQuery && (
                       <button
@@ -445,7 +401,7 @@ const Header = () => {
                             return next;
                           });
                         }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-slate-400 hover:text-slate-600"
                       >
                         <X size={15} />
                       </button>
@@ -455,13 +411,12 @@ const Header = () => {
                 <button
                   type="button"
                   onClick={() => setSearchFocused(false)}
-                  className="text-xs font-bold text-gray-600 hover:text-emerald-600 px-2 py-1.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
                 >
                   Hủy
                 </button>
               </div>
 
-              {/* Body of Mobile Search Modal */}
               <div className="flex-1 overflow-y-auto p-4 relative">
                 <SearchPopup
                   isOpen={true}
@@ -480,47 +435,39 @@ const Header = () => {
           )}
         </AnimatePresence>
 
-        {/* Mobile Menu */}
+        {/* Mobile Nav Menu */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="md:hidden border-t border-gray-100 bg-white/95 backdrop-blur-md overflow-hidden"
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-slate-100 bg-white overflow-hidden"
             >
-              <div className="px-4 py-4 space-y-1">
-                {navLinks.map((link, i) => (
-                  <motion.div
+              <div className="px-4 py-3 space-y-1">
+                {navLinks.map((link) => (
+                  <Link
                     key={link.to}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.06 }}
+                    to={link.to}
+                    onClick={(e) => handleNavLinkClick(e, link)}
+                    className={clsx(
+                      'block px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                      location.pathname === link.to
+                        ? 'text-slate-900 font-semibold bg-slate-100'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    )}
                   >
-                    <Link
-                      to={link.to}
-                      onClick={(e) => handleNavLinkClick(e, link)}
-                      className={clsx(
-                        'block px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                        location.pathname === link.to
-                          ? 'text-emerald-700 bg-emerald-50'
-                          : 'text-gray-700 hover:bg-gray-55'
-                      )}
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
+                    {link.label}
+                  </Link>
                 ))}
                 {!user && (
-                  <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 }}>
-                    <button
-                      onClick={() => { setMobileOpen(false); setLoginModalOpen(true); }}
-                      className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-                    >
-                      Đăng nhập
-                    </button>
-                  </motion.div>
+                  <button
+                    onClick={() => { setMobileOpen(false); setLoginModalOpen(true); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                  >
+                    Đăng nhập
+                  </button>
                 )}
               </div>
             </motion.div>
@@ -528,7 +475,6 @@ const Header = () => {
         </AnimatePresence>
       </header>
 
-      {/* Login Modal */}
       <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </>
   );
