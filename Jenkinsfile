@@ -160,32 +160,23 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-                    TARGET_SITE="/www/wwwroot/datn-nextgen-suggest.site"
-                    
-                    if [ -d dist ]; then
-                        echo "=== Đang sao chép thư mục dist mới vào $TARGET_SITE/dist qua docker cp ==="
-                        
-                        # 1. Tạo container tạm mount thư mục target host
-                        docker rm -f deploy_helper || true
-                        docker create --name deploy_helper -v "$TARGET_SITE":/target_site alpine
-                        
-                        # 2. Xóa và tạo mới thư mục dist trên host
-                        docker run --rm -v "$TARGET_SITE":/target_site alpine sh -c "rm -rf /target_site/dist && mkdir -p /target_site/dist"
-                        
-                        # 3. Dùng docker cp đẩy file trực tiếp từ workspace Jenkins vào host
-                        docker cp dist/. deploy_helper:/target_site/dist/
-                        
-                        # 4. Sửa phân quyền cho webserver
-                        docker run --rm -v "$TARGET_SITE":/target_site alpine chmod -R 755 /target_site/dist
-                        
-                        # 5. Xóa container tạm
-                        docker rm -f deploy_helper || true
-                        
-                        echo "Triển khai Frontend đè dist thành công!"
-                    else
-                        echo "LỖI: Không tìm thấy thư mục dist sau khi build!"
-                        exit 1
-                    fi
+                    IMAGE_NAME="nivora-frontend-react:latest"
+                    CONTAINER_NAME="nivora-frontend-react"
+
+                    echo "=== 1. Đang xây dựng Docker Image cho Frontend ==="
+                    docker build -t $IMAGE_NAME .
+
+                    echo "=== 2. Đang dừng và xóa container cũ (nếu có) ==="
+                    docker rm -f $CONTAINER_NAME || true
+
+                    echo "=== 3. Khởi chạy Docker Container mới ở Port 3000 ==="
+                    docker run -d \
+                        --name $CONTAINER_NAME \
+                        -p 3000:80 \
+                        --restart always \
+                        $IMAGE_NAME
+
+                    echo "=== Triển khai Frontend thành công chạy dưới dạng Docker Container ở Port 3000! ==="
                 '''
             }
         }

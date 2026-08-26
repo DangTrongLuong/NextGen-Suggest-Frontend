@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Mail, Phone, MapPin, ArrowRight, Send, 
   Truck, ShieldCheck, RefreshCw, Headset, 
-  Lock, Heart 
+  Lock, Heart, Users 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import logoNivora from '../../assets/logo-nivora.jpg';
@@ -44,6 +44,13 @@ const footerNavs = {
     { label: 'Hướng dẫn mua hàng', to: '#' },
     { label: 'Chính sách bảo hành', to: '#' },
     { label: 'Quy định đổi trả & hoàn tiền', to: '#' },
+  ],
+  'Đội Ngũ Phát Triển': [
+    { label: 'Khương Đình Lộc', to: '#' },
+    { label: 'Lê Thị Nga', to: '#' },
+    { label: 'Phạm Minh Đàn', to: '#' },
+    { label: 'Đặng Trọng Lương', to: '#' },
+    { label: 'Vũ Hà Kiên', to: '#' },
   ],
   'Về NIVORA': [
     { label: 'Câu chuyện thương hiệu', to: '#' },
@@ -164,7 +171,7 @@ const Footer = () => {
 
       {/* 3. Footer Links */}
       <div className="max-w-[96%] xl:max-w-[92%] mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           <div className="lg:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2.5">
               <img
@@ -217,9 +224,14 @@ const Footer = () => {
         </div>
 
         {/* 4. Bottom Legal */}
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
+        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <span>© {new Date().getFullYear()} NIVORA Inc. All rights reserved.</span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <div className="flex items-center gap-1.5 bg-slate-850 px-3 py-1.5 rounded-full border border-slate-800 text-[11px] text-slate-300">
+              <Users size={12} className="text-indigo-400 shrink-0" />
+              <span>Phát triển bởi: <strong className="font-semibold text-slate-200">Khương Đình Lộc, Lê Thị Nga, Phạm Minh Đàn, Đặng Trọng Lương, Vũ Hà Kiên</strong></span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
