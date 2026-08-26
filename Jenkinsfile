@@ -185,18 +185,10 @@ pipeline {
             steps {
                 script {
                     if (fileExists('dist')) {
-                        buildDir = 'dist'
-                        echo "Phát hiện thư mục build: dist"
-                    } else if (fileExists('build')) {
-                        buildDir = 'build'
-                        echo "Phát hiện thư mục build: build"
+                        archiveArtifacts artifacts: 'dist/**/*', excludes: '**/.env, **/.env.*', allowEmptyArchive: true
                     } else {
-                        error "LỖI: Không tìm thấy thư mục đầu ra 'dist' hay 'build'. Quá trình build có thể đã thất bại!"
+                        echo "Build đã được đóng gói trực tiếp vào Docker Container!"
                     }
-                    
-                    archiveArtifacts artifacts: "${buildDir}/**/*", excludes: '**/.env, **/.env.*'
-                    
-                    stash name: 'frontend-build-artifacts', includes: "${buildDir}/**/*", excludes: '**/.env, **/.env.*'
                 }
             }
         }
