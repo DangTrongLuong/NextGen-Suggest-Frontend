@@ -12,6 +12,7 @@ import { categoryMainService } from '../../services/categoryMainService';
 import { normalizeProducts } from '../../utils/productNormalizer';
 import { useAuth } from '../../context/AuthContext';
 import { recommendationService } from '../../services/recommendationService';
+import { ProductGridSkeleton } from '../../components/common/Loading';
 
 const Products = () => {
   const { categoryMainSlug, categorySlug, parentSlug, childSlug, leafSlug } = useParams();
@@ -590,11 +591,7 @@ const Products = () => {
           <div className="flex-1 min-w-0">
             <div>
               {showSkeleton ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="aspect-[3/4] bg-white border border-slate-200 rounded-xl animate-pulse p-4" />
-                  ))}
-                </div>
+                <ProductGridSkeleton count={10} />
               ) : products.length === 0 ? (
                 <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-card text-center mb-8">
                   <FolderOpen className="text-slate-300 w-10 h-10 mx-auto mb-2" />

@@ -24,18 +24,32 @@ export const PageLoader = () => (
 );
 
 export const CardSkeleton = () => (
-  <div className="bg-white rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-56 bg-gray-200" />
-    <div className="p-4 space-y-3">
-      <div className="h-4 bg-gray-200 rounded w-3/4" />
-      <div className="h-3 bg-gray-200 rounded w-1/2" />
-      <div className="h-5 bg-gray-200 rounded w-1/3" />
+  <div className="bg-white rounded-xl overflow-hidden border border-slate-200/80 shadow-card animate-pulse flex flex-col justify-between h-full">
+    <div className="w-full aspect-square bg-slate-200/80 relative">
+      <div className="absolute top-2 left-2 w-10 h-4 bg-slate-300/80 rounded" />
+    </div>
+    <div className="p-3 flex-1 flex flex-col justify-between space-y-3">
+      <div className="space-y-2">
+        <div className="h-2.5 bg-slate-200/80 rounded w-1/3" />
+        <div className="h-3.5 bg-slate-200/80 rounded w-full" />
+        <div className="h-3.5 bg-slate-200/80 rounded w-2/3" />
+      </div>
+      <div>
+        <div className="h-3 bg-slate-200/80 rounded w-1/4 mb-2.5" />
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="space-y-1 w-1/2">
+            <div className="h-4 bg-slate-200/80 rounded w-full" />
+            <div className="h-2.5 bg-slate-200/80 rounded w-2/3" />
+          </div>
+          <div className="w-7 h-7 bg-slate-200/80 rounded-lg shrink-0" />
+        </div>
+      </div>
     </div>
   </div>
 );
 
-export const ProductGridSkeleton = ({ count = 8 }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+export const ProductGridSkeleton = ({ count = 10 }) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
     {Array.from({ length: count }).map((_, i) => (
       <CardSkeleton key={i} />
     ))}
