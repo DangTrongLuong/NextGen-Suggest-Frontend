@@ -11,6 +11,7 @@ import heroBannerImg from '../../assets/hero-banner.png';
 import HeroAISuggestions from '../../components/product/HeroAISuggestions';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { ProductGridSkeleton } from '../../components/common/Loading';
 
 const Home = () => {
   const { user } = useAuth();
@@ -217,11 +218,7 @@ const Home = () => {
             </div>
 
             {searchLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-pulse">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] rounded-xl bg-slate-100 p-4" />
-                ))}
-              </div>
+              <ProductGridSkeleton count={10} />
             ) : searchResults.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
                 <p className="text-slate-600 text-sm font-semibold">
