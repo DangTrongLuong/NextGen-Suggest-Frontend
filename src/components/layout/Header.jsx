@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart, Heart, Search, User, Menu, X,
-  ChevronDown, LogOut, Settings, Package, Sparkles
+  ChevronDown, LogOut, Settings, Package, Sparkles, Zap
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useCart } from '../../context/CartContext';
@@ -27,6 +27,9 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [aiSearchEnabled, setAiSearchEnabled] = useState(() => {
+    try { return localStorage.getItem('nivora_ai_search') !== 'false'; } catch { return true; }
+  });
 
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
@@ -128,9 +131,15 @@ const Header = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim().slice(0, 100))}`);
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim().slice(0, 100))}&use_ai=${aiSearchEnabled}`);
       setSearchFocused(false);
     }
+  };
+
+  const handleToggleAiSearch = () => {
+    const next = !aiSearchEnabled;
+    setAiSearchEnabled(next);
+    try { localStorage.setItem('nivora_ai_search', String(next)); } catch {}
   };
 
   const handleNavLinkClick = (e, link) => {
@@ -208,9 +217,21 @@ const Header = () => {
                     className="flex-1 bg-transparent text-sm outline-none text-slate-900 placeholder-slate-400 min-w-0 font-normal"
                   />
                   <div className="flex items-center gap-1.5">
-                    <span className="hidden lg:flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-md border border-emerald-100">
-                      <Sparkles size={11} className="text-emerald-500" /> AI Search
-                    </span>
+                    <button
+                      type="button"
+                      onClick={handleToggleAiSearch}
+                      title={aiSearchEnabled ? 'AI Search đang BẬT — nhấn để tắt' : 'AI Search đang TẮT — nhấn để bật'}
+                      className={clsx(
+                        'hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-semibold transition-all duration-200 select-none cursor-pointer',
+                        aiSearchEnabled
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                          : 'text-slate-500 bg-slate-100 border-slate-200 hover:bg-slate-200'
+                      )}
+                    >
+                      {aiSearchEnabled
+                        ? <><Sparkles size={11} className="text-emerald-500" /> AI Search</>
+                        : <><Zap size={11} className="text-slate-400" /> Từ khóa</>}
+                    </button>
                     {searchQuery && (
                       <button
                         type="button"

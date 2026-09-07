@@ -20,6 +20,10 @@ const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const searchQueryParam = searchParams.get('search') || '';
+  const useAiParam = searchParams.get('use_ai');
+  const aiSearchEnabled = useAiParam !== null
+    ? useAiParam !== 'false'
+    : (() => { try { return localStorage.getItem('nivora_ai_search') !== 'false'; } catch { return true; } })();
   const [searchInput, setSearchInput] = useState('');
 
   const activeCategoryMainSlug = categoryMainSlug || null;
@@ -229,7 +233,8 @@ const Products = () => {
         if (isSearch) {
           data = await productService.searchPaginated(searchQueryParam.trim(), {
             ...params,
-            rerank: true
+            rerank: true,
+            use_ai: aiSearchEnabled,
           });
         } else {
           data = await productService.getAll(params);
