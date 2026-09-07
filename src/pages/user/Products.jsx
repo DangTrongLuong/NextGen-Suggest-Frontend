@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, FolderOpen, ArrowRight, Filter, X, Check, Star, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductCard from '../../components/product/ProductCard';
+import RecommendationSection from '../../components/product/RecommendationSection';
 import Pagination from '../../components/common/Pagination';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
 import { productService } from '../../services/productService';
@@ -51,6 +52,12 @@ const Products = () => {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
 
+  // Recommendation state ("Gợi ý dành cho bạn" section)
+  const [recPersonal, setRecPersonal] = useState([]);
+  const [recYouMayNeed, setRecYouMayNeed] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
+  const [activeRecTab, setActiveRecTab] = useState(0);
+
   const [searchPage, setSearchPage] = useState(0);
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
@@ -82,20 +89,34 @@ const Products = () => {
       .finally(() => setLoadingCategoryMains(false));
   }, []);
 
+  // Fetch personalized recommendations (used for both section display and product sort)
   useEffect(() => {
+    setRecLoading(true);
     recommendationService.getHomepageRecommendations()
       .then((data) => {
         if (data) {
-          const combined = [
-            ...(data.personal || []),
-            ...(data.youMayNeed || [])
-          ];
+          const normalizeItem = (p) => ({
+            ...p,
+            price: p.basePrice ?? p.price,
+            originalPrice: p.comparePrice ?? p.originalPrice,
+            discount: p.comparePrice > p.basePrice
+              ? Math.round(((p.comparePrice - p.basePrice) / p.comparePrice) * 100)
+              : (p.discount ?? 0),
+            rating: parseFloat(p.ratingAvg ?? p.rating ?? 0),
+            reviewCount: parseInt(p.ratingCount ?? p.reviewCount ?? 0),
+            stock: p.stock ?? 10,
+          });
+          setRecPersonal((data.personal || data.featured || []).map(normalizeItem).filter(Boolean));
+          setRecYouMayNeed((data.youMayNeed || data.trending || []).map(normalizeItem).filter(Boolean));
+          // also set userRecs for sort logic
+          const combined = [...(data.personal || []), ...(data.youMayNeed || [])];
           setUserRecs(combined);
         }
       })
       .catch((err) => {
         console.error("Failed to load user recommendations in Products.jsx", err);
-      });
+      })
+      .finally(() => setRecLoading(false));
   }, [user]);
 
   useEffect(() => {
@@ -594,6 +615,41 @@ const Products = () => {
           </aside>
 
           <div className="flex-1 min-w-0">
+            {/* Gợi ý dành cho bạn — only show when no search query and no category filter */}
+            {!searchQueryParam.trim() && !activeCategorySlug && !activeCategoryMainSlug && (
+              <div className="mb-8">
+                <RecommendationSection
+                  badge="Gợi ý AI"
+                  badgeColor="indigo"
+                  title="Dành riêng cho bạn"
+                  desc="Các sản phẩm được gợi ý dựa trên sở thích và lịch sử mua sắm của bạn"
+                  products={activeRecTab === 0
+                    ? (recPersonal.length > 0 ? recPersonal : recYouMayNeed)
+                    : (recYouMayNeed.length > 0 ? recYouMayNeed : recPersonal)
+                  }
+                  loading={recLoading}
+                  containerClassName="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card"
+                  headerExtra={
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                      {['Dành cho bạn', 'Có thể bạn thích'].map((tabLabel, idx) => (
+                        <button
+                          key={tabLabel}
+                          onClick={() => setActiveRecTab(idx)}
+                          className={`px-3 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${
+                            activeRecTab === idx
+                              ? 'bg-slate-900 text-white font-bold'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {tabLabel}
+                        </button>
+                      ))}
+                    </div>
+                  }
+                />
+              </div>
+            )}
+
             <div>
               {showSkeleton ? (
                 <ProductGridSkeleton count={10} />
